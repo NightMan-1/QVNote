@@ -14,7 +14,7 @@ GoLang server + VueJS frontend
 
 ## Project request
 
-GoLang >1.10
+GoLang >1.10  
 NodeJS  >10.x
 
 ## Project setup
@@ -41,7 +41,6 @@ go get -u github.com/gen2brain/beeep
 go get -u github.com/gen2brain/dlgs
 go get -u github.com/getlantern/systray
 go get -u github.com/gonutz/w32
-
 
 npm install
 ```
