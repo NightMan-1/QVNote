@@ -19,8 +19,8 @@ NodeJS  >10.x
 
 ## Project setup
 
-Download
-Unzip archive
+Download  
+Unzip archive  
 _(you also need install git command line program for download the source)_
 
 ```
@@ -56,6 +56,6 @@ now you can run QVNote.exe and open http://localhost:8000
 
 ## GUI development
 
-run server (QVNote.exe)
-npm run serve
+run server (QVNote.exe)  
+npm run serve  
 open http://localhost:8080
