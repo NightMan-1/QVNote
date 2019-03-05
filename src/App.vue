@@ -47,16 +47,10 @@ export default {
 </script>
 
 <style>
-    /*
-    @import url('https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i&subset=cyrillic,cyrillic-ext,latin-ext');
-    @import url('https://fonts.googleapis.com/css?family=Rubik:400,400i,500,500i,700,700i&subset=cyrillic,latin-ext');
-    */
     @import url('https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i,700,700i&subset=cyrillic,cyrillic-ext,latin-ext');
     /* purgecss start ignore */
     html, body {
-        /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif; */
-        /* font-family: 'Roboto', 'Rubik', 'Open Sans', sans-serif; */
-        font-family: 'Roboto', sans-serif;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
         font-kerning: normal;
         font-variant-ligatures: common-ligatures contextual;
         font-feature-settings: "kern", "liga", "clig", "calt";
@@ -133,6 +127,13 @@ export default {
     }
     p + .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
         margin-top: 1.1em;
+    }
+
+    .article-main {
+        font-size: 18px;
+        line-height: 24px;
+        max-width: 600px;
+        margin: 0 auto;
     }
 
     .ml--1 {

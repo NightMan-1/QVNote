@@ -32,6 +32,7 @@ export default new Vuex.Store({
     currentNotebookID: '',
     currentTagURL: '',
     showAdvancedNoteInfo: false,
+    readerMode: false,
     localesList: {
       'en-US': 'English',
       'ru-RU': 'Русский'
@@ -105,6 +106,9 @@ export default new Vuex.Store({
     getShowAdvancedNoteInfo: state => {
       return state.showAdvancedNoteInfo
     },
+    getReaderMode: state => {
+      return state.readerMode
+    },
     getLocalesList: state => {
       return state.localesList
     },
@@ -167,6 +171,10 @@ export default new Vuex.Store({
       Vue.ls.set('showAdvancedNoteInfo', data)
       state.showAdvancedNoteInfo = data
     },
+    setReaderMode: (state, data) => {
+      Vue.ls.set('readerMode', data)
+      state.readerMode = data
+    },
     toggleShowAdvancedNoteInfo: (state) => {
       if (Vue.ls.get('showAdvancedNoteInfo', false) === true) {
         Vue.ls.set('showAdvancedNoteInfo', false)
@@ -174,6 +182,15 @@ export default new Vuex.Store({
       } else {
         Vue.ls.set('showAdvancedNoteInfo', true)
         state.showAdvancedNoteInfo = true
+      }
+    },
+    toggleReaderMode: (state) => {
+      if (Vue.ls.get('readerMode', false) === true) {
+        Vue.ls.set('readerMode', false)
+        state.readerMode = false
+      } else {
+        Vue.ls.set('readerMode', true)
+        state.readerMode = true
       }
     }
   },

@@ -75,6 +75,7 @@ new Vue({
   template: '<App/>',
   mounted: function () {
     this.$store.commit('setShowAdvancedNoteInfo', Vue.ls.get('showAdvancedNoteInfo', false))
+    this.$store.commit('setReaderMode', Vue.ls.get('readerMode', false))
     this.$http.get(this.$store.getters.apiFolder + '/config.json').then(response => {
       this.$store.commit('setConfig', response.body)
       if (!this.$store.getters.getConfig.installed) {

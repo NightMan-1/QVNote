@@ -117,7 +117,8 @@ export default {
     modalMoveBtnCancel: 'Отмена',
     modalMoveBtnMove: 'Переместить',
     notificationErrorMove: 'Ошибка при перемещении заметки...',
-    btnFavorites: 'добавить в избранное'
+    btnFavorites: 'добавить в избранное',
+    btnReaderMode: 'режим чтения'
 
   },
   dashboard: {
