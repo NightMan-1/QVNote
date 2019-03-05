@@ -205,11 +205,9 @@ export default {
 
     .sidebar-nav .nav-item {
         width: 100%;
-        /*padding-right: 0.5em;*/
     }
     .sidebar, .main {
         height: 100% !important;
-        /* overflow: hidden; */
     }
     .sidebar .nav-link {
         padding: 0.5rem 1rem;
@@ -238,6 +236,61 @@ export default {
         float: left;
         width: 50px;
         font-size: 18px;
+    }
+
+    html:not([dir="rtl"]) .sidebar {
+    /* margin-left: -200px; */
+    margin-left: 14.1rem;
+    }
+
+    .app-body .sidebar {
+    /* flex: 0 0 200px; */
+    flex: 0 0 14.1rem;
+    }
+
+    .sidebar .sidebar-nav {
+    /* width: 200px; */
+    width: 14.1rem;
+    }
+
+    .sidebar .nav {
+    /* width: 200px; */
+    width: 100%;
+    }
+
+    @media (min-width: 1200px) {
+    html:not([dir="rtl"]) .sidebar-show.sidebar-fixed .app-footer, html:not([dir="rtl"]) .sidebar-show.sidebar-fixed .main, html:not([dir="rtl"]) .sidebar-xl-show.sidebar-fixed .app-footer, html:not([dir="rtl"]) .sidebar-xl-show.sidebar-fixed .main {
+        /* margin-left: 200px; */
+        margin-left: 14.1rem;
+    }
+    }
+
+    @media (min-width: 992px) {
+    html:not([dir="rtl"]) .sidebar-lg-show.sidebar-fixed .app-footer, html:not([dir="rtl"]) .sidebar-lg-show.sidebar-fixed .main, html:not([dir="rtl"]) .sidebar-show.sidebar-fixed .app-footer, html:not([dir="rtl"]) .sidebar-show.sidebar-fixed .main {
+        /* margin-left: 200px; */
+        margin-left: 14.1rem;
+    }
+    }
+
+    @media (min-width: 768px) {
+    html:not([dir="rtl"]) .sidebar-md-show.sidebar-fixed .app-footer, html:not([dir="rtl"]) .sidebar-md-show.sidebar-fixed .main, html:not([dir="rtl"]) .sidebar-show.sidebar-fixed .app-footer, html:not([dir="rtl"]) .sidebar-show.sidebar-fixed .main {
+        /* margin-left: 200px; */
+        margin-left: 14.1rem;
+    }
+    }
+
+    @media (min-width: 576px) {
+    html:not([dir="rtl"]) .sidebar-show.sidebar-fixed .app-footer, html:not([dir="rtl"]) .sidebar-show.sidebar-fixed .main, html:not([dir="rtl"]) .sidebar-sm-show.sidebar-fixed .app-footer, html:not([dir="rtl"]) .sidebar-sm-show.sidebar-fixed .main {
+        /* margin-left: 200px; */
+        margin-left: 14.1rem;
+    }
+    }
+
+    @media (min-width: 992px) {
+    .sidebar-fixed .sidebar {
+        /* width: 200px; */
+        width: 14.1rem;
+    }
     }
 
     .cxlt-toastr-container > div {
