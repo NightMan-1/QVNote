@@ -300,7 +300,6 @@ export default {
     }
     }
 
-
     .cxlt-toastr-container > div {
         width: 400px;
     }

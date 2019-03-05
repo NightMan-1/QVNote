@@ -180,7 +180,7 @@ export default {
     }
     #qv-editor-header{
         position: fixed;
-        width: calc(100% - 200px);
+        width: calc(100% - 14.1rem);
         top: 0;
         z-index: 1000;
     }
