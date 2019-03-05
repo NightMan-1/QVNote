@@ -54,7 +54,7 @@ export default {
         font-kerning: normal;
         font-variant-ligatures: common-ligatures contextual;
         font-feature-settings: "kern", "liga", "clig", "calt";
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 400;
         line-height: 1.42857143;
         font-display: swap; /* or block */
