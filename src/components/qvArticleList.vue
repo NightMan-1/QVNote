@@ -45,43 +45,13 @@
                   <button class="btn btn-outline-secondary" :title="$t('articleList.btnDelete')" @click="deleteArticle"><i class="fas fa-trash text-danger"></i></button>
                   <button class="btn btn-outline-secondary" :title="$t('articleList.btnMove')" @click="moveArticle"><i class="fas fa-people-carry- fa-exchange-alt text-black-50"></i></button>
                 </div>
+                <button class="btn btn-outline-secondary mr-2" :class="{'btn-secondary':readerMode}" :title="$t('articleList.btnReaderMode')" @click="$store.commit('toggleReaderMode')">
+                  <i class="fas text-black-50 fa-book-reader"></i>
+                </button>
                 <button class="btn btn-outline-secondary" :title="$t('articleList.btnFavorites')" @click="addToFavorites">
                   <i class="far fa-star text-black-50" :class="{'fas':articleCurrent.favorites}"></i>
                 </button>
 
-                <div class="dropdown note-move-button dropleft d-none"> <!-- !!! disabled -->
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false" @click="showActionMenu = true">
-                        <i class="fas fa-bars text-dark"></i>
-                    </button>
-                    <div
-                        class="dropdown-menu"
-                        :class="{'show':showActionMenu}"
-                    >
-                        <button class="dropdown-item" @click="doShowAdvancedInfo"><i
-                            class="fas fa-info text-dark mr-2"></i> {{$t('articleList.btnInfo')}}
-                        </button>
-                        <div class="dropdown-divider"></div>
-                        <button class="dropdown-item"
-                                @click="$router.push({name: 'qvEditor'})">
-                            <i class="fas fa-edit text-dark mr-2"></i> {{$t('articleList.btnEdit')}}
-                        </button>
-                        <button class="dropdown-item" @click="deleteArticle"><i class="fas fa-trash text-dark mr-2"></i>
-                            {{$t('articleList.btnDelete')}}
-                        </button>
-                        <button class="dropdown-item" @click="moveArticle"><i
-                            class="fas fa-people-carry text-dark mr-2"></i> {{$t('articleList.btnMove')}}
-                        </button>
-                        <!--<button class="dropdown-item" @click="doNothing"><i class="fas fa-eraser text-dark mr-2"></i> Очистить html</button>-->
-                        <!--<div class="dropdown-divider" v-if="$qvGlobalData.articleCurrent.SearchIndex === false"></div>
-                        <button class="dropdown-item" @click="doNothing" v-if="$qvGlobalData.articleCurrent.SearchIndex === false"><i class="fas fa-search-plus text-dark mr-2"></i> Индексировать</button>-->
-                    </div>
-                </div>
-                <!--
-                <div class="btn-group ml-auto" role="group" aria-label="Button group">
-                    <button class="btn btn-outline-secondary" @click="doshowAdvancedInfo" v-html="showAnvancedIcon"></button>
-                </div>
-                -->
             </div>
             <div class="scrolly-col-wrap pt-2- bg-white">
               <simplebar class="simplebarHeight" data-simplebar-auto-hide="true">
@@ -104,7 +74,7 @@
                     Поисковые индекс:{{ $qvGlobalData.articleCurrent.SearchIndex }}<br>
                     -->
                 </div>
-                <div class="pr-3 pl-3 pb-2 mt-3">
+                <div class="pr-3 pl-3 pb-2 mt-3" :class="{'article-main':readerMode}">
                     <article>
                         <h1 class="text-success mb-3 mt-2">{{ articleCurrent.title }}</h1>
                         <div class="clearfix"></div>
@@ -316,6 +286,9 @@ export default {
     },
     showAdvancedInfo () {
       return this.$store.getters.getShowAdvancedNoteInfo
+    },
+    readerMode () {
+      return this.$store.getters.getReaderMode
     }
   }
 }

@@ -118,7 +118,8 @@ export default {
     modalMoveBtnCancel: 'Cancel',
     modalMoveBtnMove: 'Move',
     notificationErrorMove: 'Error moving note...',
-    btnFavorites: 'add to favorites'
+    btnFavorites: 'add to favorites',
+    btnReaderMode: 'reading mode'
   },
   dashboard: {
     infoTitle: 'Statistics',
