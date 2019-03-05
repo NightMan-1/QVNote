@@ -286,12 +286,20 @@ export default {
     }
     }
 
+    @media (max-width: 991.98px) {
+    .sidebar {
+        /* width: 200px; */
+        width: 14.1rem;
+    }
+    }
+
     @media (min-width: 992px) {
     .sidebar-fixed .sidebar {
         /* width: 200px; */
         width: 14.1rem;
     }
     }
+
 
     .cxlt-toastr-container > div {
         width: 400px;
