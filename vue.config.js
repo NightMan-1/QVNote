@@ -5,7 +5,7 @@ const glob = require('glob-all')
 const webpack = require('webpack')
 
 const cssWhiteList = []
-const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/]
+const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/, /^ql-/]
 
 module.exports = {
   configureWebpack: {
