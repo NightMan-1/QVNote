@@ -79,11 +79,13 @@ import Multiselect from 'vue-multiselect'
 import Quill from 'quill'
 import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
-// import 'quill/dist/quill.bubble.css'
 import { ImageDrop } from 'quill-image-drop-module'
 import ImageResize from 'quill-image-resize-module'
+import MagicUrl from 'quill-magic-url'
 Quill.register('modules/imageDrop', ImageDrop)
 Quill.register('modules/ImageResize', ImageResize)
+Quill.register('modules/magicUrl', MagicUrl)
+let BeautifyHtml = require('js-beautify').html
 
 export default {
   name: 'qvEditor',
@@ -110,7 +112,13 @@ export default {
             ['link', 'image']
           ],
           imageDrop: true,
-          imageResize: { modules: [ 'Resize', 'DisplaySize' ] } // + 'Toolbar'
+          imageResize: { modules: [ 'Resize', 'DisplaySize' ] }, // + 'Toolbar'
+          magicUrl: {
+            // Regex used to check URLs during typing
+            urlRegularExpression: /(https?:\/\/[\S]+)|(www.[\S]+)|(mailto:[\S]+)|(tel:[\S]+)/,
+            // Regex used to check URLs on paste
+            globalRegularExpression: /(https?:\/\/|www\.|mailto:|tel:)[\S]+/g
+          }
         }
       }
     }
@@ -162,6 +170,13 @@ export default {
     addTag (newTag) {
       this.articleCurrentEditable.tags.push(newTag)
       this.$refs.editorTags.$el.focus()
+    }
+  },
+  watch: {
+    'articleCurrentEditable.type' () {
+      if (this.articleCurrentEditable.type === 'code') {
+        this.articleCurrentEditable.content = BeautifyHtml(this.articleCurrentEditable.content)
+      }
     }
   },
   computed: {
