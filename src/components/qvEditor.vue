@@ -57,13 +57,13 @@
 
                         </div>
                     </div>
-                    <div class="editor mt-3">
-                        <vue-editor :customModules="customModulesForEditor" :editorOptions="editorSettings" v-model="articleCurrentEditable.content" v-if="articleCurrentEditable.type === 'text'"></vue-editor>
-                        <prism-editor v-model="articleCurrentEditable.content" language="html" :line-numbers="true"
-                            class="mt-3"
-                            v-if="articleCurrentEditable.type === 'code'"></prism-editor>
-                        <div class="clearfix"></div>
+                    <div class="editor mt-3" v-if="articleCurrentEditable.type === 'text'">
+                      <quill-editor v-model="articleCurrentEditable.content" :options="editorSettings"></quill-editor>
                     </div>
+                    <div class="editor prism mt-3" v-if="articleCurrentEditable.type === 'code'">
+                        <prism-editor v-model="articleCurrentEditable.content" language="html" :line-numbers="true"></prism-editor>
+                    </div>
+                    <div class="clearfix"></div>
                 </div>
             </simplebar>
         </div>
@@ -71,17 +71,19 @@
 </template>
 
 <script>
-import { VueEditor } from 'vue2-editor'
-import { ImageDrop } from 'quill-image-drop-module'
-import ImageResize from 'quill-image-resize-module'
-import Multiselect from 'vue-multiselect'
 import 'prismjs'
 import 'prismjs/themes/prism.css'
 import PrismEditor from 'vue-prism-editor'
-
-// const SimpleScrollbar = require('simple-scrollbar')
-// const sanitizeHtml = require('sanitize-html') // https://www.npmjs.com/package/sanitize-html
-// const ting = require('ting') // https://www.npmjs.com/package/ting
+import { quillEditor } from 'vue-quill-editor'
+import Multiselect from 'vue-multiselect'
+import Quill from 'quill'
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+// import 'quill/dist/quill.bubble.css'
+import { ImageDrop } from 'quill-image-drop-module'
+import ImageResize from 'quill-image-resize-module'
+Quill.register('modules/imageDrop', ImageDrop)
+Quill.register('modules/ImageResize', ImageResize)
 
 export default {
   name: 'qvEditor',
@@ -95,12 +97,18 @@ export default {
       },
       articleCurrentEditable: { title: '', uuid: '', NoteBookUUID: '', status: '', tags: [], CreatedDate: '', UpdatedDate: '', cells: {}, content: '', type: 'text', url_src: '' },
       tagsListFormatted: [],
-      customModulesForEditor: [
-        { alias: 'imageDrop', module: ImageDrop },
-        { alias: 'imageResize', module: ImageResize }
-      ],
       editorSettings: {
         modules: {
+          toolbar: [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            ['bold', 'italic', 'underline'],
+            ['blockquote', 'code-block'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'align': [] }],
+            ['clean'],
+            ['link', 'image']
+          ],
           imageDrop: true,
           imageResize: { modules: [ 'Resize', 'DisplaySize' ] } // + 'Toolbar'
         }
@@ -108,7 +116,7 @@ export default {
     }
   },
   components: {
-    VueEditor,
+    quillEditor,
     Multiselect,
     PrismEditor
   },
@@ -146,6 +154,7 @@ export default {
         const thisResponse = response.body
         this.articleCurrentEditable.uuid = thisResponse.uuid
         this.articleCurrentEditable.NoteBookUUID = thisResponse.NoteBookUUID
+        // this.articleCurrentEditable.content = thisResponse.html // slow
       }, response => {
         this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('editor.errorSave') })
       })
@@ -194,7 +203,13 @@ export default {
     }
 
     .editor {
-        min-height: 40rem !important;
+      min-height: 40rem !important;
+    }
+
+    .editor.prism {
+      background-color: rgb(240, 243, 245);
+      height: 70vh;
+      overflow: auto;
     }
 
     .vmd-body {
@@ -254,12 +269,14 @@ export default {
     .multiselect__placeholder{
         margin-bottom: 0.53rem;
     }
-    .prism-editor__code code { padding: 0; }
+    .prism-editor__code, pre[class*="language-"] { overflow: inherit; margin: 0;}
+    .prism-editor__code code { padding: 0; overflow: inherit;}
     .prism-editor__line-numbers {
         width: 2rem;
         float: left;
         margin-top: 0 !important;
         text-align: right;
+        margin-right: 0.5rem;
     }
 
     .ql-editor blockquote, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4, .ql-editor h5, .ql-editor h6, .ql-editor ol, .ql-editor p, .ql-editor pre, .ql-editor ul {

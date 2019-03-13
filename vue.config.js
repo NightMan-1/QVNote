@@ -2,6 +2,7 @@ const path = require('path')
 // import Purgecss webpack plugin and glob-all
 const PurgecssPlugin = require('purgecss-webpack-plugin')
 const glob = require('glob-all')
+const webpack = require('webpack')
 
 const cssWhiteList = []
 const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/]
@@ -19,6 +20,9 @@ module.exports = {
         ]),
         whitelist: cssWhiteList,
         whitelistPatterns: cssWhiteListPatterns
+      }),
+      new webpack.ProvidePlugin({
+        'window.Quill': 'quill/dist/quill.js'
       })
     ],
     performance: {
