@@ -635,6 +635,8 @@ func ClearHTML(content string) string {
 		content = strings.Replace(content, match[0], preIndex, 1)
 	}
 
+	content = strings.Replace(content, "\n", "", -1)
+
 	r = regexp.MustCompile(`<div`)
 	content = r.ReplaceAllString(content, "<p")
 	r = regexp.MustCompile(`</div>`)
@@ -701,8 +703,6 @@ func ClearHTML(content string) string {
 	r = regexp.MustCompile(`<font.*?>(.*?)</font>`)
 	content = r.ReplaceAllString(content, "$1")
 
-	content = strings.Replace(content, "\n\n", "\n", -1)
-
 	for index, code := range saveCODE {
 		content = strings.Replace(content, index, code, 1)
 	}
@@ -710,14 +710,14 @@ func ClearHTML(content string) string {
 		content = strings.Replace(content, index, code, 1)
 	}
 
-	r = regexp.MustCompile(`<(p|pre|h1|h2|h3|h4|h5|ul|ol|/ul|/ol)>`)
-	content = r.ReplaceAllString(content, "\n<$1>")
-	r = regexp.MustCompile(`<li>`)
-	content = r.ReplaceAllString(content, "\n    <li>")
-	r = regexp.MustCompile(`^\n`)
-	content = r.ReplaceAllString(content, "")
-	r = regexp.MustCompile(`(\n|\s+)\n`)
-	content = r.ReplaceAllString(content, "\n")
+	//r = regexp.MustCompile(`<(p|pre|h1|h2|h3|h4|h5|ul|ol|/ul|/ol)>`)
+	//content = r.ReplaceAllString(content, "\n<$1>")
+	//r = regexp.MustCompile(`<li>`)
+	//content = r.ReplaceAllString(content, "\n    <li>")
+	//r = regexp.MustCompile(`^\n`)
+	//content = r.ReplaceAllString(content, "")
+	//r = regexp.MustCompile(`(\n|\s+)\n`)
+	//content = r.ReplaceAllString(content, "\n")
 
 	//content += `<div class="clearfix"></div>`
 
@@ -1676,7 +1676,7 @@ func WebServer(webserverChan chan bool) {
 			request.Type = "text"
 		}
 
-		request.Content = ClearHTML(request.Content)
+		//request.Content = ClearHTML(request.Content)
 
 		// update file
 		noteDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookUUID + ".qvnotebook/" + noteUUID + ".qvnote")
@@ -1777,7 +1777,8 @@ func WebServer(webserverChan chan bool) {
 
 		SaveConfig()
 
-		ctx.JSON(iris.Map{"NoteBookUUID": notebookUUID, "uuid": noteUUID, "html": request.Content})
+		//ctx.JSON(iris.Map{"NoteBookUUID": notebookUUID, "uuid": noteUUID, "html": request.Content})
+		ctx.JSON(iris.Map{"NoteBookUUID": notebookUUID, "uuid": noteUUID})
 
 	})
 
