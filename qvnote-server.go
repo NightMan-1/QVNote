@@ -31,7 +31,7 @@ import (
 	"github.com/gonutz/w32"
 	"github.com/imroc/req"
 	"github.com/iris-contrib/middleware/cors"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
@@ -643,37 +643,23 @@ func ClearHTML(content string) string {
 	r = regexp.MustCompile(`<h(.).*?>`)
 	content = r.ReplaceAllString(content, `<h$1>`)
 
-	r = regexp.MustCompile(`<p(.*?)>`)
-	content = r.ReplaceAllString(content, "<p>")
-	r = regexp.MustCompile(`<p>\n`)
-	content = r.ReplaceAllString(content, "<p>")
+	r = regexp.MustCompile(`<(p|br|hr).*?>`)
+	content = r.ReplaceAllString(content, "<$1>")
 
-	r = regexp.MustCompile(`<p>\s+`)
-	content = r.ReplaceAllString(content, "<p>")
+	r = regexp.MustCompile(`<(p|h1|h2|h3|h4|h5|h6)>\s+`)
+	content = r.ReplaceAllString(content, "<$1>")
+	r = regexp.MustCompile(`\s+<(/p|/h1|/h2|/h3|/h4|/h5|/h6)>`)
+	content = r.ReplaceAllString(content, "<$1>")
 
-	r = regexp.MustCompile(`<p><p>(.*?)</p></p>`)
-	content = r.ReplaceAllString(content, `<p>$1</p>`)
-	r = regexp.MustCompile(`<p><p>(.*?)</p></p>`)
-	content = r.ReplaceAllString(content, `<p>$1</p>`)
-	r = regexp.MustCompile(`<p><p>(.*?)</p></p>`)
-	content = r.ReplaceAllString(content, `<p>$1</p>`)
-	r = regexp.MustCompile(`<p><p>(.*?)</p></p>`)
-	content = r.ReplaceAllString(content, `<p>$1</p>`)
-	r = regexp.MustCompile(`<p><p>(.*?)</p></p>`)
-	content = r.ReplaceAllString(content, `<p>$1</p>`)
-	r = regexp.MustCompile(`<p><p>(.*?)</p></p>`)
-	content = r.ReplaceAllString(content, `<p>$1</p>`)
-	r = regexp.MustCompile(`<p><p>(.*?)</p></p>`)
-	content = r.ReplaceAllString(content, `<p>$1</p>`)
-	r = regexp.MustCompile(`<p><p>(.*?)</p></p>`)
-	content = r.ReplaceAllString(content, `<p>$1</p>`)
-	r = regexp.MustCompile(`<p><br></p>`)
-	content = r.ReplaceAllString(content, ``)
+	r = regexp.MustCompile("(<p>){2,}")
+	content = r.ReplaceAllString(content, `<p>`)
+	r = regexp.MustCompile("(</p>){2,}")
+	content = r.ReplaceAllString(content, `</p>`)
 
-	r = regexp.MustCompile(`<p></p>`)
-	content = r.ReplaceAllString(content, "")
+	r = regexp.MustCompile("<(p|h1|h2|h3|h4|h5|h6)><br>")
+	content = r.ReplaceAllString(content, `<$1>`)
 
-	r = regexp.MustCompile(`<span></span>`)
+	r = regexp.MustCompile(`<(span|p|h1|h2|h3|h4|h5|h6)></(span|p|h1|h2|h3|h4|h5|h6)>`)
 	content = r.ReplaceAllString(content, "")
 
 	// r = regexp.MustCompile(`<img.*?src=["|'](.*?)["|'].*?>`)
@@ -724,7 +710,16 @@ func ClearHTML(content string) string {
 		content = strings.Replace(content, index, code, 1)
 	}
 
-	content += `<div class="clearfix"></div>`
+	r = regexp.MustCompile(`<(p|pre|h1|h2|h3|h4|h5|ul|ol|/ul|/ol)>`)
+	content = r.ReplaceAllString(content, "\n<$1>")
+	r = regexp.MustCompile(`<li>`)
+	content = r.ReplaceAllString(content, "\n    <li>")
+	r = regexp.MustCompile(`^\n`)
+	content = r.ReplaceAllString(content, "")
+	r = regexp.MustCompile(`(\n|\s+)\n`)
+	content = r.ReplaceAllString(content, "\n")
+
+	//content += `<div class="clearfix"></div>`
 
 	//fmt.Println(content)
 
@@ -1616,7 +1611,6 @@ func WebServer(webserverChan chan bool) {
 					noteData.ContentType = text.Type
 				}
 				noteData.Content = ClearHTML(noteData.Content)
-				// noteData.Content = gohtml.Format(noteData.Content)
 
 				noteData.Content = FixNoteImagesLinks(noteData, noteData.Content, ctx)
 
@@ -1682,6 +1676,8 @@ func WebServer(webserverChan chan bool) {
 			request.Type = "text"
 		}
 
+		request.Content = ClearHTML(request.Content)
+
 		// update file
 		noteDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookUUID + ".qvnotebook/" + noteUUID + ".qvnote")
 		os.MkdirAll(noteDir, 0755)
@@ -1743,7 +1739,7 @@ func WebServer(webserverChan chan bool) {
 			}
 		}
 
-		//Tadd new tags to cloud
+		//Add new tags to cloud
 		for _, tagID := range request.Tags {
 			data, _ := TagsDB.Get([]byte(tagID))
 			dataString := BytesToString(data)
@@ -1781,7 +1777,7 @@ func WebServer(webserverChan chan bool) {
 
 		SaveConfig()
 
-		ctx.JSON(iris.Map{"NoteBookUUID": notebookUUID, "uuid": noteUUID})
+		ctx.JSON(iris.Map{"NoteBookUUID": notebookUUID, "uuid": noteUUID, "html": request.Content})
 
 	})
 
