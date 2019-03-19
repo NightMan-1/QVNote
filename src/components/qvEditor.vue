@@ -230,7 +230,16 @@ export default {
     .vmd-body {
         min-height: 40rem !important;
     }
-
+    .ql-container{
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+        font-kerning: normal;
+        font-variant-ligatures: common-ligatures contextual;
+        font-feature-settings: "kern", "liga", "clig", "calt";
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.42857143;
+        font-display: swap; /* or block */
+    }
     .ql-editor- {
         white-space: normal !important;
     }
