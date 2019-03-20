@@ -26,7 +26,7 @@
         "simplebar-vue": "^0.1.4",
         "tingle.js": "^0.13.2",
         "v-charts": "^1.19.0",
-        "vue": "^2.6.8",
+        "vue": "^2.6.10",
         "vue-calendar-heatmap": "^0.8.4",
         "vue-headful": "^2.0.1",
         "vue-i18n": "^8.9.0",
@@ -39,17 +39,17 @@
         "vuex": "^3.1.0"
     },
     "devDependencies": {
-        "@fortawesome/fontawesome-free": "^5.7.2",
+        "@fortawesome/fontawesome-free": "^5.8.0",
         "@vue/cli-plugin-babel": "^3.5.1",
         "@vue/cli-plugin-eslint": "^3.5.1",
         "@vue/cli-service": "^3.5.1",
         "@vue/eslint-config-standard": "^4.0.0",
         "babel-eslint": "^10.0.1",
-        "eslint": "^5.15.1",
+        "eslint": "^5.15.3",
         "eslint-plugin-vue": "^5.2.2",
         "node-sass": "^4.11.0",
         "sass-loader": "^7.0.1",
-        "vue-template-compiler": "^2.6.8"
+        "vue-template-compiler": "^2.6.10"
     },
     "eslintConfig": {
         "root": true,
