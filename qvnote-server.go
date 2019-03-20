@@ -24,6 +24,7 @@ import (
 	"github.com/blevesearch/snowballstem"
 	"github.com/blevesearch/snowballstem/russian"
 	"github.com/dustin/go-humanize"
+	"github.com/go-ini/ini"
 	"github.com/gofrs/uuid" // "github.com/satori/go.uuid"
 	"github.com/imroc/req"
 	"github.com/iris-contrib/middleware/cors"
@@ -107,11 +108,39 @@ func initSystem() {
 	}
 	dataDir = dataDir + "/.config/QVNote"
 
+	var portTMP int = 8000
+	configGlobal.cmdPortable = false
+	configGlobal.cmdServerMode = false
+
+	//read configuration file
+	cfgFile := configGlobal.execDir + "/config.ini"
+	if _, err := os.Stat(cfgFile); err == nil {
+		cfg, err := ini.Load(cfgFile)
+		if err != nil {
+			fmt.Printf("Fail to read file: %v", err)
+			os.Exit(1)
+		}
+
+		if cfg.Section("").Key("port").MustInt(9999) > 0 && cfg.Section("").Key("port").MustInt(9999) < 65535 {
+			portTMP = cfg.Section("").Key("port").MustInt(9999)
+		}
+		if runtime.GOOS == "windows" {
+			configGlobal.cmdPortable = cfg.Section("").Key("portable").MustBool(false)
+		}
+
+		configGlobal.cmdServerMode = cfg.Section("").Key("servermode").MustBool(false)
+
+		if cfg.Section("").Key("datadir").String() != "" {
+			if _, err := os.Stat(cfgFile); err == nil {
+				dataDir = cfg.Section("").Key("datadir").String()
+			}
+		}
+	}
+
 	//get command line flags
-	var portTMP int
-	flag.IntVar(&portTMP, "port", 8000, "port number")
+	flag.IntVar(&portTMP, "port", portTMP, "port number")
 	configGlobal.cmdPort = strconv.Itoa(portTMP)
-	flag.BoolVar(&configGlobal.cmdPortable, "portable", false, "portable flag for Windows OS")
+	flag.BoolVar(&configGlobal.cmdPortable, "portable", configGlobal.cmdPortable, "portable flag for Windows OS")
 	flag.BoolVar(&configGlobal.cmdServerMode, "server", false, "server mode")
 	flag.StringVar(&dataDir, "datadir", dataDir, "data folder")
 	flag.Parse()
