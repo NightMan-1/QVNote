@@ -14,6 +14,12 @@ import (
 	"github.com/siddontang/ledisdb/ledis"
 )
 
+var cmdParam struct {
+	port     int32
+	portable bool
+	dataDir  string
+}
+
 type configGlobalStruct struct {
 	sourceFolder         string
 	timeStart            time.Time
@@ -24,6 +30,10 @@ type configGlobalStruct struct {
 	atStartCheckNewNotes bool
 	atStartShowConsole   bool
 	postEditor           string
+	cmdPort              string
+	cmdPortable          bool
+	cmdDataDir           string
+	cmdServerMode        bool
 }
 
 var configGlobal (configGlobalStruct)

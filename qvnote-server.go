@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,7 +11,9 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -90,10 +93,38 @@ func initSystem() {
 	ex, err := os.Executable()
 	configGlobal.execDir, _ = filepath.Abs(path.Dir(ex) + "/")
 
+	var dataDir string
+	switch runtime.GOOS {
+	case "windows":
+		dataDir = os.Getenv("USERPROFILE")
+	case "darwin":
+		dataDir = os.Getenv("HOME")
+	case "linux":
+		dataDir = os.Getenv("HOME")
+	default:
+		fmt.Println("Sorry, can not run on your OS.")
+		os.Exit(1)
+	}
+	dataDir = dataDir + "/.config/QVNote"
+
+	//get command line flags
+	var portTMP int
+	flag.IntVar(&portTMP, "port", 8000, "port number")
+	configGlobal.cmdPort = strconv.Itoa(portTMP)
+	flag.BoolVar(&configGlobal.cmdPortable, "portable", false, "portable flag for Windows OS")
+	flag.BoolVar(&configGlobal.cmdServerMode, "server", false, "server mode")
+	flag.StringVar(&dataDir, "datadir", dataDir, "data folder")
+	flag.Parse()
+
+	if configGlobal.cmdPortable {
+		dataDir, _ = filepath.Abs(configGlobal.execDir + "/data")
+	}
+	dataDir, _ = filepath.Abs(dataDir)
+
 	//open database
 	cfg := lediscfg.NewConfigDefault()
-	//os.MkdirAll(configGlobal.execDir + "/data", 0760)
-	cfg.DataDir, _ = filepath.Abs(configGlobal.execDir + "/data")
+	os.MkdirAll(dataDir, 0760)
+	cfg.DataDir = dataDir
 	LedisDB, err = ledis.Open(cfg)
 	check(err, "Error open data file")
 	ConfigDB, err = LedisDB.Select(0)
@@ -1802,7 +1833,7 @@ func WebServer(webserverChan chan bool) {
 		}
 	})
 
-	app.Run(iris.Addr(":8000"), iris.WithOptimizations)
+	app.Run(iris.Addr(":"+configGlobal.cmdPort), iris.WithOptimizations)
 
 	webserverChan <- true
 }
@@ -1835,8 +1866,8 @@ func main() {
 
 	//start web server
 	println("Starting web server...")
-	if configGlobal.atStartOpenBrowser == true {
-		go openBrowser("http://localhost:8000/")
+	if configGlobal.atStartOpenBrowser == true && configGlobal.cmdServerMode != true {
+		go openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
 	}
 	webserverChan := make(chan bool)
 	go WebServer(webserverChan)

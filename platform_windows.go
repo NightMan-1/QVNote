@@ -30,6 +30,9 @@ func openBrowser(url string) error {
 }
 
 func showNotification(message_text string, message_type string) {
+	if configGlobal.cmdServerMode {
+		return
+	}
 	switch message_type {
 	case "dialog_warning":
 		dlgs.Warning("QVNote error!", message_text)
@@ -117,6 +120,10 @@ func onExitSysTray() {
 }
 
 func initPlatformSpecific() {
+	if configGlobal.cmdServerMode {
+		return
+	}
+
 	consoleWindows = w32.GetConsoleWindow()
 	consoleWindowsVisible = true
 
