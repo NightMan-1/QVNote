@@ -73,6 +73,18 @@ run server (QVNote.exe)
 npm run serve  
 open http://localhost:8080
 
+## Command line parameters:
+    --help  
+        usage info
+    --port=8000
+        listen port
+    --portable
+        portable mode for Windows OS, data will be stored in app folder
+    --server
+        server mode without systray and other GUI
+    --datadir
+        data folder, default $HOME/.config/QVNote or %USERPROFILE%/.config/QVNote
+
 
 ## Known issues:
 1) systray icon work only in Windows
