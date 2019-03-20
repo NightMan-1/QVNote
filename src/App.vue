@@ -60,6 +60,7 @@ export default {
         font-display: swap; /* or block */
         background-color: white;
         height: 100vh;
+        scroll-behavior: smooth;
         /*
         font-smooth:always;
         -webkit-font-smoothing:subpixel-antialiased;
