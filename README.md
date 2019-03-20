@@ -37,6 +37,7 @@ go get -u github.com/json-iterator/go
 go get -u github.com/marcsauter/single
 go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo
 go get -u github.com/syndtr/goleveldb/leveldb
+go get -u github.com/go-ini/ini
 
 npm install
 ```
@@ -85,6 +86,7 @@ open http://localhost:8080
     --datadir
         data folder, default $HOME/.config/QVNote or %USERPROFILE%/.config/QVNote
 
+Also you can you optional configuration file "config.ini"
 
 ## Known issues:
 1) systray icon work only in Windows
