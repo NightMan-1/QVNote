@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -24,14 +21,9 @@ import (
 	"github.com/blevesearch/snowballstem"
 	"github.com/blevesearch/snowballstem/russian"
 	"github.com/dustin/go-humanize"
-	"github.com/gen2brain/beeep"
-	"github.com/gen2brain/dlgs"
-	"github.com/getlantern/systray"
 	"github.com/gofrs/uuid" // "github.com/satori/go.uuid"
-	"github.com/gonutz/w32"
 	"github.com/imroc/req"
 	"github.com/iris-contrib/middleware/cors"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
@@ -40,131 +32,10 @@ import (
 	"github.com/siddontang/ledisdb/ledis"
 )
 
-type configGlobalStruct struct {
-	sourceFolder         string
-	timeStart            time.Time
-	execDir              string
-	appInstalled         bool
-	requestIndexing      bool //необходимость запустить переиндексацию поиска
-	console              w32.HWND
-	consoleVisible       bool
-	atStartOpenBrowser   bool
-	atStartCheckNewNotes bool
-	atStartShowConsole   bool
-	postEditor           string
-}
-
-var configGlobal (configGlobalStruct)
-var LedisDB *ledis.Ledis
-var ConfigDB, NoteBookDB, NoteDB, TagsDB, FavoritesDB *ledis.DB
-
-type SearchService struct {
-	index      bleve.Index
-	batchCount int
-	batch      *bleve.Batch
-}
-
-var ss SearchService
-
-var searchStatus struct {
-	status       string `json:"status"`
-	notesTotal   int    `json:"notesTotal"`
-	notesCurrent int    `json:"notesCurrent"`
-}
-
-var optimizationStatus struct {
-	status       string `json:"status"`
-	notesTotal   int    `json:"notesTotal"`
-	notesCurrent int    `json:"notesCurrent"`
-}
-
-type SearchContent struct {
-	UUID  string             `json:"uuid"`
-	Title string             `json:"title"`
-	Cells []ContentCellsType `json:"cells"`
-}
-
-type SearchResult struct {
-	Title        string `json:"title"`
-	UUID         string `json:"uuid"`
-	NoteBookUUID string `json:"NoteBookUUID"`
-}
-
-//TODO optimize for indexing speed
-var SearchThreads = false
-
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
-
-type NoteBookType struct {
-	UUID       string
-	Name       string
-	Notes      map[string]int64
-	NotesCount int
-}
-
-type NoteBookTypeAPI struct {
-	UUID       string `json:"uuid"`
-	Name       string `json:"name"`
-	NotesCount int    `json:"notesCount"`
-}
-
-type NoteType struct {
-	Created_at   int32    `json:"created_at"`
-	Updated_at   int32    `json:"updated_at"`
-	Tags         []string `json:"tags"`
-	Title        string   `json:"title"`
-	UUID         string   `json:"uuid"`
-	URL          string   `json:"url_src"`
-	NoteBookUUID string
-	SearchIndex  bool
-}
-
-type NoteTypeWithContentAPI struct {
-	Created_at   int32    `json:"created_at"`
-	Updated_at   int32    `json:"updated_at"`
-	Tags         []string `json:"tags"`
-	Title        string   `json:"title"`
-	UUID         string   `json:"uuid"`
-	URL          string   `json:"url_src"`
-	NoteBookUUID string
-	SearchIndex  bool
-	Content      string `json:"content"`
-	ContentType  string `json:"type"`
-	Favorites    bool   `json:"favorites"`
-}
-
-type NoteTypeAPI struct {
-	Updated_at   int32  `json:"updated_at"`
-	Title        string `json:"title"`
-	UUID         string `json:"uuid"`
-	NoteBookUUID string `json:"NoteBookUUID"`
-}
-
-var NoteBook = make(map[string]NoteBookType)
-var TagsCloud = make(map[string][]string)
-
-type TagsListStruct struct {
-	Count int    `json:"count"`
-	Name  string `json:"name"`
-	Url   string `json:"url"`
-}
-
-type ContentCellsType struct {
-	Type string `json:"type"`
-	Data string `json:"data"`
-}
-
-type FilesForIndexType struct {
-	Patch string
-	UUID  string
-}
-
-var FilesForIndex = []FilesForIndexType{}
-
 func check(e error, message string) {
 	if e != nil {
 		fmt.Println(message)
-		dlgs.Warning("QVNote error!", message)
+		showNotification(message, "dialog_warning")
 		panic(e)
 		os.Exit(1)
 	}
@@ -173,12 +44,8 @@ func check(e error, message string) {
 func check_ne(e error) { //check_no_exit
 	if e != nil {
 		fmt.Println(e)
-		beeep.Notify("QVNote", fmt.Sprintf("%s", e), "")
+		showNotification(fmt.Sprintf("%s", e), "notify")
 	}
-}
-
-func BytesToString(data []byte) string {
-	return string(data[:])
 }
 
 func queryStem(query string) string {
@@ -214,15 +81,6 @@ func (ss *SearchService) Search(query string) (*bleve.SearchResult, error) {
 	search := bleve.NewSearchRequest(qsq)
 	search.Fields = []string{"UUID"}
 	return ss.index.Search(search)
-}
-
-func RandStringBytes(n int) string {
-	const letterBytes = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
 }
 
 func initSystem() {
@@ -300,9 +158,6 @@ func initSystem() {
 	if !CheckNotebooksFolderStructure(configGlobal.sourceFolder) {
 		configGlobal.appInstalled = false
 	}
-
-	configGlobal.console = w32.GetConsoleWindow()
-	configGlobal.consoleVisible = true
 
 	data, _ = ConfigDB.Get([]byte("atStartOpenBrowser"))
 	if BytesToString(data) == "false" {
@@ -485,14 +340,7 @@ func FindAllNotes() {
 
 	SaveConfig()
 	fmt.Println("Done!")
-	beeep.Notify("QVNote", "The list of notes has been updated.", "")
-}
-
-func MemStat() {
-	var mem runtime.MemStats
-	runtime.ReadMemStats(&mem)
-	//fmt.Printf("\nAlloc = %v\nTotalAlloc = %v\nSys = %v\nNumGC = %v\n\n", humanize.Bytes(mem.Alloc), humanize.Bytes(mem.TotalAlloc), humanize.Bytes(mem.Sys), mem.NumGC)
-	fmt.Printf("\nSys = %v\n\n", humanize.Bytes(mem.Sys))
+	showNotification("The list of notes has been updated.", "notify")
 }
 
 //creating a structure for new notes
@@ -848,20 +696,6 @@ func OptimizeResources(UUID string) {
 
 }
 
-//https://www.codesd.com/item/golang-how-to-get-the-total-size-of-the-directory.html
-func DirSize2(path string) (int64, error) {
-	var size int64
-	adjSize := func(_ string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			size += info.Size()
-		}
-		return err
-	}
-	err := filepath.Walk(path, adjSize)
-
-	return size, err
-}
-
 func indexingAllNotes() {
 	searchStatus.status = "indexing"
 	FilesForIndex = []FilesForIndexType{}
@@ -936,41 +770,11 @@ func optimizeAllNotes() {
 		}
 	}
 	optimizationStatus.status = "done"
-	beeep.Notify("QVNote", "Optimization is complete.", "")
+	showNotification("Optimization is complete.", "notify")
 
-}
-
-func openBrowser(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default: // "linux", "freebsd", "openbsd", "netbsd"
-		cmd = "xdg-open"
-	}
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
-}
-
-// https://codereview.stackexchange.com/questions/60074/in-array-in-go
-func in_array(val string, array []string) (exists bool) {
-	exists = false
-	for _, v := range array {
-		if val == v {
-			exists = true
-			return
-		}
-	}
-	return
 }
 
 func WebServer(webserverChan chan bool) {
-
 	app := iris.New()
 	app.Use(iris.Gzip)
 	app.Use(recover.New())
@@ -2003,94 +1807,15 @@ func WebServer(webserverChan chan bool) {
 	webserverChan <- true
 }
 
-func initSysTray() {
-	systray.Run(onReadySysTray, onExitSysTray)
-}
-
-func onReadySysTray() {
-	iconData, _ := Asset("icon.ico")
-
-	systray.SetIcon(iconData)
-	systray.SetTitle("QVNote")
-
-	mBrowser := systray.AddMenuItem("Open browser", "open default browser with this app page")
-	go func() {
-		<-mBrowser.ClickedCh
-		go openBrowser("http://localhost:8000/")
-	}()
-
-	mShowConsoleHide := systray.AddMenuItem("Hide console", "debug")
-	mShowConsoleShow := systray.AddMenuItem("Show console", "debug")
-	go func() {
-		<-mShowConsoleHide.ClickedCh
-		consoleHide()
-		mShowConsoleHide.Hide()
-		mShowConsoleShow.Show()
-	}()
-	go func() {
-		<-mShowConsoleShow.ClickedCh
-		consoleShow()
-		mShowConsoleShow.Hide()
-		mShowConsoleHide.Show()
-	}()
-	if configGlobal.consoleVisible {
-		mShowConsoleShow.Hide()
-	} else {
-		mShowConsoleHide.Hide()
-	}
-
-	mRelod := systray.AddMenuItem("Reload notes", "may be slow")
-	go func() {
-		<-mRelod.ClickedCh
-		FindAllNotes()
-		beeep.Notify("QVNote", "All data reloaded", "")
-	}()
-
-	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
-	go func() {
-		<-mQuit.ClickedCh
-		systray.Quit()
-		beeep.Notify("QVNote", "Good buy!", "")
-		fmt.Println("Good buy!")
-	}()
-
-}
-
-func onExitSysTray() {
-	// clean up here
-	os.Exit(0)
-}
-
-func consoleShow() {
-	if configGlobal.console != 0 {
-		_, consoleProcID := w32.GetWindowThreadProcessId(configGlobal.console)
-		if w32.GetCurrentProcessId() == consoleProcID {
-			w32.ShowWindowAsync(configGlobal.console, w32.SW_SHOW)
-			configGlobal.consoleVisible = true
-		}
-	}
-
-}
-
-func consoleHide() {
-	if configGlobal.console != 0 {
-		_, consoleProcID := w32.GetWindowThreadProcessId(configGlobal.console)
-		if w32.GetCurrentProcessId() == consoleProcID {
-			w32.ShowWindowAsync(configGlobal.console, w32.SW_HIDE)
-			configGlobal.consoleVisible = false
-		}
-	}
-}
-
 func main() {
 	s := single.New("QVNote")
 	if err := s.CheckLock(); err != nil && err == single.ErrAlreadyRunning {
-		dlgs.Warning("QVNote error!", "another instance of the app is already running, exiting")
+		showNotification("another instance of the app is already running, exiting", "dialog_warning")
 		log.Fatal("another instance of the app is already running, exiting")
 		os.Exit(1)
 	} else if err != nil {
 		// Another error occurred, might be worth handling it as well
-		dlgs.Warning("QVNote error!", "failed to acquire exclusive app lock")
+		showNotification("failed to acquire exclusive app lock", "dialog_warning")
 		log.Fatalf("failed to acquire exclusive app lock: %v", err)
 		os.Exit(1)
 	}
@@ -2099,12 +1824,7 @@ func main() {
 	start := time.Now()
 	println("Initializing...")
 	initSystem()
-
-	if configGlobal.atStartShowConsole == false {
-		consoleHide()
-	}
-
-	go systray.Run(onReadySysTray, onExitSysTray)
+	initPlatformSpecific()
 
 	//update the list of notes
 	if configGlobal.appInstalled {
