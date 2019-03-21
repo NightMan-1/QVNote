@@ -168,7 +168,7 @@ func initSystem() {
 	check(err, "Error open data file")
 
 	//search db
-	indexName, _ := filepath.Abs(configGlobal.execDir + "/data/search.bleve")
+	indexName, _ := filepath.Abs(dataDir + "/search.bleve")
 	if _, err := os.Stat(indexName + "/index_meta.json"); err != nil {
 		os.RemoveAll(indexName)
 		// time.Sleep(1 * time.Second)
