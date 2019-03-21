@@ -163,6 +163,7 @@ export default {
         this.articleCurrentEditable.uuid = thisResponse.uuid
         this.articleCurrentEditable.NoteBookUUID = thisResponse.NoteBookUUID
         // this.articleCurrentEditable.content = thisResponse.html // slow
+        this.$store.dispatch('getAllData')
       }, response => {
         this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('editor.errorSave') })
       })
