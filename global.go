@@ -24,6 +24,7 @@ type configGlobalStruct struct {
 	sourceFolder         string
 	timeStart            time.Time
 	execDir              string
+	dataDir              string
 	appInstalled         bool
 	requestIndexing      bool //необходимость запустить переиндексацию поиска
 	atStartOpenBrowser   bool
