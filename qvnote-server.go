@@ -210,8 +210,12 @@ func initSystem() {
 	data, _ = ConfigDB.Get([]byte("sourceFolder"))
 	if BytesToString(data) == "" {
 		configGlobal.appInstalled = false
-		//configGlobal.sourceFolder, _ = filepath.Abs(configGlobal.execDir + "/notes")
-		configGlobal.sourceFolder = "./notes"
+		switch runtime.GOOS {
+		case "windows":
+			configGlobal.sourceFolder = "./notes"
+		default:
+			configGlobal.sourceFolder = os.Getenv("HOME") + "/notes"
+		}
 	} else {
 		configGlobal.sourceFolder = BytesToString(data)
 	}
