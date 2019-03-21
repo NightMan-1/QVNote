@@ -24,6 +24,7 @@ import (
 	"github.com/blevesearch/snowballstem"
 	"github.com/blevesearch/snowballstem/russian"
 	"github.com/dustin/go-humanize"
+	"github.com/gen2brain/beeep"
 	"github.com/go-ini/ini"
 	"github.com/gofrs/uuid" // "github.com/satori/go.uuid"
 	"github.com/imroc/req"
@@ -942,6 +943,12 @@ func WebServer(webserverChan chan bool) {
 				}
 			}
 		}
+	})
+
+	app.Handle("ANY", "/api/exit", func(ctx iris.Context) {
+		beeep.Notify("QVNote", "Good buy!", "")
+		fmt.Println("Good buy!")
+		os.Exit(0)
 	})
 
 	app.Handle("ANY", "/api/config.json", func(ctx iris.Context) {
