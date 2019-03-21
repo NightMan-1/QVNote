@@ -951,6 +951,10 @@ func WebServer(webserverChan chan bool) {
 		os.Exit(0)
 	})
 
+	app.Handle("ANY", "/api/ping", func(ctx iris.Context) {
+		ctx.JSON(iris.Map{"result": "pong"})
+	})
+
 	app.Handle("ANY", "/api/config.json", func(ctx iris.Context) {
 		var request struct {
 			OpenBrowser   string `json:"atStartOpenBrowser"`

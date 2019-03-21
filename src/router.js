@@ -5,6 +5,7 @@ import qvApp from '@/components/qvApp'
 const qvInstaller = () => import('@/components/qvInstaller')
 const qvErrorFatal = () => import('@/components/qvErrorFatal')
 const qvNotFound = () => import('@/components/qv404')
+const qvShutdown = () => import('@/components/qvShutdown')
 
 export default new Router({
   // mode: 'history', // https://router.vuejs.org/ru/guide/essentials/history-mode.html
@@ -23,6 +24,11 @@ export default new Router({
       path: '/settings',
       name: 'qvSettings',
       component: qvApp
+    },
+    {
+      path: '/shutdown',
+      name: 'qvShutdown',
+      component: qvShutdown
     },
     {
       path: '/notes',

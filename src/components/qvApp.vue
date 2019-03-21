@@ -210,6 +210,18 @@ export default {
       this.show = 'settings'
       this.$router.push('/settings')
     }
+
+    let thisGlobal = this
+    setInterval(function () {
+      thisGlobal.$http.get(thisGlobal.$store.getters.apiFolder + '/ping').then(response => {
+        // console.log(response.body.result)
+        if (response.body.result !== 'pong') {
+          thisGlobal.$router.push('/shutdown')
+        }
+      }, response => {
+        thisGlobal.$router.push('/shutdown')
+      })
+    }, 2000)
   },
   destroyed: function () {
     document.body.className = ''
@@ -257,6 +269,7 @@ export default {
   methods: {
     powerOFF () {
       this.$http.get(this.$store.getters.apiFolder + '/exit')
+      this.$router.push('/shutdown')
     },
     goHome (index) {
       this.$store.commit('setCurrentNotebookID', '')
