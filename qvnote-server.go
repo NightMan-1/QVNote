@@ -95,19 +95,18 @@ func initSystem() {
 	ex, err := os.Executable()
 	configGlobal.execDir, _ = filepath.Abs(path.Dir(ex) + "/")
 
-	var dataDir string
 	switch runtime.GOOS {
 	case "windows":
-		dataDir = os.Getenv("USERPROFILE")
+		configGlobal.dataDir = os.Getenv("USERPROFILE")
 	case "darwin":
-		dataDir = os.Getenv("HOME")
+		configGlobal.dataDir = os.Getenv("HOME")
 	case "linux":
-		dataDir = os.Getenv("HOME")
+		configGlobal.dataDir = os.Getenv("HOME")
 	default:
 		fmt.Println("Sorry, can not run on your OS.")
 		os.Exit(1)
 	}
-	dataDir = dataDir + "/.config/QVNote"
+	configGlobal.dataDir = configGlobal.dataDir + "/.config/QVNote"
 
 	var portTMP int = 8000
 	configGlobal.cmdPortable = false
@@ -133,7 +132,7 @@ func initSystem() {
 
 		if cfg.Section("").Key("datadir").String() != "" {
 			if _, err := os.Stat(cfgFile); err == nil {
-				dataDir = cfg.Section("").Key("datadir").String()
+				configGlobal.dataDir = cfg.Section("").Key("datadir").String()
 			}
 		}
 	}
@@ -143,18 +142,18 @@ func initSystem() {
 	configGlobal.cmdPort = strconv.Itoa(portTMP)
 	flag.BoolVar(&configGlobal.cmdPortable, "portable", configGlobal.cmdPortable, "portable flag for Windows OS")
 	flag.BoolVar(&configGlobal.cmdServerMode, "server", false, "server mode")
-	flag.StringVar(&dataDir, "datadir", dataDir, "data folder")
+	flag.StringVar(&configGlobal.dataDir, "datadir", configGlobal.dataDir, "data folder")
 	flag.Parse()
 
 	if configGlobal.cmdPortable {
-		dataDir, _ = filepath.Abs(configGlobal.execDir + "/data")
+		configGlobal.dataDir, _ = filepath.Abs(configGlobal.execDir + "/data")
 	}
-	dataDir, _ = filepath.Abs(dataDir)
+	configGlobal.dataDir, _ = filepath.Abs(configGlobal.dataDir)
 
 	//open database
 	cfg := lediscfg.NewConfigDefault()
-	os.MkdirAll(dataDir, 0760)
-	cfg.DataDir = dataDir
+	os.MkdirAll(configGlobal.dataDir, 0760)
+	cfg.DataDir = configGlobal.dataDir
 	LedisDB, err = ledis.Open(cfg)
 	check(err, "Error open data file")
 	ConfigDB, err = LedisDB.Select(0)
@@ -169,7 +168,7 @@ func initSystem() {
 	check(err, "Error open data file")
 
 	//search db
-	indexName, _ := filepath.Abs(dataDir + "/search.bleve")
+	indexName, _ := filepath.Abs(configGlobal.dataDir + "/search.bleve")
 	if _, err := os.Stat(indexName + "/index_meta.json"); err != nil {
 		os.RemoveAll(indexName)
 		// time.Sleep(1 * time.Second)
@@ -1207,7 +1206,7 @@ func WebServer(webserverChan chan bool) {
 		}
 
 		//sourceSize, _ := DirSize2(configGlobal.sourceFolder) //take long time
-		dataSize, _ := DirSize2(configGlobal.execDir + "/data")
+		dataSize, _ := DirSize2(configGlobal.dataDir)
 
 		ctx.JSON(iris.Map{
 			"dateFirst": dateFirst,
