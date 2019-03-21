@@ -7,6 +7,7 @@ export default {
     addNewNote: 'Создать запись',
     addNewNotebook: 'Добавить блокнот',
     buttonSettings: 'Настройки',
+    buttonExit: 'Выключить',
     sidebarLibrary: 'LIBRARY',
     sidebarInbox: 'Inbox',
     sidebarFavorites: 'Favorite',

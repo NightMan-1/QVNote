@@ -7,6 +7,7 @@ export default {
     addNewNote: 'New note',
     addNewNotebook: 'Add a notebook',
     buttonSettings: 'Settings',
+    buttonExit: 'Shutdown',
     sidebarLibrary: 'LIBRARY',
     sidebarInbox: 'Inbox',
     sidebarFavorites: 'Favorite',

@@ -35,6 +35,10 @@
                         <button class="dropdown-item" @click="openSettings"><i class="fas fa-cog text-dark mr-2"></i>
                             {{$t('general.buttonSettings')}}
                         </button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" @click="powerOFF"><i class="fas fa-power-off text-dark mr-2"></i>
+                            {{$t('general.buttonExit')}}
+                        </button>
                     </div>
                 </div>
 
@@ -251,6 +255,9 @@ export default {
     }
   },
   methods: {
+    powerOFF () {
+      this.$http.get(this.$store.getters.apiFolder + '/exit')
+    },
     goHome (index) {
       this.$store.commit('setCurrentNotebookID', '')
       this.$store.commit('setPageType', 'dashboard')
