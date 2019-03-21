@@ -33,7 +33,8 @@ export default {
     no: 'no',
     yesBig: 'Yes',
     noBig: 'No',
-    modalClose: 'Close'
+    modalClose: 'Close',
+    shutdownMessage: 'Server power off.'
   },
   installer: {
     title: 'QVNote - installation',

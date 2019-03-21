@@ -33,7 +33,8 @@ export default {
     no: 'нет',
     yesBig: 'Да',
     noBig: 'Нет',
-    modalClose: 'Закрыть'
+    modalClose: 'Закрыть',
+    shutdownMessage: 'Сервер выключен.'
   },
   installer: {
     title: 'QVNote - установка',
