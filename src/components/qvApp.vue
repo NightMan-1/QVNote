@@ -1,6 +1,5 @@
 <template>
     <div>
-
         <div class="app-body">
             <div class="sidebar">
                 <button
@@ -156,20 +155,10 @@
                 </div>
             </div>
             <main class="main">
-
-                <transition name="fade">
-                    <qv-editor v-if="pageType === 'editor'"></qv-editor>
-                </transition>
-                <transition name="fade">
-                    <qv-settings v-if="pageType === 'settings'"></qv-settings>
-                </transition>
-                <transition name="fade">
-                    <qv-dashboard v-if="pageType === 'dashboard'" ></qv-dashboard>
-                </transition>
-                <transition name="fade">
-                    <qv-article-list v-if="pageType === 'articleList' || pageType === 'tags'" ></qv-article-list>
-                </transition>
-
+              <qv-editor v-if="pageType === 'editor'"></qv-editor>
+              <qv-settings v-if="pageType === 'settings'"></qv-settings>
+              <qv-dashboard v-if="pageType === 'dashboard'" ></qv-dashboard>
+              <qv-article-list v-if="pageType === 'articleList' || pageType === 'tags'" ></qv-article-list>
             </main>
         </div>
     </div>
@@ -432,14 +421,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-    .fade-enter-active, .fade-leave-active {
-        transition: opacity .2s;
-    }
-
-    .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */
-    {
-        opacity: 0;
-    }
-</style>
