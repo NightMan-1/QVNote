@@ -37,6 +37,8 @@ const i18n = new VueI18n({
   }
 })
 
+document.getElementsByTagName('html')[0].setAttribute('lang', Vue.ls.get('locale'))
+
 const isDev = process.env.NODE_ENV !== 'production'
 Vue.config.performance = isDev
 
