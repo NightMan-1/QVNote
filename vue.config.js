@@ -3,6 +3,7 @@ const path = require('path')
 const PurgecssPlugin = require('purgecss-webpack-plugin')
 const glob = require('glob-all')
 const webpack = require('webpack')
+const TerserPlugin = require('terser-webpack-plugin')
 
 const cssWhiteList = []
 const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/, /^ql-/]
@@ -27,6 +28,18 @@ module.exports = {
     ],
     performance: {
       hints: false
+    },
+    optimization: {
+      minimizer: [new TerserPlugin({
+        cache: true,
+        parallel: true,
+        sourceMap: false,
+        terserOptions: {
+          output: {
+            comments: false
+          }
+        }
+      })]
     }
   },
 
