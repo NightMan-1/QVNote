@@ -90,5 +90,3 @@ open http://localhost:8080
 
 Also you can you optional configuration file "config.ini"
 
-## Known issues:
-1) systray icon work only in Windows
