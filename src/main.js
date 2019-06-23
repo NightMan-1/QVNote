@@ -5,6 +5,7 @@ import './style/nord.css'
 import './style/bootstrap/bootstrap.scss'
 import './style/grid.css'
 import './style/main.css'
+import './style/typography.scss'
 
 import App from './App'
 import store from './store'
