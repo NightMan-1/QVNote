@@ -874,6 +874,12 @@ func WebServer(webserverChan chan bool) {
 		ctx.HTML(string(data))
 	})
 
+	app.OnErrorCode(404, func(ctx iris.Context) {
+		data, _ := Asset("templates/index.html")
+		ctx.StatusCode(200)
+		ctx.HTML(string(data))
+	})
+
 	// for installation
 	app.Handle("ANY", "/api/config.write", func(ctx iris.Context) {
 		var config struct {
@@ -947,6 +953,9 @@ func WebServer(webserverChan chan bool) {
 	app.Handle("ANY", "/api/exit", func(ctx iris.Context) {
 		beeep.Notify("QVNote", "Good buy!", "")
 		fmt.Println("Good buy!")
+		if systrayProcess != nil {
+			systrayProcess.Process.Kill()
+		}
 		os.Exit(0)
 	})
 
@@ -1234,7 +1243,7 @@ func WebServer(webserverChan chan bool) {
 
 			ss.index.Close()
 			time.Sleep(1 * time.Second)
-			indexName, _ := filepath.Abs(configGlobal.execDir + "/data/search.bleve")
+			indexName, _ := filepath.Abs(configGlobal.dataDir + "/data/search.bleve")
 			os.RemoveAll(indexName)
 			time.Sleep(1 * time.Second)
 			index, err := bleve.Open(indexName)
@@ -1882,6 +1891,11 @@ func WebServer(webserverChan chan bool) {
 }
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == string("--systray") && runtime.GOOS == string("darwin") {
+		runSystray()
+		os.Exit(0)
+	}
+
 	s := single.New("QVNote")
 	if err := s.CheckLock(); err != nil && err == single.ErrAlreadyRunning {
 		showNotification("another instance of the app is already running, exiting", "dialog_warning")
@@ -1918,6 +1932,6 @@ func main() {
 	<-webserverChan
 
 	MemStat()
-	fmt.Printf("page took %s", time.Since(start))
+	fmt.Printf("page took %s\n", time.Since(start))
 
 }

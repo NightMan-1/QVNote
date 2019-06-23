@@ -8,17 +8,19 @@ All data stored in Quiver like format (http://happenapps.com/)
 
 GoLang server + VueJS frontend
 
+More info here - https://qvnote.fsky.info/
+
 ![Screenshot eng](screenshot_eng.png)
 
 ## Project request
 
-GoLang >1.10  
+GoLang >1.10
 NodeJS  >10.x
 
 ## Project setup
 
-Download  
-Unzip archive  
+Download
+Unzip archive
 _(you also need install git command line program for download the source)_
 
 ```
@@ -70,12 +72,12 @@ now you can run QVNote binary and open http://localhost:8000 in your browser
 
 ## GUI development
 
-run server (QVNote.exe)  
-npm run serve  
+run server (QVNote.exe)
+npm run serve
 open http://localhost:8080
 
 ## Command line parameters:
-    --help  
+    --help
         usage info
     --port=8000
         listen port

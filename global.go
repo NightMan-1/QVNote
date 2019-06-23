@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -143,6 +144,8 @@ type FilesForIndexType struct {
 }
 
 var FilesForIndex = []FilesForIndexType{}
+
+var systrayProcess *exec.Cmd
 
 func BytesToString(data []byte) string {
 	return string(data[:])

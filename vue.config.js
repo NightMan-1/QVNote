@@ -9,42 +9,42 @@ const cssWhiteList = []
 const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/, /^ql-/]
 
 module.exports = {
-  configureWebpack: {
-    plugins: [
-      // Remove unused CSS using purgecss. See https://github.com/FullHuman/purgecss
-      // for more information about purgecss.
-      new PurgecssPlugin({
-        paths: glob.sync([
-          path.join(__dirname, './../public/index.html'),
-          path.join(__dirname, './../**/*.vue'),
-          path.join(__dirname, './../src/**/*.js')
-        ]),
-        whitelist: cssWhiteList,
-        whitelistPatterns: cssWhiteListPatterns
-      }),
-      new webpack.ProvidePlugin({
-        'window.Quill': 'quill/dist/quill.js'
-      })
-    ],
-    performance: {
-      hints: false
-    },
-    optimization: {
-      minimizer: [new TerserPlugin({
-        cache: true,
-        parallel: true,
-        sourceMap: false,
-        terserOptions: {
-          output: {
-            comments: false
-          }
+    configureWebpack: {
+        plugins: [
+            // Remove unused CSS using purgecss. See https://github.com/FullHuman/purgecss
+            // for more information about purgecss.
+            new PurgecssPlugin({
+                paths: glob.sync([
+                    path.join(__dirname, './../public/index.html'),
+                    path.join(__dirname, './../**/*.vue'),
+                    path.join(__dirname, './../src/**/*.js')
+                ]),
+                whitelist: cssWhiteList,
+                whitelistPatterns: cssWhiteListPatterns
+            }),
+            new webpack.ProvidePlugin({
+                'window.Quill': 'quill/dist/quill.js'
+            })
+        ],
+        performance: {
+            hints: false
+        },
+        optimization: {
+            minimizer: [new TerserPlugin({
+                cache: true,
+                parallel: true,
+                sourceMap: false,
+                terserOptions: {
+                    output: {
+                        comments: false
+                    }
+                }
+            })]
         }
-      })]
-    }
-  },
+    },
 
-  assetsDir: 'static',
-  productionSourceMap: false,
-  outputDir: 'templates'
+    assetsDir: 'static',
+    productionSourceMap: false,
+    outputDir: 'templates'
 
 }

@@ -4,8 +4,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/gen2brain/beeep"
 	"github.com/gen2brain/dlgs"
@@ -37,7 +39,17 @@ func showNotification(message_text string, message_type string) {
 	case "dialog_warning":
 		dlgs.Warning("QVNote error!", message_text)
 	case "notify":
-		beeep.Notify("QVNote", message_text, "")
+		if runtime.GOOS == string("windows") {
+			var tmpIcon *os.File
+			iconData, _ := Asset("icon.ico")
+			tmpIcon, _ = ioutil.TempFile("", "icon.*.ico")
+			tmpIcon.Write(iconData)
+			tmpIcon.Close()
+			beeep.Notify("QVNote", message_text, tmpIcon.Name())
+			os.Remove(tmpIcon.Name())
+		} else {
+			beeep.Notify("QVNote", message_text, "") // icon not work on MacOS
+		}
 
 	}
 }
@@ -70,53 +82,52 @@ func onReadySysTray() {
 	systray.SetTitle("QVNote")
 
 	mBrowser := systray.AddMenuItem("Open browser", "open default browser with this app page")
-	go func() {
-		<-mBrowser.ClickedCh
-		go openBrowser("http://localhost:8000/")
-	}()
+	mRelod := systray.AddMenuItem("Reload notes", "may be slow")
+	mShowConsoleHide := systray.AddMenuItem("Hide console", "debug")
+	mShowConsoleShow := systray.AddMenuItem("Show console", "debug")
+	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
 	if consolePresent {
-		mShowConsoleHide := systray.AddMenuItem("Hide console", "debug")
-		mShowConsoleShow := systray.AddMenuItem("Show console", "debug")
-		go func() {
-			<-mShowConsoleHide.ClickedCh
-			consoleHide()
-			mShowConsoleHide.Hide()
-			mShowConsoleShow.Show()
-		}()
-		go func() {
-			<-mShowConsoleShow.ClickedCh
-			consoleShow()
-			mShowConsoleShow.Hide()
-			mShowConsoleHide.Show()
-		}()
 		if consoleWindowsVisible {
 			mShowConsoleShow.Hide()
 		} else {
 			mShowConsoleHide.Hide()
 		}
+	} else {
+		mShowConsoleShow.Hide()
+		mShowConsoleHide.Hide()
 	}
 
-	mRelod := systray.AddMenuItem("Reload notes", "may be slow")
-	go func() {
-		<-mRelod.ClickedCh
-		FindAllNotes()
-		beeep.Notify("QVNote", "All data reloaded", "")
-	}()
-
-	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
-	go func() {
-		<-mQuit.ClickedCh
-		systray.Quit()
-		beeep.Notify("QVNote", "Good buy!", "")
-		fmt.Println("Good buy!")
-	}()
+	for {
+		select {
+		case <-mShowConsoleHide.ClickedCh:
+			consoleHide()
+			mShowConsoleHide.Hide()
+			mShowConsoleShow.Show()
+		case <-mShowConsoleShow.ClickedCh:
+			consoleShow()
+			mShowConsoleShow.Hide()
+			mShowConsoleHide.Show()
+		case <-mBrowser.ClickedCh:
+			openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
+		case <-mRelod.ClickedCh:
+			FindAllNotes()
+			beeep.Notify("QVNote", "All data reloaded", "")
+		case <-mQuit.ClickedCh:
+			systray.Quit()
+			beeep.Notify("QVNote", "Good buy!", "")
+			fmt.Println("Good buy!")
+		}
+	}
 
 }
 
 func onExitSysTray() {
 	// clean up here
 	os.Exit(0)
+}
+
+func runSystray() {
 }
 
 func initPlatformSpecific() {
