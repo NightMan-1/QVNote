@@ -1,6 +1,6 @@
 <template>
     <div id="qv-editor">
-        <div class="pt-2 pb-2 pl-3 pr-3 bg-light b-b-1 mb-2" id="qv-editor-header">
+        <div id="qv-editor-header">
             <h4 class="mt-1 mb-0 float-left" v-if="(articleCurrentEditable.uuid === '')">{{$t('editor.titleNew')}}</h4>
             <h4 class="mt-1 mb-0 float-left" v-if="(articleCurrentEditable.uuid !== '')">{{$t('editor.titleExist')}}</h4>
             <div class="float-right">
@@ -21,51 +21,47 @@
             </div>
         </div>
 
-        <div class="pl-0" id="qv-editor-main">
-            <simplebar class="simplebarHeight" data-simplebar-auto-hide="true">
-                <div class="pl-3 pr-4 mb-4">
-                    <input type="text" class="form-control mb-3 mt-3 text-dark font-size-normal"
-                           :placeholder="$t('editor.inputTitlePlaceholder')" v-model="articleCurrentEditable.title" ref='editorTitle'/>
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="form-group">
-                                <label><b>{{$t('editor.titleURL')}}</b></label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-external-link-alt"></i></span>
-                                    </div>
-                                    <input type="text" class="form-control text-dark font-size-normal"
-                                           :placeholder="$t('editor.inputURLPlaceholder')" v-model="articleCurrentEditable.url_src"/>
+        <div id="qv-editor-main">
+                <input type="text" class="form-control mb-3 mt-3 text-dark font-size-normal"
+                        :placeholder="$t('editor.inputTitlePlaceholder')" v-model="articleCurrentEditable.title" ref='editorTitle'/>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label><b>{{$t('editor.titleURL')}}</b></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="fas fa-external-link-alt"></i></span>
                                 </div>
+                                <input type="text" class="form-control text-dark font-size-normal"
+                                        :placeholder="$t('editor.inputURLPlaceholder')" v-model="articleCurrentEditable.url_src"/>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <div class="form-group">
-                                <label><b>{{$t('editor.titleTags')}}</b></label>
-                                <multiselect
-                                    ref='editorTags'
-                                    v-model="articleCurrentEditable.tags"
-                                    :placeholder="$t('editor.inputTagsPlaceholder')"
-                                    :options="tagsListFormatted"
-                                    :multiple="true"
-                                    :taggable="true"
-                                    @tag="addTag"
-                                    :selectLabel="multiselectLang.selectLabel"
-                                    :deselectLabel="multiselectLang.deselectLabel"
-                                    :selectedLabel="multiselectLang.selectedLabel"></multiselect>
-                            </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label><b>{{$t('editor.titleTags')}}</b></label>
+                            <multiselect
+                                ref='editorTags'
+                                v-model="articleCurrentEditable.tags"
+                                :placeholder="$t('editor.inputTagsPlaceholder')"
+                                :options="tagsListFormatted"
+                                :multiple="true"
+                                :taggable="true"
+                                @tag="addTag"
+                                :selectLabel="multiselectLang.selectLabel"
+                                :deselectLabel="multiselectLang.deselectLabel"
+                                :selectedLabel="multiselectLang.selectedLabel"></multiselect>
+                        </div>
 
-                        </div>
                     </div>
-                    <div class="editor mt-3" v-if="articleCurrentEditable.type === 'text'">
-                      <quill-editor v-model="articleCurrentEditable.content" :options="editorSettings"></quill-editor>
-                    </div>
-                    <div class="editor prism mt-3" v-if="articleCurrentEditable.type === 'code'">
-                        <prism-editor v-model="articleCurrentEditable.content" language="html" :line-numbers="true"></prism-editor>
-                    </div>
-                    <div class="clearfix"></div>
                 </div>
-            </simplebar>
+                <div class="editor mt-3" v-if="articleCurrentEditable.type === 'text'">
+                    <quill-editor v-model="articleCurrentEditable.content" :options="editorSettings"></quill-editor>
+                </div>
+                <div class="editor prism mt-3" v-if="articleCurrentEditable.type === 'code'">
+                    <prism-editor v-model="articleCurrentEditable.content" language="html" :line-numbers="true"></prism-editor>
+                </div>
+                <div class="clearfix"></div>
         </div>
     </div>
 </template>
@@ -83,135 +79,137 @@ import { ImageDrop } from 'quill-image-drop-module'
 import ImageResize from 'quill-image-resize-module'
 import MagicUrl from 'quill-magic-url'
 Quill.register('modules/imageDrop', ImageDrop)
-Quill.register('modules/ImageResize', ImageResize)
+Quill.register('modules/imageResize', ImageResize)
 Quill.register('modules/magicUrl', MagicUrl)
 let BeautifyHtml = require('js-beautify').html
 
 export default {
-  name: 'qvEditor',
-  props: ['noteUUID'],
-  data () {
-    return {
-      multiselectLang: {
-        selectLabel: this.$t('editor.multiselectLang.selectLabel'),
-        deselectLabel: this.$t('editor.multiselectLang.deselectLabel'),
-        selectedLabel: this.$t('editor.multiselectLang.selectedLabel')
-      },
-      articleCurrentEditable: { title: '', uuid: '', NoteBookUUID: '', status: '', tags: [], CreatedDate: '', UpdatedDate: '', cells: {}, content: '', type: 'text', url_src: '' },
-      tagsListFormatted: [],
-      editorSettings: {
-        modules: {
-          toolbar: [
-            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-            ['bold', 'italic', 'underline'],
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'align': [] }],
-            ['clean'],
-            ['link', 'image']
-          ],
-          imageDrop: true,
-          imageResize: { modules: [ 'Resize', 'DisplaySize' ] }, // + 'Toolbar'
-          magicUrl: {
-            // Regex used to check URLs during typing
-            urlRegularExpression: /(https?:\/\/[\S]+)|(www.[\S]+)|(mailto:[\S]+)|(tel:[\S]+)/,
-            // Regex used to check URLs on paste
-            globalRegularExpression: /(https?:\/\/|www\.|mailto:|tel:)[\S]+/g
-          }
+    name: 'qvEditor',
+    props: ['noteUUID'],
+    data () {
+        return {
+            multiselectLang: {
+                selectLabel: this.$t('editor.multiselectLang.selectLabel'),
+                deselectLabel: this.$t('editor.multiselectLang.deselectLabel'),
+                selectedLabel: this.$t('editor.multiselectLang.selectedLabel')
+            },
+            articleCurrentEditable: { title: '', uuid: '', NoteBookUUID: '', status: '', tags: [], CreatedDate: '', UpdatedDate: '', cells: {}, content: '', type: 'text', url_src: '' },
+            tagsListFormatted: [],
+            editorSettings: {
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                        ['bold', 'italic', 'underline'],
+                        ['blockquote', 'code-block'],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'align': [] }],
+                        ['clean'],
+                        ['link', 'image']
+                    ],
+                    imageDrop: true,
+                    imageResize: { modules: [ 'Resize', 'DisplaySize' ] }, // + 'Toolbar'
+                    magicUrl: {
+                        // Regex used to check URLs during typing
+                        urlRegularExpression: /(https?:\/\/[\S]+)|(www.[\S]+)|(mailto:[\S]+)|(tel:[\S]+)/,
+                        // Regex used to check URLs on paste
+                        globalRegularExpression: /(https?:\/\/|www\.|mailto:|tel:)[\S]+/g
+                    }
+                }
+            }
         }
-      }
-    }
-  },
-  components: {
-    quillEditor,
-    Multiselect,
-    PrismEditor
-  },
-  created () {
-  },
-  mounted () {
-    if (this.BrowserPlatform === 'general') {
-      // SimpleScrollbar.initAll()
-    }
-    this.$refs.editorTitle.focus()
-    // this.articleCurrentEditable = Object.assign({}, this.articleCurrent)
-    this.articleCurrentEditable = JSON.parse(JSON.stringify(this.articleCurrent))
-    if (this.articleCurrentEditable.type === '') {
-      this.articleCurrentEditable.type = 'text'
-    }
+    },
+    components: {
+        quillEditor,
+        Multiselect,
+        PrismEditor
+    },
+    mounted () {
+        if (this.BrowserPlatform === 'general') {
+            // SimpleScrollbar.initAll()
+        }
+        this.$refs.editorTitle.focus()
+        // this.articleCurrentEditable = Object.assign({}, this.articleCurrent)
+        this.articleCurrentEditable = JSON.parse(JSON.stringify(this.articleCurrent))
+        if (this.articleCurrentEditable.type === '') {
+            this.articleCurrentEditable.type = 'text'
+        }
 
-    for (const tag in this.tagsList) {
-      if (this.tagsList[tag].name !== '') {
-        this.tagsListFormatted.push(this.tagsList[tag].name)
-      }
-    }
-  },
-  methods: {
-    editorInit: function () {
+        for (const tag in this.tagsList) {
+            if (this.tagsList[tag].name !== '') {
+                this.tagsListFormatted.push(this.tagsList[tag].name)
+            }
+        }
     },
-    saveData () {
-      this.$http.post(this.$store.getters.apiFolder + '/note_edit.json', {
-        'title': this.articleCurrentEditable.title,
-        'url': this.articleCurrentEditable.url_src,
-        'uuid': this.articleCurrentEditable.uuid,
-        'type': this.articleCurrentEditable.editorType,
-        'tags': this.articleCurrentEditable.tags,
-        'content': this.articleCurrentEditable.content
-      }, { method: 'PUT' }).then(response => {
-        const thisResponse = response.body
-        this.articleCurrentEditable.uuid = thisResponse.uuid
-        this.articleCurrentEditable.NoteBookUUID = thisResponse.NoteBookUUID
-        // this.articleCurrentEditable.content = thisResponse.html // slow
-        this.$store.dispatch('getAllData')
-      }, response => {
-        this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('editor.errorSave') })
-      })
+    methods: {
+        saveData () {
+            fetch(this.$store.getters.apiFolder + '/note_edit.json',
+                { method: 'POST',
+                    body: JSON.stringify({
+                        'title': this.articleCurrentEditable.title,
+                        'url': this.articleCurrentEditable.url_src,
+                        'uuid': this.articleCurrentEditable.uuid,
+                        'type': this.articleCurrentEditable.editorType,
+                        'tags': this.articleCurrentEditable.tags,
+                        'content': this.articleCurrentEditable.content
+                    }) }).then(response => { return response.json() })
+                .then(jsonData => {
+                    this.articleCurrentEditable.uuid = jsonData.uuid
+                    this.articleCurrentEditable.NoteBookUUID = jsonData.NoteBookUUID
+                    // this.articleCurrentEditable.content = jsonData.html // slow
+                    this.$store.dispatch('getAllData')
+                })
+                .catch(error => {
+                    console.error('Error save note data:', error)
+                    this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('editor.errorSave') })
+                })
+        },
+        addTag (newTag) {
+            this.articleCurrentEditable.tags.push(newTag)
+            this.$refs.editorTags.$el.focus()
+        }
     },
-    addTag (newTag) {
-      this.articleCurrentEditable.tags.push(newTag)
-      this.$refs.editorTags.$el.focus()
-    }
-  },
-  watch: {
-    'articleCurrentEditable.type' () {
-      if (this.articleCurrentEditable.type === 'code') {
-        this.articleCurrentEditable.content = BeautifyHtml(this.articleCurrentEditable.content)
-      }
-    }
-  },
-  computed: {
-    articleCurrent () {
-      return this.$store.getters.getCurrentArticle
+    watch: {
+        'articleCurrentEditable.type' () {
+            if (this.articleCurrentEditable.type === 'code') {
+                this.articleCurrentEditable.content = BeautifyHtml(this.articleCurrentEditable.content)
+            }
+        }
     },
-    tagsList () {
-      return this.$store.getters.getTagsList
-    },
-    BrowserPlatform () {
-      return this.$store.getters.getBrowserPlatform
+    computed: {
+        articleCurrent () {
+            return this.$store.getters.getCurrentArticle
+        },
+        tagsList () {
+            return this.$store.getters.getTagsList
+        },
+        BrowserPlatform () {
+            return this.$store.getters.getBrowserPlatform
+        }
     }
-  }
 
 }
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
 
-<style>
+<style scope>
     /* purgecss start ignore */
     #qv-editor{
-        height: 100vh;
-        overflow: hidden;
+        padding: .5rem 1.5rem 2rem;
     }
     #qv-editor-header{
         position: fixed;
-        width: calc(100% - 14.1rem);
+        width: calc(100% - 14rem);
         top: 0;
+        left:14rem;
         z-index: 1000;
+        background-color: var(--nord6);
+        border-bottom: 1px solid var(--nord4);
+        padding: .5rem .75rem;
     }
     #qv-editor-main{
-        margin-top: 3.5rem;
-        height: calc(100vh - 3.5rem);
+        overflow: hidden;
     }
 
     .font-size-normal {
@@ -274,6 +272,11 @@ export default {
     .multiselect__tag {
         border-radius: 0.25rem;
         font-size: 0.9rem;
+        /*background: var(--nord14);*/
+    }
+
+    .multiselect__option--highlight{
+        /*background: var(--nord14);*/
     }
 
     .multiselect__input, .multiselect__single {

@@ -11,6 +11,8 @@ func openBrowser(url string) error {
 func showNotification(message_text string, message_type string) {
 	//do nothing
 }
+func runSystray() {
+}
 
 func initPlatformSpecific() {
 	configGlobal.atStartOpenBrowser = false
