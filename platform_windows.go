@@ -15,7 +15,6 @@ import (
 	"github.com/gonutz/w32"
 )
 
-var osWithGUI = true
 var consoleWindows w32.HWND
 var consoleWindowsVisible bool
 var consolePresent bool
@@ -31,13 +30,13 @@ func openBrowser(url string) error {
 	return exec.Command(cmd, args...).Start()
 }
 
-func showNotification(message_text string, message_type string) {
+func showNotification(messageText string, messageType string) {
 	if configGlobal.cmdServerMode {
 		return
 	}
-	switch message_type {
+	switch messageType {
 	case "dialog_warning":
-		dlgs.Warning("QVNote error!", message_text)
+		dlgs.Warning("QVNote error!", messageText)
 	case "notify":
 		if runtime.GOOS == string("windows") {
 			var tmpIcon *os.File
@@ -45,10 +44,10 @@ func showNotification(message_text string, message_type string) {
 			tmpIcon, _ = ioutil.TempFile("", "icon.*.ico")
 			tmpIcon.Write(iconData)
 			tmpIcon.Close()
-			beeep.Notify("QVNote", message_text, tmpIcon.Name())
+			beeep.Notify("QVNote", messageText, tmpIcon.Name())
 			os.Remove(tmpIcon.Name())
 		} else {
-			beeep.Notify("QVNote", message_text, "") // icon not work on MacOS
+			beeep.Notify("QVNote", messageText, "") // icon not work on MacOS
 		}
 
 	}

@@ -14,21 +14,19 @@ import (
 	"github.com/getlantern/systray"
 )
 
-var osWithGUI = true
-
 func openBrowser(url string) error {
 	return exec.Command("open", url).Start()
 }
 
-func showNotification(message_text string, message_type string) {
+func showNotification(messageText string, messageType string) {
 	if configGlobal.cmdServerMode {
 		return
 	}
-	switch message_type {
+	switch messageType {
 	case "dialog_warning":
-		dlgs.Warning("QVNote error!", message_text)
+		dlgs.Warning("QVNote error!", messageText)
 	case "notify":
-		beeep.Notify("QVNote", message_text, "")
+		beeep.Notify("QVNote", messageText, "")
 
 	}
 }
@@ -50,7 +48,7 @@ func onReadySysTray() {
 		case <-mRelod.ClickedCh:
 			url := "http://localhost:8000/api/refresh_data.json"
 			var jsonStr = []byte(`{"action":"reload"}`)
-			req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+			req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 			req.Header.Set("Content-Type", "application/json")
 			client := &http.Client{}
 			resp, err := client.Do(req)

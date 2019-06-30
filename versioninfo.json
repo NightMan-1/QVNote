@@ -4,13 +4,13 @@
             "Major": 0,
             "Minor": 8,
             "Patch": 0,
-            "Build": 0
+            "Build": 1
         },
         "ProductVersion": {
             "Major": 0,
             "Minor": 8,
             "Patch": 0,
-            "Build": 0
+            "Build": 1
         }
     },
     "StringFileInfo": {
@@ -24,7 +24,7 @@
         "OriginalFilename": "QVNote.exe",
         "PrivateBuild": "",
         "ProductName": "QVNote",
-        "ProductVersion": "0.8.0",
+        "ProductVersion": "0.8.1",
         "SpecialBuild": ""
     },
     "VarFileInfo": {

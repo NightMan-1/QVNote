@@ -2,13 +2,11 @@
 
 package main
 
-var osWithGUI = false
-
 func openBrowser(url string) error {
 	return nil
 }
 
-func showNotification(message_text string, message_type string) {
+func showNotification(messageText string, messageType string) {
 	//do nothing
 }
 func runSystray() {
