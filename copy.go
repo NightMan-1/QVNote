@@ -1,3 +1,4 @@
+//nolint:golint
 /* MIT License
  *
  * Copyright (c) 2017 Roland Singer [roland.singer@desertbit.com]
@@ -71,7 +72,7 @@ func CopyFile(src, dst string) (err error) {
 		return
 	}
 
-	return
+	return nil
 }
 
 // CopyDir recursively copies a directory tree, attempting to preserve permissions.
@@ -91,7 +92,7 @@ func CopyDir(src string, dst string) (err error) {
 
 	_, err = os.Stat(dst)
 	if err != nil && !os.IsNotExist(err) {
-		return
+		return err
 	}
 	if err == nil {
 		return fmt.Errorf("destination already exists")
@@ -99,12 +100,12 @@ func CopyDir(src string, dst string) (err error) {
 
 	err = os.MkdirAll(dst, si.Mode())
 	if err != nil {
-		return
+		return err
 	}
 
 	entries, err := ioutil.ReadDir(src)
 	if err != nil {
-		return
+		return err
 	}
 
 	for _, entry := range entries {
@@ -114,7 +115,7 @@ func CopyDir(src string, dst string) (err error) {
 		if entry.IsDir() {
 			err = CopyDir(srcPath, dstPath)
 			if err != nil {
-				return
+				return err
 			}
 		} else {
 			// Skip symlinks.
@@ -124,10 +125,10 @@ func CopyDir(src string, dst string) (err error) {
 
 			err = CopyFile(srcPath, dstPath)
 			if err != nil {
-				return
+				return err
 			}
 		}
 	}
 
-	return
+	return nil
 }

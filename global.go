@@ -15,12 +15,6 @@ import (
 	"github.com/siddontang/ledisdb/ledis"
 )
 
-var cmdParam struct {
-	port     int32
-	portable bool
-	dataDir  string
-}
-
 type configGlobalStruct struct {
 	sourceFolder         string
 	timeStart            time.Time
@@ -34,32 +28,29 @@ type configGlobalStruct struct {
 	postEditor           string
 	cmdPort              string
 	cmdPortable          bool
-	cmdDataDir           string
 	cmdServerMode        bool
 }
 
 var configGlobal (configGlobalStruct)
-var LedisDB *ledis.Ledis
-var ConfigDB, NoteBookDB, NoteDB, TagsDB, FavoritesDB *ledis.DB
+var ConfigDB, NoteBookDB, NoteDB, TagsDB, FavoritesDB *ledis.DB //nolint:golint
 
 type SearchService struct {
-	index      bleve.Index
-	batchCount int
-	batch      *bleve.Batch
+	index bleve.Index
+	batch *bleve.Batch
 }
 
 var ss SearchService
 
 var searchStatus struct {
-	status       string `json:"status"`
-	notesTotal   int    `json:"notesTotal"`
-	notesCurrent int    `json:"notesCurrent"`
+	Status       string `json:"status"`
+	NotesTotal   int    `json:"notesTotal"`
+	NotesCurrent int    `json:"notesCurrent"`
 }
 
 var optimizationStatus struct {
-	status       string `json:"status"`
-	notesTotal   int    `json:"notesTotal"`
-	notesCurrent int    `json:"notesCurrent"`
+	Status       string `json:"status"`
+	NotesTotal   int    `json:"notesTotal"`
+	NotesCurrent int    `json:"notesCurrent"`
 }
 
 type SearchContent struct {
@@ -73,9 +64,6 @@ type SearchResult struct {
 	UUID         string `json:"uuid"`
 	NoteBookUUID string `json:"NoteBookUUID"`
 }
-
-//TODO optimize for indexing speed
-var SearchThreads = false
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -93,8 +81,8 @@ type NoteBookTypeAPI struct {
 }
 
 type NoteType struct {
-	Created_at   int32    `json:"created_at"`
-	Updated_at   int32    `json:"updated_at"`
+	CreatedAt    int32    `json:"created_at"`
+	UpdatedAt    int32    `json:"updated_at"`
 	Tags         []string `json:"tags"`
 	Title        string   `json:"title"`
 	UUID         string   `json:"uuid"`
@@ -104,8 +92,8 @@ type NoteType struct {
 }
 
 type NoteTypeWithContentAPI struct {
-	Created_at   int32    `json:"created_at"`
-	Updated_at   int32    `json:"updated_at"`
+	CreatedAt    int32    `json:"created_at"`
+	UpdatedAt    int32    `json:"updated_at"`
 	Tags         []string `json:"tags"`
 	Title        string   `json:"title"`
 	UUID         string   `json:"uuid"`
@@ -118,7 +106,7 @@ type NoteTypeWithContentAPI struct {
 }
 
 type NoteTypeAPI struct {
-	Updated_at   int32  `json:"updated_at"`
+	UpdatedAt    int32  `json:"updated_at"`
 	Title        string `json:"title"`
 	UUID         string `json:"uuid"`
 	NoteBookUUID string `json:"NoteBookUUID"`
@@ -130,7 +118,7 @@ var TagsCloud = make(map[string][]string)
 type TagsListStruct struct {
 	Count int    `json:"count"`
 	Name  string `json:"name"`
-	Url   string `json:"url"`
+	URL   string `json:"url"`
 }
 
 type ContentCellsType struct {
@@ -148,7 +136,7 @@ var FilesForIndex = []FilesForIndexType{}
 var systrayProcess *exec.Cmd
 
 func BytesToString(data []byte) string {
-	return string(data[:])
+	return string(data)
 }
 
 func RandStringBytes(n int) string {
@@ -182,7 +170,7 @@ func DirSize2(path string) (int64, error) {
 }
 
 // https://codereview.stackexchange.com/questions/60074/in-array-in-go
-func in_array(val string, array []string) (exists bool) {
+func inArray(val string, array []string) (exists bool) {
 	exists = false
 	for _, v := range array {
 		if val == v {

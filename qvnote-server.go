@@ -42,11 +42,10 @@ func check(e error, message string) {
 		fmt.Println(message)
 		showNotification(message, "dialog_warning")
 		panic(e)
-		os.Exit(1)
 	}
 }
 
-func check_ne(e error) { //check_no_exit
+func checkQuiet(e error) { //check_no_exit
 	if e != nil {
 		fmt.Println(e)
 		showNotification(fmt.Sprintf("%s", e), "notify")
@@ -63,7 +62,7 @@ func queryStem(query string) string {
 		queryTMP = strings.Replace(queryTMP, word, env.Current(), -1)
 	}
 	if len(queryArray) == 1 {
-		queryTMP = queryTMP + "*"
+		queryTMP += "*"
 	}
 	return queryTMP
 
@@ -77,7 +76,7 @@ func (ss *SearchService) buildMapping() *mapping.IndexMappingImpl {
 
 func (ss *SearchService) IndexMessage(data SearchContent) error {
 	err := ss.index.Index(data.UUID, data)
-	check_ne(err)
+	checkQuiet(err)
 	return nil
 }
 
@@ -92,7 +91,7 @@ func initSystem() {
 	configGlobal.timeStart = time.Now()
 
 	//program folder
-	ex, err := os.Executable()
+	ex, _ := os.Executable()
 	configGlobal.execDir, _ = filepath.Abs(path.Dir(ex) + "/")
 
 	switch runtime.GOOS {
@@ -106,9 +105,9 @@ func initSystem() {
 		fmt.Println("Sorry, can not run on your OS.")
 		os.Exit(1)
 	}
-	configGlobal.dataDir = configGlobal.dataDir + "/.config/QVNote"
+	configGlobal.dataDir += "/.config/QVNote"
 
-	var portTMP int = 8000
+	portTMP := 8000
 	configGlobal.cmdPortable = false
 	configGlobal.cmdServerMode = false
 
@@ -154,7 +153,7 @@ func initSystem() {
 	cfg := lediscfg.NewConfigDefault()
 	os.MkdirAll(configGlobal.dataDir, 0760)
 	cfg.DataDir = configGlobal.dataDir
-	LedisDB, err = ledis.Open(cfg)
+	LedisDB, err := ledis.Open(cfg)
 	check(err, "Error open data file")
 	ConfigDB, err = LedisDB.Select(0)
 	check(err, "Error open data file")
@@ -190,7 +189,7 @@ func initSystem() {
 	ss.index = index
 	ss.batch = index.NewBatch()
 
-	searchStatus.status = "idle"
+	searchStatus.Status = "idle"
 
 	//читаем настройки
 	data, _ := ConfigDB.Get([]byte("appInstalled"))
@@ -252,7 +251,7 @@ func initSystem() {
 
 }
 
-func addToIndex(path string, UUID string) error {
+func addToIndex(path string, uuid string) error {
 	path = strings.Replace(path, "meta.json", "content.json", -1)
 
 	if _, err := os.Stat(path); err == nil {
@@ -265,7 +264,7 @@ func addToIndex(path string, UUID string) error {
 		byteValue, _ := ioutil.ReadAll(jsonFile)
 		var content SearchContent
 		json.Unmarshal(byteValue, &content)
-		content.UUID = UUID
+		content.UUID = uuid
 		jsonFile.Close()
 		err = ss.IndexMessage(content)
 		return err
@@ -273,20 +272,9 @@ func addToIndex(path string, UUID string) error {
 	return nil
 }
 
-func addToFileIndex(id int, jobs <-chan FilesForIndexType, results chan<- bool) {
-	for j := range jobs {
-		err := addToIndex(j.Patch, j.UUID)
-		if err != nil {
-			results <- false
-		} else {
-			results <- true
-		}
-	}
-}
-
 func FindAllNotes() {
 	fmt.Println("Preparing the list of categories...")
-	metaNoteBookRE, _ := regexp.Compile(`.*\.qvnotebook[\\|/]meta.json$`)
+	metaNoteBookRE := regexp.MustCompile(`.*\.qvnotebook[\\|/]meta.json$`)
 	if _, err := os.Stat(configGlobal.sourceFolder); err == nil {
 		filepath.Walk(configGlobal.sourceFolder, func(path string, info os.FileInfo, err error) error {
 
@@ -324,14 +312,14 @@ func FindAllNotes() {
 			data, _ := NoteDB.Get(NoteID)
 			var note NoteType
 			err = json.Unmarshal(data, &note)
-			//check_ne(err)
+			//checkQuiet(err)
 			check(err, "Ошибка:")
 			NoteOld[BytesToString(NoteID)] = note
 		}
 	}
 
 	NoteDB.FlushAll()
-	metaNoteRE, _ := regexp.Compile(`.*[\\|/](.*)\.qvnotebook[\\|/](.*)\.qvnote[\\|/]meta.json$`)
+	metaNoteRE := regexp.MustCompile(`.*[\\|/](.*)\.qvnotebook[\\|/](.*)\.qvnote[\\|/]meta.json$`)
 
 	if _, err := os.Stat(configGlobal.sourceFolder); err == nil {
 		filepath.Walk(configGlobal.sourceFolder, func(path string, info os.FileInfo, err error) error {
@@ -341,7 +329,7 @@ func FindAllNotes() {
 				notebookID := noteFile[0][1]
 
 				jsonFile, err := os.Open(path)
-				check_ne(err)
+				checkQuiet(err)
 				byteValue, _ := ioutil.ReadAll(jsonFile)
 				var note NoteType
 				json.Unmarshal(byteValue, &note)
@@ -355,8 +343,8 @@ func FindAllNotes() {
 					if note.UUID != value.UUID ||
 						note.Title != value.Title ||
 						note.NoteBookUUID != value.NoteBookUUID ||
-						note.Created_at != value.Created_at ||
-						note.Updated_at != value.Updated_at {
+						note.CreatedAt != value.CreatedAt ||
+						note.UpdatedAt != value.UpdatedAt {
 						note.SearchIndex = false
 						configGlobal.requestIndexing = true
 					} else {
@@ -369,9 +357,9 @@ func FindAllNotes() {
 				}
 
 				enc, err := json.Marshal(note)
-				check_ne(err)
+				checkQuiet(err)
 				err = NoteDB.Set([]byte(note.UUID), enc)
-				check_ne(err)
+				checkQuiet(err)
 
 				if len(note.Tags) > 0 {
 					for _, TagName := range note.Tags {
@@ -392,14 +380,14 @@ func FindAllNotes() {
 	NoteBookDB.FlushAll()
 	for k, v := range NoteBook {
 		enc, err := json.Marshal(v)
-		check_ne(err)
-		err = NoteBookDB.Set([]byte(k), enc)
+		checkQuiet(err)
+		NoteBookDB.Set([]byte(k), enc)
 	}
 	TagsDB.FlushAll()
 	for k, v := range TagsCloud {
 		enc, err := json.Marshal(v)
-		check_ne(err)
-		err = TagsDB.Set([]byte(k), enc)
+		checkQuiet(err)
+		TagsDB.Set([]byte(k), enc)
 	}
 
 	SaveConfig()
@@ -432,7 +420,7 @@ func CreateNewNotebooksFolder(folder string) bool {
 
 	content = "{ \"name\" : \"Trash\", \"uuid\" : \"Trash\"}\n"
 	err = ioutil.WriteFile(folder+"/Trash.qvnotebook/meta.json", []byte(content), 0644)
-	if err != nil {
+	if err != nil { //nolint:gosimple
 		return false
 	}
 
@@ -505,7 +493,7 @@ func SaveConfig() bool {
 		tmp = "true"
 	}
 	err = ConfigDB.Set([]byte("atStartShowConsole"), []byte(tmp))
-	if err != nil {
+	if err != nil { //nolint:gosimple
 		return false
 	}
 
@@ -513,9 +501,9 @@ func SaveConfig() bool {
 }
 
 func FixNoteImagesLinks(note NoteTypeWithContentAPI, content string, ctx iris.Context) string {
-	imageURL := "//" + ctx.Host() + "/resources/" + note.NoteBookUUID + "/" + note.UUID + ""
-	content = strings.Replace(content, "quiver-image-url", imageURL, -1)
-	content = strings.Replace(content, "quiver-file-url", imageURL, -1)
+	ImageURL := "//" + ctx.Host() + "/resources/" + note.NoteBookUUID + "/" + note.UUID + ""
+	content = strings.Replace(content, "quiver-image-url", ImageURL, -1)
+	content = strings.Replace(content, "quiver-file-url", ImageURL, -1)
 	return content
 }
 
@@ -638,15 +626,15 @@ func ClearHTML(content string) string {
 	return content
 }
 
-func OptimizeResources(UUID string) {
-	if UUID == "" {
+func OptimizeResources(uuid string) {
+	if uuid == "" {
 		return
 	}
 
-	data, _ := NoteDB.Get([]byte(UUID))
+	data, _ := NoteDB.Get([]byte(uuid))
 	var noteData NoteType
 	err := json.Unmarshal(data, &noteData)
-	check_ne(err)
+	checkQuiet(err)
 
 	contentDir := configGlobal.sourceFolder + "/" + noteData.NoteBookUUID + ".qvnotebook/" + noteData.UUID + ".qvnote"
 	contentPath := contentDir + "/content.json"
@@ -654,7 +642,7 @@ func OptimizeResources(UUID string) {
 		os.MkdirAll(contentDir+"/resources", 0755)
 
 		jsonFile, err := os.Open(contentPath)
-		check_ne(err)
+		checkQuiet(err)
 		byteValue, _ := ioutil.ReadAll(jsonFile)
 		var contentData SearchContent
 		json.Unmarshal(byteValue, &contentData)
@@ -667,16 +655,16 @@ func OptimizeResources(UUID string) {
 			contentType = text.Type
 		}
 
-		r, _ := regexp.Compile(`<img.*?src=["|'](http.*?)["|'].*?>`)
+		r := regexp.MustCompile(`<img.*?src=["|'](http.*?)["|'].*?>`)
 		matchData := r.FindAllStringSubmatch(content, -1)
 		if len(matchData) > 0 {
-			fmt.Println("Optimization start for", UUID)
+			fmt.Println("Optimization start for", uuid)
 
 		}
 		for _, match := range matchData {
-			ImageUrl := match[1]
-			fmt.Println("\tdownloading", ImageUrl)
-			r, err := req.Get(ImageUrl)
+			ImageURL := match[1]
+			fmt.Println("\tdownloading", ImageURL)
+			r, err := req.Get(ImageURL)
 			if err == nil {
 				resp := r.Response()
 				if _, ok := resp.Header["Content-Type"]; ok {
@@ -700,9 +688,9 @@ func OptimizeResources(UUID string) {
 						FileNameFull, _ := filepath.Abs(contentDir + "/resources/" + FileName)
 						err = r.ToFile(FileNameFull)
 						if err == nil {
-							content = strings.Replace(content, ImageUrl, "quiver-image-url/"+FileName, 1)
+							content = strings.Replace(content, ImageURL, "quiver-image-url/"+FileName, 1)
 						} else {
-							check_ne(err)
+							checkQuiet(err)
 						}
 					} else {
 						fmt.Println("\t\tError: wrong image type:", ContentTypeTrue[0])
@@ -711,7 +699,7 @@ func OptimizeResources(UUID string) {
 					fmt.Println("\t\tError: wrong headers:", resp.Header)
 				}
 			} else {
-				// check_ne(err) // disabled, too many messages
+				// checkQuiet(err) // disabled, too many messages
 				fmt.Println(err)
 			}
 		}
@@ -729,16 +717,16 @@ func OptimizeResources(UUID string) {
 		enc.Encode(ContentFile)
 
 		err = ioutil.WriteFile(contentDir+"/content.json", buf.Bytes(), 0644)
-		check_ne(err)
+		checkQuiet(err)
 
 		//delete unnecessary files
-		r, _ = regexp.Compile(`["|']quiver-image-url/(.*?)["|']`)
+		r = regexp.MustCompile(`["|']quiver-image-url/(.*?)["|']`)
 		matchData = r.FindAllStringSubmatch(content, -1)
 		InternalImages := make(map[string]bool)
 		for _, match := range matchData {
 			InternalImages[match[1]] = true
 		}
-		r, _ = regexp.Compile(`["|']quiver-file-url/(.*?)["|']`)
+		r = regexp.MustCompile(`["|']quiver-file-url/(.*?)["|']`)
 		matchData = r.FindAllStringSubmatch(content, -1)
 		for _, match := range matchData {
 			InternalImages[match[1]] = true
@@ -761,7 +749,7 @@ func OptimizeResources(UUID string) {
 }
 
 func indexingAllNotes() {
-	searchStatus.status = "indexing"
+	searchStatus.Status = "indexing"
 	FilesForIndex = []FilesForIndexType{}
 	cursor := []byte(nil)
 	for {
@@ -775,8 +763,8 @@ func indexingAllNotes() {
 			data, _ := NoteDB.Get(NoteID)
 			var note NoteType
 			err := json.Unmarshal(data, &note)
-			check_ne(err)
-			if note.SearchIndex == false {
+			checkQuiet(err)
+			if !note.SearchIndex {
 				noteFilePath, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote/meta.json")
 				FilesForIndex = append(FilesForIndex, FilesForIndexType{noteFilePath, note.UUID})
 			}
@@ -784,11 +772,11 @@ func indexingAllNotes() {
 	}
 
 	if len(FilesForIndex) > 0 {
-		searchStatus.notesTotal = len(FilesForIndex)
-		searchStatus.notesCurrent = 0
+		searchStatus.NotesTotal = len(FilesForIndex)
+		searchStatus.NotesCurrent = 0
 
 		for _, item := range FilesForIndex {
-			searchStatus.notesCurrent += 1
+			searchStatus.NotesCurrent++
 			addToIndex(item.Patch, item.UUID)
 
 			//обновляем данные об индексации
@@ -803,12 +791,12 @@ func indexingAllNotes() {
 	}
 	configGlobal.requestIndexing = false
 	SaveConfig()
-	searchStatus.status = "done"
+	searchStatus.Status = "done"
 
 }
 
 func optimizeAllNotes() {
-	optimizationStatus.status = "processing"
+	optimizationStatus.Status = "processing"
 
 	var NotesForOptimization []string
 	cursor := []byte(nil)
@@ -824,21 +812,21 @@ func optimizeAllNotes() {
 	}
 
 	if len(NotesForOptimization) > 0 {
-		optimizationStatus.notesTotal = len(NotesForOptimization)
-		optimizationStatus.notesCurrent = 0
+		optimizationStatus.NotesTotal = len(NotesForOptimization)
+		optimizationStatus.NotesCurrent = 0
 
 		for _, item := range NotesForOptimization {
-			optimizationStatus.notesCurrent += 1
+			optimizationStatus.NotesCurrent++
 			OptimizeResources(item)
 
 		}
 	}
-	optimizationStatus.status = "done"
+	optimizationStatus.Status = "done"
 	showNotification("Optimization is complete.", "notify")
 
 }
 
-func WebServer(webserverChan chan bool) {
+func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	app := iris.New()
 	app.Use(iris.Gzip)
 	app.Use(recover.New())
@@ -1021,7 +1009,7 @@ func WebServer(webserverChan chan bool) {
 		switch request.Action {
 		case "add":
 			err = FavoritesDB.Set([]byte(request.UUID), []byte(""))
-			check_ne(err)
+			checkQuiet(err)
 
 		case "remove":
 			FavoritesDB.Del([]byte(request.UUID))
@@ -1070,7 +1058,7 @@ func WebServer(webserverChan chan bool) {
 				data, _ := NoteBookDB.Get(NoteBookID)
 				var notebookData NoteBookType
 				err := json.Unmarshal(data, &notebookData)
-				check_ne(err)
+				checkQuiet(err)
 				noteBooksList = append(noteBooksList, NoteBookTypeAPI{notebookData.UUID, notebookData.Name, len(notebookData.Notes)})
 
 			}
@@ -1095,7 +1083,7 @@ func WebServer(webserverChan chan bool) {
 				data, _ := TagsDB.Get(TagID)
 				var tagsData []string
 				err := json.Unmarshal(data, &tagsData)
-				check_ne(err)
+				checkQuiet(err)
 				TagsCloud = append(TagsCloud, TagsListStruct{len(tagsData), strings.Trim(BytesToString(TagID), " "), url.PathEscape(BytesToString(TagID))})
 
 			}
@@ -1112,7 +1100,8 @@ func WebServer(webserverChan chan bool) {
 			NotebookID string `json:"NotebookID"`
 		}
 		ctx.ReadJSON(&request)
-		if request.NotebookID == "Favorites" {
+		switch {
+		case request.NotebookID == "Favorites":
 			var NotesList []NoteTypeAPI
 			cursor := []byte(nil)
 			for {
@@ -1125,17 +1114,17 @@ func WebServer(webserverChan chan bool) {
 					data, _ := NoteDB.Get(NoteID)
 					var note NoteTypeAPI
 					err := json.Unmarshal(data, &note)
-					check_ne(err)
+					checkQuiet(err)
 					note.NoteBookUUID = "Favorites"
 					NotesList = append(NotesList, note)
 				}
 			}
 			sort.Slice(NotesList, func(i, j int) bool {
-				return NotesList[i].Updated_at > NotesList[j].Updated_at
+				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
 
 			ctx.JSON(NotesList)
-		} else if request.NotebookID == "Allnotes" {
+		case request.NotebookID == "Allnotes":
 			var NotesList []NoteTypeAPI
 			cursor := []byte(nil)
 			for {
@@ -1148,42 +1137,42 @@ func WebServer(webserverChan chan bool) {
 					data, _ := NoteDB.Get(NoteID)
 					var note NoteTypeAPI
 					err := json.Unmarshal(data, &note)
-					check_ne(err)
+					checkQuiet(err)
 					NotesList = append(NotesList, note)
 				}
 			}
 			sort.Slice(NotesList, func(i, j int) bool {
-				return NotesList[i].Updated_at > NotesList[j].Updated_at
+				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
 			ctx.JSON(NotesList)
-
-		} else if request.NotebookID != "" {
+		case len(request.NotebookID) > 0:
 			var NotesList []NoteTypeAPI
 			data, _ := NoteBookDB.Get([]byte(request.NotebookID))
 			var notebookData NoteBookType
 			err := json.Unmarshal(data, &notebookData)
-			check_ne(err)
-			for NoteBookID, _ := range notebookData.Notes {
+			checkQuiet(err)
+			for NoteBookID := range notebookData.Notes {
 				data, _ := NoteDB.Get([]byte(NoteBookID))
 				var note NoteTypeAPI
 				err := json.Unmarshal(data, &note)
-				check_ne(err)
+				checkQuiet(err)
 				NotesList = append(NotesList, note)
 			}
 			sort.Slice(NotesList, func(i, j int) bool {
-				return NotesList[i].Updated_at > NotesList[j].Updated_at
+				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
 			ctx.JSON(NotesList)
 
-		} else {
+		default:
 			ctx.JSON(iris.Map{})
 		}
+
 	})
 
 	app.Handle("ANY", "/api/statistic.json", func(ctx iris.Context) {
 		var dateFirst int32 = 2147483647
 		var dateLast int32
-		var dateSkip int32 = int32(time.Now().Unix()) - (60 * 60 * 24 * 365 * 2)
+		var dateSkip = int32(time.Now().Unix()) - (60 * 60 * 24 * 365 * 2)
 		var tagsCount = make(map[int]int)
 		//var chartsCreatedDate  = make(map[string]int)
 		var chartsUpdatedDate = make(map[string]int)
@@ -1198,17 +1187,17 @@ func WebServer(webserverChan chan bool) {
 				data, _ := NoteDB.Get(NoteID)
 				var note NoteType
 				err := json.Unmarshal(data, &note)
-				check_ne(err)
-				if note.Created_at < dateFirst {
-					dateFirst = note.Created_at
+				checkQuiet(err)
+				if note.CreatedAt < dateFirst {
+					dateFirst = note.CreatedAt
 				}
-				if note.Updated_at > dateLast {
-					dateLast = note.Updated_at
+				if note.UpdatedAt > dateLast {
+					dateLast = note.UpdatedAt
 				}
 
-				tagsCount[len(note.Tags)] += 1
-				if note.Updated_at >= dateSkip {
-					chartsUpdatedDate[time.Unix(int64(note.Updated_at), 0).Format("2006-01-02")] += 1
+				tagsCount[len(note.Tags)]++
+				if note.UpdatedAt >= dateSkip {
+					chartsUpdatedDate[time.Unix(int64(note.UpdatedAt), 0).Format("2006-01-02")]++
 				}
 
 			}
@@ -1234,12 +1223,12 @@ func WebServer(webserverChan chan bool) {
 			Action string `json:"action"`
 		}
 		ctx.ReadJSON(&request)
-		if request.Action == "reload" && searchStatus.status != "indexing" && searchStatus.status != "refresh" {
-			searchStatus.status = "refresh"
+		if request.Action == "reload" && searchStatus.Status != "indexing" && searchStatus.Status != "refresh" {
+			searchStatus.Status = "refresh"
 			FindAllNotes()
-			searchStatus.status = "idle"
-		} else if request.Action == "reloadAll" && searchStatus.status != "indexing" && searchStatus.status != "refresh" {
-			searchStatus.status = "refresh"
+			searchStatus.Status = "idle"
+		} else if request.Action == "reloadAll" && searchStatus.Status != "indexing" && searchStatus.Status != "refresh" {
+			searchStatus.Status = "refresh"
 
 			ss.index.Close()
 			time.Sleep(1 * time.Second)
@@ -1271,7 +1260,7 @@ func WebServer(webserverChan chan bool) {
 			configGlobal.requestIndexing = true
 			SaveConfig()
 
-			searchStatus.status = "idle"
+			searchStatus.Status = "idle"
 
 			go indexingAllNotes()
 			time.Sleep(3 * time.Second)
@@ -1286,14 +1275,14 @@ func WebServer(webserverChan chan bool) {
 			Action string `json:"action"`
 		}
 		ctx.ReadJSON(&request)
-		if request.Action == "start" && optimizationStatus.status != "processing" {
-			optimizationStatus.status = "processing"
+		if request.Action == "start" && optimizationStatus.Status != "processing" {
+			optimizationStatus.Status = "processing"
 			go optimizeAllNotes()
 
-		} else if optimizationStatus.status == "" {
-			optimizationStatus.status = "idle"
+		} else if optimizationStatus.Status == "" {
+			optimizationStatus.Status = "idle"
 		}
-		ctx.JSON(iris.Map{"status": optimizationStatus.status, "notesCurrent": optimizationStatus.notesCurrent, "notesTotal": optimizationStatus.notesTotal})
+		ctx.JSON(iris.Map{"status": optimizationStatus.Status, "notesCurrent": optimizationStatus.NotesCurrent, "notesTotal": optimizationStatus.NotesTotal})
 
 	})
 
@@ -1303,44 +1292,44 @@ func WebServer(webserverChan chan bool) {
 			Action string `json:"action"`
 		}
 		ctx.ReadJSON(&request)
-		if request.Action == "start" && searchStatus.status != "indexing" {
+		if request.Action == "start" && searchStatus.Status != "indexing" {
 			go indexingAllNotes()
 			time.Sleep(3 * time.Second)
 		}
-		ctx.JSON(iris.Map{"status": searchStatus.status, "notesCurrent": searchStatus.notesCurrent, "notesTotal": searchStatus.notesTotal})
+		ctx.JSON(iris.Map{"status": searchStatus.Status, "notesCurrent": searchStatus.NotesCurrent, "notesTotal": searchStatus.NotesTotal})
 	})
 
 	//notebook_edit
 	app.Handle("ANY", "/api/notebook_edit.json", func(ctx iris.Context) {
 		var request struct {
 			Action string `json:"action"`
-			Uuid   string `json:"uuid"`
+			UUID   string `json:"uuid"`
 			Title  string `json:"title"`
 		}
 		ctx.ReadJSON(&request)
-		if request.Action == "rename" && request.Uuid != "" {
+		switch {
+		case request.Action == "rename" && request.UUID != "":
 			//update file
 			var meta struct {
 				Name string `json:"name"`
-				Uuid string `json:"uuid"`
+				UUID string `json:"uuid"`
 			}
 			meta.Name = request.Title
-			meta.Uuid = request.Uuid
-			metaJson, _ := json.Marshal(meta)
-			jsonFile, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.Uuid + ".qvnotebook/meta.json")
-			err = ioutil.WriteFile(jsonFile, metaJson, 0644)
-			check_ne(err)
+			meta.UUID = request.UUID
+			metaJSON, _ := json.Marshal(meta)
+			jsonFile, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.UUID + ".qvnotebook/meta.json")
+			err = ioutil.WriteFile(jsonFile, metaJSON, 0644)
+			checkQuiet(err)
 
 			//update database
-			data, _ := NoteBookDB.Get([]byte(request.Uuid))
+			data, _ := NoteBookDB.Get([]byte(request.UUID))
 			var notebookData NoteBookType
 			json.Unmarshal(data, &notebookData)
 			notebookData.Name = request.Title
 			enc, err := json.Marshal(notebookData)
-			check_ne(err)
-			err = NoteBookDB.Set([]byte(request.Uuid), enc)
-		} else if request.Action == "new" && request.Uuid == "" {
-
+			checkQuiet(err)
+			NoteBookDB.Set([]byte(request.UUID), enc)
+		case request.Action == "new" && request.UUID == "":
 			//TODO verify the uniqueness of the UUID
 			u1 := strings.ToUpper(uuid.Must(uuid.NewV4()).String())
 
@@ -1349,38 +1338,37 @@ func WebServer(webserverChan chan bool) {
 			metaFile, _ := filepath.Abs(notebookDir + "/meta.json")
 			var meta struct {
 				Name string `json:"name"`
-				Uuid string `json:"uuid"`
+				UUID string `json:"uuid"`
 			}
 			meta.Name = request.Title
-			meta.Uuid = u1
-			metaJson, _ := json.MarshalIndent(meta, "", "  ")
+			meta.UUID = u1
+			metaJSON, _ := json.MarshalIndent(meta, "", "  ")
 			os.MkdirAll(notebookDir, 0755)
-			err = ioutil.WriteFile(metaFile, metaJson, 0644)
-			check_ne(err)
+			err = ioutil.WriteFile(metaFile, metaJSON, 0644)
+			checkQuiet(err)
 
 			//update database
 			var notebookNew NoteBookType
 			notebookNew.Name = request.Title
 			notebookNew.UUID = u1
 			enc, err := json.Marshal(notebookNew)
-			check_ne(err)
-			err = NoteBookDB.Set([]byte(u1), enc)
-
-		} else if request.Action == "remove" && request.Uuid != "" && request.Uuid != "Inbox" && request.Uuid != "Trash" {
+			checkQuiet(err)
+			NoteBookDB.Set([]byte(u1), enc)
+		case request.Action == "remove" && request.UUID != "" && request.UUID != "Inbox" && request.UUID != "Trash":
 			data, _ := NoteBookDB.Get([]byte("Trash"))
 			var notebookDataTrash NoteBookType
 			json.Unmarshal(data, &notebookDataTrash)
 
-			data, _ = NoteBookDB.Get([]byte(request.Uuid))
+			data, _ = NoteBookDB.Get([]byte(request.UUID))
 			var notebookData NoteBookType
 			json.Unmarshal(data, &notebookData)
 			if notebookData.UUID != "" {
 				canDelete := true
-				for noteUUID, _ := range notebookData.Notes {
+				for noteUUID := range notebookData.Notes {
 					var note NoteType
 					data, _ := NoteDB.Get([]byte(noteUUID))
 					json.Unmarshal(data, &note)
-					noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.Uuid + ".qvnotebook/" + noteUUID + ".qvnote")
+					noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.UUID + ".qvnotebook/" + noteUUID + ".qvnote")
 					noteDirDst, _ := filepath.Abs(configGlobal.sourceFolder + "/Trash.qvnotebook/" + noteUUID + ".qvnote")
 
 					err = CopyDir(noteDirSrc, noteDirDst)
@@ -1399,14 +1387,14 @@ func WebServer(webserverChan chan bool) {
 						canDelete = false
 					}
 				}
-				if canDelete == true {
-					srcFolder, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.Uuid + ".qvnotebook/")
+				if canDelete {
+					srcFolder, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.UUID + ".qvnotebook/")
 					os.RemoveAll(srcFolder)
-					NoteBookDB.Del([]byte(request.Uuid))
+					NoteBookDB.Del([]byte(request.UUID))
 				}
 			}
-
 		}
+
 		ctx.JSON(iris.Map{})
 	})
 
@@ -1427,7 +1415,7 @@ func WebServer(webserverChan chan bool) {
 			for _, item := range searchResult.Hits {
 				data, _ := NoteDB.Get([]byte(item.ID))
 				err := json.Unmarshal(data, &noteShort)
-				check_ne(err)
+				checkQuiet(err)
 				if _, ok := NoteListDedup[noteShort.UUID]; ok {
 					//duplicate detected
 				} else {
@@ -1451,16 +1439,16 @@ func WebServer(webserverChan chan bool) {
 			data, _ := TagsDB.Get([]byte(request.TagName))
 			var notesListTMP []string
 			err := json.Unmarshal(data, &notesListTMP)
-			check_ne(err)
+			checkQuiet(err)
 			for _, tagID := range notesListTMP {
 				data, _ := NoteDB.Get([]byte(tagID))
 				var note NoteTypeAPI
 				err := json.Unmarshal(data, &note)
-				check_ne(err)
+				checkQuiet(err)
 				NotesList = append(NotesList, note)
 			}
 			sort.Slice(NotesList, func(i, j int) bool {
-				return NotesList[i].Updated_at > NotesList[j].Updated_at
+				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
 			ctx.JSON(NotesList)
 
@@ -1480,13 +1468,13 @@ func WebServer(webserverChan chan bool) {
 			data, _ := NoteDB.Get([]byte(request.NoteID))
 			var noteData NoteTypeWithContentAPI
 			err := json.Unmarshal(data, &noteData)
-			check_ne(err)
+			checkQuiet(err)
 
 			contentDir := configGlobal.sourceFolder + "/" + noteData.NoteBookUUID + ".qvnotebook/" + noteData.UUID + ".qvnote"
 			contentPath := contentDir + "/content.json"
 			if _, err := os.Stat(contentPath); err == nil {
 				jsonFile, err := os.Open(contentPath)
-				check_ne(err)
+				checkQuiet(err)
 				byteValue, _ := ioutil.ReadAll(jsonFile)
 				var contentFile SearchContent
 				json.Unmarshal(byteValue, &contentFile)
@@ -1553,11 +1541,11 @@ func WebServer(webserverChan chan bool) {
 		configGlobal.requestIndexing = true
 
 		if request.UUID == "" {
-			noteData.Created_at = int32(time.Now().Unix())
-			noteData.Updated_at = noteData.Created_at
+			noteData.CreatedAt = int32(time.Now().Unix())
+			noteData.UpdatedAt = noteData.CreatedAt
 
 		} else {
-			noteData.Updated_at = int32(time.Now().Unix())
+			noteData.UpdatedAt = int32(time.Now().Unix())
 		}
 		if request.Type == "tinymce" {
 			request.Type = "text"
@@ -1569,22 +1557,22 @@ func WebServer(webserverChan chan bool) {
 		noteDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookUUID + ".qvnotebook/" + noteUUID + ".qvnote")
 		os.MkdirAll(noteDir, 0755)
 		var meta struct {
-			Created_at int32    `json:"created_at"`
-			Updated_at int32    `json:"updated_at"`
-			Tags       []string `json:"tags"`
-			Title      string   `json:"title"`
-			Uuid       string   `json:"uuid"`
-			URL        string   `json:"url_src"`
+			CreatedAt int32    `json:"created_at"`
+			UpdatedAt int32    `json:"updated_at"`
+			Tags      []string `json:"tags"`
+			Title     string   `json:"title"`
+			UUID      string   `json:"uuid"`
+			URL       string   `json:"url_src"`
 		}
-		meta.Created_at = noteData.Created_at
-		meta.Updated_at = noteData.Updated_at
+		meta.CreatedAt = noteData.CreatedAt
+		meta.UpdatedAt = noteData.UpdatedAt
 		meta.Title = noteData.Title
-		meta.Uuid = noteData.UUID
+		meta.UUID = noteData.UUID
 		meta.URL = noteData.URL
 		meta.Tags = request.Tags
-		metaJson, _ := json.MarshalIndent(meta, "", "  ")
-		err = ioutil.WriteFile(noteDir+"/meta.json", metaJson, 0644)
-		check_ne(err)
+		metaJSON, _ := json.MarshalIndent(meta, "", "  ")
+		err = ioutil.WriteFile(noteDir+"/meta.json", metaJSON, 0644)
+		checkQuiet(err)
 
 		var content struct {
 			Title string             `json:"title"`
@@ -1599,7 +1587,7 @@ func WebServer(webserverChan chan bool) {
 		enc.Encode(content)
 
 		err = ioutil.WriteFile(noteDir+"/content.json", buf.Bytes(), 0644)
-		check_ne(err)
+		checkQuiet(err)
 
 		//TODO add image processing
 
@@ -1609,7 +1597,7 @@ func WebServer(webserverChan chan bool) {
 			var notesListOld []string
 			var notesListNew []string
 			err := json.Unmarshal(data, &notesListOld)
-			check_ne(err)
+			checkQuiet(err)
 			for _, noteID := range notesListOld {
 				if noteID != noteUUID {
 					notesListNew = append(notesListNew, noteID)
@@ -1617,11 +1605,11 @@ func WebServer(webserverChan chan bool) {
 			}
 			if len(notesListNew) == 0 {
 				idT, err := TagsDB.Del([]byte(tagID))
-				check_ne(err)
+				checkQuiet(err)
 				fmt.Println(idT)
 			} else {
 				enc, err := json.Marshal(notesListNew)
-				check_ne(err)
+				checkQuiet(err)
 				TagsDB.Set([]byte(tagID), enc)
 			}
 		}
@@ -1636,21 +1624,21 @@ func WebServer(webserverChan chan bool) {
 			} else {
 				//exist tag
 				err := json.Unmarshal(data, &notesList)
-				check_ne(err)
+				checkQuiet(err)
 			}
 			notesList = append(notesList, noteUUID)
 
 			enc, err := json.Marshal(notesList)
-			check_ne(err)
+			checkQuiet(err)
 			err = TagsDB.Set([]byte(tagID), enc)
-			check_ne(err)
+			checkQuiet(err)
 		}
 
 		// update database
 		noteData.Tags = request.Tags
 		encNote, _ := json.Marshal(noteData)
 		err = NoteDB.Set([]byte(noteUUID), encNote)
-		check_ne(err)
+		checkQuiet(err)
 
 		// add new note to inbox
 		if request.UUID == "" {
@@ -1683,14 +1671,14 @@ func WebServer(webserverChan chan bool) {
 			if BytesToString(data) != "" {
 				var tagsData []string
 				err := json.Unmarshal(data, &tagsData)
-				check_ne(err)
+				checkQuiet(err)
 				for _, noteID := range tagsData {
 					//change files
 					dataNote, _ := NoteDB.Get([]byte(noteID))
 					if BytesToString(dataNote) != "" {
 						var note NoteType
 						err := json.Unmarshal(dataNote, &note)
-						check_ne(err)
+						checkQuiet(err)
 
 						metaFile, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote/meta.json")
 
@@ -1705,31 +1693,31 @@ func WebServer(webserverChan chan bool) {
 									tagsNew = append(tagsNew, tagName)
 								}
 							}
-							if request.Action == "rename" {
+							switch request.Action {
+							case "rename":
 								tagsNew = append(tagsNew, request.Title) //add new nag name
-
-							} else if request.Action == "remove" {
+							case "remove":
 								// do nothing
 							}
 							note.Tags = tagsNew
 
 							//save file with meta data
 							var meta struct {
-								Created_at int32    `json:"created_at"`
-								Updated_at int32    `json:"updated_at"`
-								Tags       []string `json:"tags"`
-								Title      string   `json:"title"`
-								Uuid       string   `json:"uuid"`
+								CreatedAt int32    `json:"created_at"`
+								UpdatedAt int32    `json:"updated_at"`
+								Tags      []string `json:"tags"`
+								Title     string   `json:"title"`
+								UUID      string   `json:"uuid"`
 							}
-							meta.Created_at = note.Created_at
-							meta.Updated_at = note.Updated_at
+							meta.CreatedAt = note.CreatedAt
+							meta.UpdatedAt = note.UpdatedAt
 							meta.Title = note.Title
-							meta.Uuid = note.UUID
+							meta.UUID = note.UUID
 							meta.Tags = note.Tags
 
-							metaJson, _ := json.MarshalIndent(meta, "", "  ")
-							err = ioutil.WriteFile(metaFile, metaJson, 0644)
-							check_ne(err)
+							metaJSON, _ := json.MarshalIndent(meta, "", "  ")
+							err = ioutil.WriteFile(metaFile, metaJSON, 0644)
+							checkQuiet(err)
 
 							//update NoteDB
 							enc, _ := json.Marshal(note)
@@ -1753,10 +1741,10 @@ func WebServer(webserverChan chan bool) {
 					if BytesToString(data) != "" {
 						var tagsDataExist []string
 						err := json.Unmarshal(data, &tagsDataExist)
-						check_ne(err)
+						checkQuiet(err)
 
 						for _, tagName := range tagsDataExist {
-							if !in_array(tagName, tagsData) {
+							if !inArray(tagName, tagsData) {
 								tagsData = append(tagsData, tagName)
 							}
 						}
@@ -1764,8 +1752,8 @@ func WebServer(webserverChan chan bool) {
 					}
 
 					enc, err := json.Marshal(tagsData)
-					check_ne(err)
-					err = TagsDB.Set([]byte(request.Title), enc)
+					checkQuiet(err)
+					TagsDB.Set([]byte(request.Title), enc)
 
 				}
 			}
@@ -1781,7 +1769,8 @@ func WebServer(webserverChan chan bool) {
 			Target string `json:"target"`
 		}
 		ctx.ReadJSON(&request)
-		if request.UUID != "" && request.Action == "move" {
+		switch {
+		case request.UUID != "" && request.Action == "move":
 			//get note info
 			var note NoteType
 			data, _ := NoteDB.Get([]byte(request.UUID))
@@ -1820,15 +1809,14 @@ func WebServer(webserverChan chan bool) {
 
 					os.RemoveAll(noteDirSrc)
 
-				} else {
+				} else { //nolint:staticcheck
 					//TODO показывать ошибку о переносе папки
 				}
 
-			} else {
+			} else { //nolint:staticcheck
 				//TODO показывать ошибку о несуществующем блокноте
 			}
-
-		} else if request.UUID != "" && request.Action == "delete" {
+		case request.UUID != "" && request.Action == "delete":
 			//get note info
 			var note NoteType
 			data, _ := NoteDB.Get([]byte(request.UUID))
@@ -1874,13 +1862,12 @@ func WebServer(webserverChan chan bool) {
 
 					os.RemoveAll(noteDirSrc)
 
-				} else {
+				} else { //nolint:staticcheck
 					//TODO показывать ошибку о переносе папки
 				}
 
 			}
-
-		} else {
+		default:
 			ctx.JSON(iris.Map{})
 		}
 	})
@@ -1916,14 +1903,14 @@ func main() {
 
 	//update the list of notes
 	if configGlobal.appInstalled {
-		if configGlobal.atStartCheckNewNotes == true {
+		if configGlobal.atStartCheckNewNotes {
 			FindAllNotes()
 		}
 	}
 
 	//start web server
 	println("Starting web server...")
-	if configGlobal.atStartOpenBrowser == true && configGlobal.cmdServerMode != true {
+	if configGlobal.atStartOpenBrowser && !configGlobal.cmdServerMode {
 		go openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
 	}
 	webserverChan := make(chan bool)
