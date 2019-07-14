@@ -22,7 +22,7 @@
         </div>
 
         <div id="qv-editor-main">
-                <input type="text" class="form-control mb-3 mt-3 text-dark font-size-normal"
+                <input type="text" class="form-control mb-2 mt-3 text-dark font-size-normal"
                         :placeholder="$t('editor.inputTitlePlaceholder')" v-model="articleCurrentEditable.title" ref='editorTitle'/>
                 <div class="row">
                     <div class="col-6">
@@ -55,10 +55,10 @@
 
                     </div>
                 </div>
-                <div class="editor mt-3" v-if="articleCurrentEditable.type === 'text'">
+                <div class="editor mt-2" v-if="articleCurrentEditable.type === 'text'">
                     <quill-editor v-model="articleCurrentEditable.content" :options="editorSettings"></quill-editor>
                 </div>
-                <div class="editor prism mt-3" v-if="articleCurrentEditable.type === 'code'">
+                <div class="editor prism mt-2" v-if="articleCurrentEditable.type === 'code'">
                     <prism-editor v-model="articleCurrentEditable.content" language="html" :line-numbers="true"></prism-editor>
                 </div>
                 <div class="clearfix"></div>
@@ -77,6 +77,7 @@ import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
 import { ImageDrop } from 'quill-image-drop-module'
 import ImageResize from 'quill-image-resize-module'
+import screenfull from 'screenfull'
 Quill.register('modules/imageDrop', ImageDrop)
 Quill.register('modules/imageResize', ImageResize)
 let BeautifyHtml = require('js-beautify').html
@@ -103,7 +104,7 @@ export default {
                         [{ 'color': [] }, { 'background': [] }],
                         [{ 'align': [] }],
                         ['clean'],
-                        ['link', 'image']
+                        ['link', 'image'], [], ['fullscreen']
                     ],
                     imageDrop: true,
                     imageResize: { modules: [ 'Resize', 'DisplaySize' ] } // + 'Toolbar'
@@ -132,6 +133,17 @@ export default {
                 this.tagsListFormatted.push(this.tagsList[tag].name)
             }
         }
+
+        var customButton = document.querySelector('.ql-fullscreen')
+        customButton.addEventListener('click', function () {
+            if (screenfull.enabled) {
+                console.log('requesting fullscreen')
+                var quillEditor = document.querySelector('.quill-editor')
+                screenfull.request(quillEditor)
+            } else {
+                console.log('Screenfull not enabled')
+            }
+        })
     },
     methods: {
         saveData () {
@@ -221,6 +233,23 @@ export default {
     .vmd-body {
         min-height: 40rem !important;
     }
+
+    .quill-editor:-moz-full-screen {padding: 1rem;background: white;}
+    .quill-editor:-webkit-full-screen {padding: 1rem;background: white; }
+    .quill-editor:-ms-fullscreen {padding: 1rem;background: white; }
+
+    .quill-editor:-moz-full-screen .ql-container {max-height: calc(100vh - 5rem);}
+    .quill-editor:-webkit-full-screen .ql-container {max-height: calc(100vh - 5rem);}
+    .quill-editor:-ms-full-screen .ql-container {max-height: calc(100vh - 5rem);}
+
+    .quill-editor:-moz-full-screen .ql-editor {max-height: 100%;}
+    .quill-editor:-webkit-full-screen .ql-editor {max-height: 100%;}
+    .quill-editor:-ms-full-screen .ql-editor {max-height: 100%;}
+
+    .ql-editor {
+        /*white-space: normal !important;*/
+        max-height: calc(100vh - 18.5rem);
+    }
     .ql-container{
         font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
         font-kerning: normal;
@@ -230,13 +259,22 @@ export default {
         font-weight: 400;
         line-height: 1.42857143;
         font-display: swap; /* or block */
+        border-radius: 0 0 .25rem .25rem !important;
     }
-    .ql-editor- {
-        white-space: normal !important;
-    }
+    .ql-toolbar.ql-snow{border-radius: .25rem .25rem 0 0 !important;}
 
     .ql-snow .ql-editor pre.ql-syntax {
         color: black !important;
+    }
+
+    .ql-fullscreen {
+        padding: 0 !important;
+    }
+    .ql-fullscreen:after {
+        font-family: 'Font Awesome 5 Free';
+        content: "\f31e";
+        font-weight: 900;
+        font-size: .9rem;
     }
 
     .multiselect {
