@@ -305,10 +305,6 @@ export default {
         /*background: var(--nord14);*/
     }
 
-    .multiselect__option--highlight{
-        /*background: var(--nord14);*/
-    }
-
     .multiselect__input, .multiselect__single {
         padding-left: 0;
         margin-bottom: 0.425em;
