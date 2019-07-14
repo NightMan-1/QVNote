@@ -122,7 +122,8 @@ export default {
         modalMoveBtnMove: 'Move',
         notificationErrorMove: 'Error moving note...',
         btnFavorites: 'add to favorites',
-        btnReaderMode: 'reading mode'
+        btnReaderMode: 'reading mode',
+        btnHideSidebar: 'hide sidebar'
     },
     dashboard: {
         infoTitle: 'Statistics',

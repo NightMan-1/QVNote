@@ -121,7 +121,8 @@ export default {
         modalMoveBtnMove: 'Переместить',
         notificationErrorMove: 'Ошибка при перемещении заметки...',
         btnFavorites: 'добавить в избранное',
-        btnReaderMode: 'режим чтения'
+        btnReaderMode: 'режим чтения',
+        btnHideSidebar: 'скрыть боковую панель'
 
     },
     dashboard: {

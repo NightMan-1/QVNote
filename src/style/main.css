@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i,700,700i&subset=cyrillic,cyrillic-ext,latin-ext');
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,400i,500,500i&display=swap&subset=cyrillic');
+
 /* purgecss start ignore */
 html, body {
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;

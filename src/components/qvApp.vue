@@ -1,5 +1,5 @@
 <template>
-    <div :class="gridClass">
+    <div :class="gridClass" id="grid">
     	<div class="grid-head-1">
             <qv-header-logo></qv-header-logo>
         </div>
@@ -53,6 +53,8 @@
             </div>
         </div></div>
     	<div class="grid-head-3 text-right" v-if="pageType === 'articleList'">
+            <button class="btn btn-outline-secondary float-left" :title="$t('articleList.btnHideSidebar')" @click="gridShow = !gridShow"><i class="fas fa-chevron-left text-black-50" v-if="gridShow"></i><i class="fas fa-chevron-right text-black-50" v-if="!gridShow"></i></button>
+
             <a v-bind:href="articleCurrent.url_src" v-if="articleCurrent.url_src"
                 target="_blank" class="btn btn-outline-secondary mr-2"><i class="fas fa-external-link-alt text-dark"></i></a>
 
@@ -69,7 +71,7 @@
                 <i class="far fa-star text-black-50" :class="{'fas':articleCurrent.favorites}"></i>
             </button>
         </div>
-    	<div class="grid-body-2" v-if="pageType === 'articleList'"><div class="scrooll-wrap">
+    	<div class="grid-body-2 bg-white" v-if="pageType === 'articleList'"><div class="scrooll-wrap">
                 <div class="justify-content-center article-info"
                      :class="{'d-block':showAdvancedInfo === true, 'd-none':showAdvancedInfo === false }">
                     <b>{{$t('articleList.infoDateCreate')}}:</b> {{ articleCurrent.created_at | formatDate}}<br>
@@ -120,7 +122,8 @@ export default {
             articleListType: 'notes', // tags
             searchInput: '',
             notesListBackup: {},
-            mutableNotesList: {}
+            mutableNotesList: {},
+            gridShow: true
         }
     },
     beforeMount: function () {
@@ -138,6 +141,22 @@ export default {
         }
     },
     watch: {
+        'gridShow' () {
+            const root = document.documentElement
+            root.style.setProperty('--sidebar-width', document.getElementsByClassName('grid-sidebar-1')[0].offsetWidth + 'px')
+            root.style.setProperty('--menu-width', document.getElementsByClassName('grid-body-1')[0].offsetWidth + 'px')
+            window.onresize = function (event) {
+                root.style.setProperty('--sidebar-width', document.getElementsByClassName('grid-sidebar-1')[0].offsetWidth + 'px')
+                root.style.setProperty('--menu-width', document.getElementsByClassName('grid-body-1')[0].offsetWidth + 'px')
+            }
+
+            const gridContent = document.querySelector('#grid')
+            if (gridContent.classList.contains('hidden')) {
+                gridContent.classList.remove('hidden')
+            } else {
+                gridContent.classList.add('hidden')
+            }
+        },
         '$route' (to, from) {
             // console.log('from ', from.name, 'to ', to.name)
             // console.log('route.name ', this.$route.name)
