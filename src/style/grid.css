@@ -1,3 +1,7 @@
+:root{
+    --sidebar-width: 14rem;
+    --menu-width: 20rem;
+}
 .grid-v1, .grid-v2 {
     height: 100%;
     overflow: hidden;
@@ -7,18 +11,21 @@
     grid-template-rows: 3.2rem calc(100% - 6.6rem) 3.4rem;
 }
 .grid-v1 {
-    grid-template-columns: 14rem auto;
+    grid-template-columns: minmax(8rem, 14rem) auto;
 }
 .grid-v2 {
-    grid-template-columns: 14rem 20rem auto;
+    grid-template-columns: minmax(8rem, 14rem) minmax(10rem, 20rem) auto;
 }
+.grid-head-1, .grid-sidebar-1, .grid-footer-1 {transition:all .5s; z-index: 1000;}
+.grid-head-2, .grid-body-1, .grid-footer-2 {transition:all .5s; z-index: 999;}
+
 .grid-head-1 { grid-area: 1 / 1 / 2 / 2; position: relative;}
 .grid-sidebar-1 { grid-area: 2 / 1 / 3 / 2; position: relative; height: 100%; overflow: auto;}
 .grid-footer-1 { grid-area: 3 / 1 / 4 / 2; position: relative; padding: .6rem 1rem;}
-.grid-head-2 { grid-area: 1 / 2 / 2 / 3; position: relative;}
+.grid-head-2 { grid-area: 1 / 2 / 2 / 3; position: relative; }
 .grid-body-1 { grid-area: 2 / 2 / 4 / 3; position: relative; height: 100%; overflow: auto;}
-.grid-head-3 { grid-area: 1 / 3 / 2 / 4; position: relative;}
-.grid-body-2 { grid-area: 2 / 3 / 4 / 4; position: relative; height: 100%; overflow: auto;}
+.grid-head-3 { grid-area: 1 / 3 / 2 / 4; position: relative; width:100%; transition:all .5s;  z-index: 1001;}
+.grid-body-2 { grid-area: 2 / 3 / 4 / 4; position: relative; height: 100%; overflow: auto;  width:100%; transition:all .5s;z-index: 1001;}
 .grid-v1 .grid-head-3, .grid-v1 .grid-body-2{display: none;}
 .grid-head-2, .grid-head-3{padding: .5rem .75rem;}
 .grid-v2 .grid-head-2, .grid-v2 .grid-head-3{border-bottom: 1px solid var(--nord4); padding: .5rem .75rem; background-color: var(--nord6);}
@@ -28,3 +35,12 @@
 .grid-v1 .grid-body-1 { padding: .5rem 1.5rem;}
 .grid-v2 .grid-body-1 { padding: 0;}
 */
+
+#grid {
+    transition:all 1s;
+}
+/*
+#grid.hidden .grid-head-1, #grid.hidden .grid-footer-1, #grid.hidden .grid-sidebar-1 { transform:translateX(-100%); }
+#grid.hidden .grid-head-2, #grid.hidden .grid-footer-2, #grid.hidden .grid-body-1 { transform:translateX(-200%); }
+*/
+#grid.hidden .grid-head-3, #grid.hidden .grid-body-2 { width:calc(100% + var(--sidebar-width) + var(--menu-width)); transform:translateX(calc(0px - var(--sidebar-width) - var(--menu-width))); }
