@@ -77,10 +77,8 @@ import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
 import { ImageDrop } from 'quill-image-drop-module'
 import ImageResize from 'quill-image-resize-module'
-import MagicUrl from 'quill-magic-url'
 Quill.register('modules/imageDrop', ImageDrop)
 Quill.register('modules/imageResize', ImageResize)
-Quill.register('modules/magicUrl', MagicUrl)
 let BeautifyHtml = require('js-beautify').html
 
 export default {
@@ -108,13 +106,7 @@ export default {
                         ['link', 'image']
                     ],
                     imageDrop: true,
-                    imageResize: { modules: [ 'Resize', 'DisplaySize' ] }, // + 'Toolbar'
-                    magicUrl: {
-                        // Regex used to check URLs during typing
-                        urlRegularExpression: /(https?:\/\/[\S]+)|(www.[\S]+)|(mailto:[\S]+)|(tel:[\S]+)/,
-                        // Regex used to check URLs on paste
-                        globalRegularExpression: /(https?:\/\/|www\.|mailto:|tel:)[\S]+/g
-                    }
+                    imageResize: { modules: [ 'Resize', 'DisplaySize' ] } // + 'Toolbar'
                 }
             }
         }
