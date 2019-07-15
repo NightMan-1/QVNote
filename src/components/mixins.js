@@ -1,49 +1,55 @@
 const mixin = {
     computed: {
         gridClass () {
-            return this.$store.getters.getGridClass
+            return this.$store.state.gridClass
         },
         pageType () {
-            return this.$store.getters.getPageType
+            return this.$store.state.pageType
         },
         sidebarType () {
-            return this.$store.getters.getSidebarType
+            return this.$store.state.sidebarType
         },
         notesCountInbox () {
-            return this.$store.getters.getNotesCountInbox
+            return this.$store.state.notesCountInbox
         },
         notesCountTrash () {
-            return this.$store.getters.getNotesCountTrash
+            return this.$store.state.notesCountTrash
         },
         notesCountTotal () {
-            return this.$store.getters.getNotesCountTotal
+            return this.$store.state.notesCountTotal
         },
         notesCountFavorites () {
-            return this.$store.getters.getNotesCountFavorites
+            return this.$store.state.notesCountFavorites
         },
         currentNotebookID () {
-            return this.$store.getters.getCurrentNotebookID
+            return this.$store.state.currentNotebookID
         },
         notebooksList () {
-            return this.$store.getters.getNotebooksList
+            return this.$store.state.notebooksList
         },
         notesList () {
-            return this.$store.getters.getNotesList
+            return this.$store.state.notesList
         },
         tagsList () {
-            return this.$store.getters.getTagsList
+            return this.$store.state.tagsList
         },
         currentTagURL () {
-            return this.$store.getters.getCurrentTagURL
+            return this.$store.state.currentTagURL
         },
         articleCurrent () {
-            return this.$store.getters.getCurrentArticle
+            return this.$store.state.currentArticle
         },
         showAdvancedInfo () {
-            return this.$store.getters.getShowAdvancedNoteInfo
+            return this.$store.state.showAdvancedNoteInfo
         },
         readerMode () {
-            return this.$store.getters.getReaderMode
+            return this.$store.state.readerMode
+        },
+        notebookCount () {
+            return this.$store.getters.getNotebooksCount
+        },
+        tagsCount () {
+            return this.$store.getters.getTagsCount
         }
     }
 }

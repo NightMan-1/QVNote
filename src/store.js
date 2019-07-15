@@ -52,23 +52,8 @@ export default new Vuex.Store({
                 return '/api'
             }
         },
-        getConfig: state => {
-            return state.config
-        },
-        getGridClass: state => {
-            return state.gridClass
-        },
-        getNotebooksList: state => {
-            return state.notebooksList
-        },
-        getNotesList: state => {
-            return state.notesList
-        },
         getNotebooksCount: state => {
             return Object.keys(state.notebooksList).length
-        },
-        getTagsList: state => {
-            return state.tagsList
         },
         getTagsCount: state => {
             if (state.tagsList == null) {
@@ -76,51 +61,6 @@ export default new Vuex.Store({
             } else {
                 return Object.keys(state.tagsList).length
             }
-        },
-        getNotesCountInbox: state => {
-            return state.notesCountInbox
-        },
-        getNotesCountTrash: state => {
-            return state.notesCountTrash
-        },
-        getNotesCountTotal: state => {
-            return state.notesCountTotal
-        },
-        getNotesCountFavorites: state => {
-            return state.notesCountFavorites
-        },
-        getStatusText: state => {
-            return state.status.errorText
-        },
-        getPageType: state => {
-            return state.pageType
-        },
-        getSidebarType: state => {
-            return state.sidebarType
-        },
-        getSettingsPageType: state => {
-            return state.settingsPageType
-        },
-        getCurrentNotebookID: state => {
-            return state.currentNotebookID
-        },
-        getCurrentTagURL: state => {
-            return state.currentTagURL
-        },
-        getCurrentArticle: state => {
-            return state.currentArticle
-        },
-        getShowAdvancedNoteInfo: state => {
-            return state.showAdvancedNoteInfo
-        },
-        getReaderMode: state => {
-            return state.readerMode
-        },
-        getLocalesList: state => {
-            return state.localesList
-        },
-        getEditorsList: state => {
-            return state.editorsList
         },
         getStatus: state => () => state.status.errorType
     },
@@ -214,13 +154,13 @@ export default new Vuex.Store({
                     this.commit('setNotebooksList', jsonData)
                     this.commit('setNotesCountTotal', 0)
 
-                    for (const value in this.getters.getNotebooksList) {
-                        let countTMP = this.getters.getNotesCountTotal + this.getters.getNotebooksList[value].notesCount
+                    for (const value in this.state.notebooksList) {
+                        let countTMP = this.state.notesCountTotal + this.state.notebooksList[value].notesCount
                         this.commit('setNotesCountTotal', countTMP)
-                        if (this.getters.getNotebooksList[value].name === 'Inbox') {
-                            this.commit('setNotesCountInbox', this.getters.getNotebooksList[value].notesCount)
-                        } else if (this.getters.getNotebooksList[value].name === 'Trash') {
-                            this.commit('setNotesCountTrash', this.getters.getNotebooksList[value].notesCount)
+                        if (this.state.notebooksList[value].name === 'Inbox') {
+                            this.commit('setNotesCountInbox', this.state.notebooksList[value].notesCount)
+                        } else if (this.state.notebooksList[value].name === 'Trash') {
+                            this.commit('setNotesCountTrash', this.state.notebooksList[value].notesCount)
                         }
                     }
                 })
@@ -239,7 +179,7 @@ export default new Vuex.Store({
                 })
         },
         getArticle (store, noteUUID) {
-            if (this.getters.getCurrentArticle.content !== undefined) {
+            if (this.state.currentArticle.content !== undefined) {
                 this.commit('setCurrentArticle', {})
             } // нужно для скрола списка вверх, иначе будет на предыдущей позиции
             fetch(this.getters.apiFolder + '/note.json', { method: 'POST', body: JSON.stringify({ NoteID: noteUUID }) }).then(response => { return response.json() })
