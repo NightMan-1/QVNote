@@ -104,7 +104,7 @@ export default {
                         [{ 'color': [] }, { 'background': [] }],
                         [{ 'align': [] }],
                         ['clean'],
-                        ['link', 'image'], [], ['fullscreen']
+                        ['link', 'image'], [], ['eraser', 'fullscreen']
                     ],
                     imageDrop: true,
                     imageResize: { modules: [ 'Resize', 'DisplaySize' ] } // + 'Toolbar'
@@ -134,8 +134,7 @@ export default {
             }
         }
 
-        var customButton = document.querySelector('.ql-fullscreen')
-        customButton.addEventListener('click', function () {
+        document.querySelector('.ql-fullscreen').addEventListener('click', function () {
             if (screenfull.enabled) {
                 console.log('requesting fullscreen')
                 var quillEditor = document.querySelector('.quill-editor')
@@ -143,6 +142,10 @@ export default {
             } else {
                 console.log('Screenfull not enabled')
             }
+        })
+
+        document.querySelector('.ql-eraser').addEventListener('click', () => {
+            this.articleCurrentEditable.content = this.articleCurrentEditable.content.replace(/<p><br><\/p>/g, '')
         })
     },
     methods: {
@@ -267,14 +270,15 @@ export default {
         color: black !important;
     }
 
-    .ql-fullscreen {
-        padding: 0 !important;
-    }
-    .ql-fullscreen:after {
+    .ql-fullscreen, .ql-eraser { padding: 0 !important; }
+    .ql-fullscreen:after, .ql-eraser:after {
         font-family: 'Font Awesome 5 Free';
         content: "\f31e";
         font-weight: 900;
         font-size: .9rem;
+    }
+    .ql-eraser:after{
+        content: "\f12d";
     }
 
     .multiselect {
