@@ -73,8 +73,7 @@ import PrismEditor from 'vue-prism-editor'
 import { quillEditor } from 'vue-quill-editor'
 import Multiselect from 'vue-multiselect'
 import Quill from 'quill'
-import 'quill/dist/quill.core.css'
-import 'quill/dist/quill.snow.css'
+import '../style/quill.snow.css'
 import { ImageDrop } from 'quill-image-drop-module'
 import ImageResize from 'quill-image-resize-module'
 import screenfull from 'screenfull'
@@ -146,6 +145,7 @@ export default {
 
         document.querySelector('.ql-eraser').addEventListener('click', () => {
             this.articleCurrentEditable.content = this.articleCurrentEditable.content.replace(/<p><br><\/p>/g, '')
+            this.articleCurrentEditable.content = this.articleCurrentEditable.content.replace(/<p>&nbsp;<\/p>/g, '')
         })
     },
     methods: {
@@ -207,9 +207,9 @@ export default {
     }
     #qv-editor-header{
         position: fixed;
-        width: calc(100% - 14rem);
+        width: calc(100% - var(--sidebar-width));
         top: 0;
-        left:14rem;
+        left:var(--sidebar-width);
         z-index: 1000;
         background-color: var(--nord6);
         border-bottom: 1px solid var(--nord4);

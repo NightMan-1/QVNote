@@ -37,6 +37,7 @@ a, button {
 a {
     display: inline-block;
     position: relative;
+    color:#0054b9;
 }
 a::after:not(a.btn) {
     content: '';
