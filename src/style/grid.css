@@ -11,10 +11,10 @@
     grid-template-rows: 3.2rem calc(100% - 6.6rem) 3.4rem;
 }
 .grid-v1 {
-    grid-template-columns: minmax(8rem, 14rem) auto;
+    grid-template-columns: var(--sidebar-width) auto;
 }
 .grid-v2 {
-    grid-template-columns: minmax(8rem, 14rem) minmax(10rem, 20rem) auto;
+    grid-template-columns: var(--sidebar-width) var(--menu-width) auto;
 }
 .grid-head-1, .grid-sidebar-1, .grid-footer-1 {transition:all .5s; z-index: 1000;}
 .grid-head-2, .grid-body-1, .grid-footer-2 {transition:all .5s; z-index: 999;}
@@ -44,3 +44,23 @@
 #grid.hidden .grid-head-2, #grid.hidden .grid-footer-2, #grid.hidden .grid-body-1 { transform:translateX(-200%); }
 */
 #grid.hidden .grid-head-3, #grid.hidden .grid-body-2 { width:calc(100% + var(--sidebar-width) + var(--menu-width)); transform:translateX(calc(0px - var(--sidebar-width) - var(--menu-width))); }
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) { 
+    :root{ --sidebar-width: 12rem; --menu-width: 12rem; }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) { 
+    :root{ --sidebar-width: 12rem; --menu-width: 14rem; }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+    :root{ --sidebar-width: 14rem; --menu-width: 20rem; }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    :root{ --sidebar-width: 14rem; --menu-width: 20rem; }
+}
