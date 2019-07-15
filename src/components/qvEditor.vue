@@ -144,8 +144,15 @@ export default {
         })
 
         document.querySelector('.ql-eraser').addEventListener('click', () => {
-            this.articleCurrentEditable.content = this.articleCurrentEditable.content.replace(/<p><br><\/p>/g, '')
-            this.articleCurrentEditable.content = this.articleCurrentEditable.content.replace(/<p>&nbsp;<\/p>/g, '')
+            fetch(this.$store.getters.apiFolder + '/cleanup_html.json',
+                { method: 'POST',
+                    body: JSON.stringify({ 'content': this.articleCurrentEditable.content }) }).then(response => { return response.json() })
+                .then(jsonData => {
+                    this.articleCurrentEditable.content = jsonData.content
+                })
+                .catch(error => {
+                    console.error('Error cleanup html:', error)
+                })
         })
     },
     methods: {
