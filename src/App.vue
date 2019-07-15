@@ -19,7 +19,7 @@ export default {
             if (errorType === 1) {
                 this.$toast.error({
                     title: 'Error!',
-                    message: this.$store.getters.getStatusText,
+                    message: this.$store.state.status.errorText,
                     closeButton: true,
                     progressBar: true,
                     timeOut: 15000
@@ -28,7 +28,7 @@ export default {
             } else if (errorType === 2) {
                 this.$toast.error({
                     title: 'Warning!',
-                    message: this.$store.getters.getStatusText,
+                    message: this.$store.state.status.errorText,
                     closeButton: true,
                     progressBar: true,
                     timeOut: 7000
@@ -36,7 +36,7 @@ export default {
             } else if (errorType === 5) {
                 this.$toast.success({
                     title: '',
-                    message: this.$store.getters.getStatusText,
+                    message: this.$store.state.status.errorText,
                     closeButton: true,
                     progressBar: true,
                     timeOut: 5000

@@ -67,6 +67,7 @@
 </template>
 
 <script>
+import mixin from './mixins'
 import 'prismjs'
 import 'prismjs/themes/prism.css'
 import PrismEditor from 'vue-prism-editor'
@@ -83,6 +84,7 @@ let BeautifyHtml = require('js-beautify').html
 
 export default {
     name: 'qvEditor',
+    mixins: [mixin],
     props: ['noteUUID'],
     data () {
         return {
@@ -117,9 +119,6 @@ export default {
         PrismEditor
     },
     mounted () {
-        if (this.BrowserPlatform === 'general') {
-            // SimpleScrollbar.initAll()
-        }
         this.$refs.editorTitle.focus()
         // this.articleCurrentEditable = Object.assign({}, this.articleCurrent)
         this.articleCurrentEditable = JSON.parse(JSON.stringify(this.articleCurrent))
@@ -188,17 +187,6 @@ export default {
             if (this.articleCurrentEditable.type === 'code') {
                 this.articleCurrentEditable.content = BeautifyHtml(this.articleCurrentEditable.content)
             }
-        }
-    },
-    computed: {
-        articleCurrent () {
-            return this.$store.getters.getCurrentArticle
-        },
-        tagsList () {
-            return this.$store.getters.getTagsList
-        },
-        BrowserPlatform () {
-            return this.$store.getters.getBrowserPlatform
         }
     }
 

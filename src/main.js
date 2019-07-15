@@ -100,7 +100,7 @@ new Vue({
         fetch(this.$store.getters.apiFolder + '/config.json').then(response => { return response.json() })
             .then(jsonData => {
                 this.$store.commit('setConfig', jsonData)
-                if (!this.$store.getters.getConfig.installed) {
+                if (!this.$store.state.config.installed) {
                     this.$router.push({ name: 'qvInstaller', params: { initialized: true } })
                 } else if (this.$route.params.nbUUID !== undefined && this.$route.params.noteUUID !== undefined) {
                     // this.$router.push('/app/' + this.$route.params.nbUUID + '/' + this.$route.params.noteUUID)

@@ -157,9 +157,9 @@ export default {
     components: { qvHeaderLogo },
     data () {
         return {
-            checkboxOpenBrowser: this.$store.getters.getConfig.atStartOpenBrowser,
-            checkboxCheckNew: this.$store.getters.getConfig.atStartCheckNewNotes,
-            checkboxShowConsole: this.$store.getters.getConfig.atStartShowConsole,
+            checkboxOpenBrowser: this.$store.state.config.atStartOpenBrowser,
+            checkboxCheckNew: this.$store.state.config.atStartCheckNewNotes,
+            checkboxShowConsole: this.$store.state.config.atStartShowConsole,
             searchStatus: {
                 'notesCurrent': 0,
                 'notesTotal': 0,
@@ -173,7 +173,7 @@ export default {
                 'persent': 0
             },
             langSelected: this.$ls.get('locale', false),
-            editorSelected: this.$store.getters.getConfig.postEditor
+            editorSelected: this.$store.state.config.postEditor
         }
     },
     watch: {
@@ -385,16 +385,16 @@ export default {
     },
     computed: {
         settingsPageType () {
-            return this.$store.getters.getSettingsPageType
+            return this.$store.state.settingsPageType
         },
         config () {
-            return this.$store.getters.getConfig
+            return this.$store.state.config
         },
         localesList () {
-            return this.$store.getters.getLocalesList
+            return this.$store.state.localesList
         },
         editorsList () {
-            return this.$store.getters.getEditorsList
+            return this.$store.state.editorsList
         }
     }
 }

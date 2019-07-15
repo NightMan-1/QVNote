@@ -41,12 +41,14 @@
 </template>
 
 <script>
+import mixin from './mixins'
 import VePie from 'v-charts/lib/pie.common'
 import { CalendarHeatmap } from 'vue-calendar-heatmap'
 
 export default {
     name: 'qvDashboard',
     components: { VePie, CalendarHeatmap },
+    mixins: [mixin],
     data () {
         return {
             statistic: {
@@ -105,17 +107,6 @@ export default {
                     timeOut: 7000
                 })
             })
-    },
-    computed: {
-        notesCountTotal () {
-            return this.$store.getters.getNotesCountTotal
-        },
-        notebookCount () {
-            return this.$store.getters.getNotebooksCount
-        },
-        tagsCount () {
-            return this.$store.getters.getTagsCount
-        }
     }
 }
 </script>

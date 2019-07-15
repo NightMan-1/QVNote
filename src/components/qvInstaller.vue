@@ -64,7 +64,7 @@ export default {
             },
             loader: false,
             formData: {
-                sourceFolder: this.$store.getters.getConfig.sourceFolder,
+                sourceFolder: this.$store.state.config.sourceFolder,
                 sourceFolderCreateIfNotExist: true
             }
 
