@@ -561,6 +561,9 @@ func ClearHTML(content string) string {
 	r = regexp.MustCompile("<(p|h1|h2|h3|h4|h5|h6)><br>")
 	content = r.ReplaceAllString(content, `<$1>`)
 
+	r = regexp.MustCompile("<p>&nbsp;</p>")
+	content = r.ReplaceAllString(content, ``)
+
 	r = regexp.MustCompile(`<(span|p|h1|h2|h3|h4|h5|h6)></(span|p|h1|h2|h3|h4|h5|h6)>`)
 	content = r.ReplaceAllString(content, "")
 
@@ -1655,6 +1658,14 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		//ctx.JSON(iris.Map{"NoteBookUUID": notebookUUID, "uuid": noteUUID, "html": request.Content})
 		ctx.JSON(iris.Map{"NoteBookUUID": notebookUUID, "uuid": noteUUID})
 
+	})
+
+	app.Handle("ANY", "/api/cleanup_html.json", func(ctx iris.Context) {
+		var request struct {
+			Content string   `json:"content"`
+		}
+		ctx.ReadJSON(&request)
+		ctx.JSON(iris.Map{"content": ClearHTML(request.Content)})
 	})
 
 	app.Handle("ANY", "/api/tag_edit.json", func(ctx iris.Context) {
