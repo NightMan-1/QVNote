@@ -501,9 +501,10 @@ func SaveConfig() bool {
 }
 
 func FixNoteImagesLinks(note NoteTypeWithContentAPI, content string, ctx iris.Context) string {
-	ImageURL := "//" + ctx.Host() + "/resources/" + note.NoteBookUUID + "/" + note.UUID + ""
+	ImageURL := "/resources/" + note.NoteBookUUID + "/" + note.UUID + ""
 	content = strings.Replace(content, "quiver-image-url", ImageURL, -1)
 	content = strings.Replace(content, "quiver-file-url", ImageURL, -1)
+	content = strings.Replace(content, "//"+ctx.Host()+"/resources/", "/resources/", -1) // fix for old cleanup
 	return content
 }
 
@@ -1662,7 +1663,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 	app.Handle("ANY", "/api/cleanup_html.json", func(ctx iris.Context) {
 		var request struct {
-			Content string   `json:"content"`
+			Content string `json:"content"`
 		}
 		ctx.ReadJSON(&request)
 		ctx.JSON(iris.Map{"content": ClearHTML(request.Content)})
