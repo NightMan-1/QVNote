@@ -22,7 +22,7 @@
         "quill-image-drop-module": "^1.0.3",
         "quill-image-resize-module": "^3.0.0",
         "screenfull": "^4.2.0",
-        "tingle.js": "0.13.2",
+        "tingle.js": "^0.15.1",
         "v-charts": "^1.19.0",
         "vue": "^2.6.10",
         "vue-calendar-heatmap": "^0.8.4",
