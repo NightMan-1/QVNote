@@ -841,8 +841,9 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	}))
 
 	//app.StaticWeb("/static", configGlobal.execDir + "/templates/static")
-	app.StaticEmbedded("/", "./templates", Asset, AssetNames)
-
+	//app.StaticEmbedded("/", "./templates", Asset, AssetNames)
+	app.HandleDir("/", "./templates", iris.DirOptions { Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames, Gzip: false, })
+	
 	var err error
 
 	// Register custom handler for specific http errors.
