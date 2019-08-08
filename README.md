@@ -24,7 +24,7 @@ Unzip archive
 _(you also need install git command line program for download the source)_
 
 ```
-go get -u github.com/jteeuwen/go-bindata/...
+go get -u github.com/go-bindata/go-bindata/...
 go get -u github.com/blevesearch/bleve
 go get -u github.com/blevesearch/snowballstem
 go get -u github.com/dustin/go-humanize
