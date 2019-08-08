@@ -1,3 +1,5 @@
+![Travis (.com)](https://img.shields.io/travis/com/NightMan-1/QVNote?style=flat-square) ![GitHub issues](https://img.shields.io/github/issues/NightMan-1/QVNote?style=flat-square) ![GitHub release](https://img.shields.io/github/release-pre/NightMan-1/QVNote?style=flat-square) ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/NightMan-1/QVNote?style=flat-square) ![GitHub All Releases](https://img.shields.io/github/downloads/NightMan-1/QVNote/total?style=flat-square)
+
 # QVNote
 
 The program for storing notes, pages of sites, personal knowledge base.
