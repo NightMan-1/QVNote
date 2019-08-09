@@ -212,16 +212,16 @@ export default {
     },
     methods: {
         favoritesImportSelected: function (event) {
-            let globalThis = this
             if (event.target.files[0].type === 'application/json') {
                 let reader = new FileReader()
                 reader.onload = () => {
                     let dataFavoritesRaw = reader.result
                     try {
                         let dataFavorites = JSON.parse(dataFavoritesRaw)
-                        dataFavorites.forEach(function (element) {
-                            fetch(globalThis.$store.getters.apiFolder + '/favorites.json', { method: 'POST', body: JSON.stringify({ 'action': 'add', 'UUID': element }) })
+                        dataFavorites.forEach((element) => {
+                            fetch(this.$store.getters.apiFolder + '/favorites.json', { method: 'POST', body: JSON.stringify({ 'action': 'add', 'UUID': element }) })
                         })
+                        console.log(this.$t('setting.global.favoritesImportDone'))
                         this.$store.commit('setStatus', { errorType: 5, errorText: this.$t('setting.global.favoritesImportDone') })
                     } catch (e) {
                         this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.global.favoritesImportWrongData') })
