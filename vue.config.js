@@ -6,7 +6,7 @@ const webpack = require('webpack')
 const TerserPlugin = require('terser-webpack-plugin')
 
 const cssWhiteList = []
-const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/, /^ql-/]
+const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/, /^ql-/, /^toast/]
 
 module.exports = {
     configureWebpack: {
