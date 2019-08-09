@@ -1,0 +1,76 @@
+os:
+  - osx
+  - windows
+language: go
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade node; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then nvm install 12; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install p7zip; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install nodejs; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install 7zip; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export "PATH=/c/Program Files/7-Zip:/c/Users/travis/gopath/bin:/c/Program Files/nodejs:$PATH"; fi
+install:
+  - npm install -g npm@latest
+  - npm install
+  - npm audit fix
+  - go get -u github.com/go-bindata/go-bindata/...
+  - go get -u github.com/blevesearch/bleve
+  - go get -u github.com/blevesearch/snowballstem
+  - go get -u github.com/dustin/go-humanize
+  - go get -u github.com/imroc/req
+  - go get -u github.com/json-iterator/go
+  - go get -u github.com/kataras/iris
+  - go get -u github.com/iris-contrib/middleware/cors
+  - go get -u github.com/gofrs/uuid
+  - go get -u github.com/siddontang/ledisdb/config
+  - go get -u github.com/siddontang/ledisdb/ledis
+  - go get -u github.com/json-iterator/go
+  - go get -u github.com/marcsauter/single
+  - go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo
+  - go get -u github.com/syndtr/goleveldb/leveldb
+  - go get -u github.com/go-ini/ini
+  - go get -u github.com/gen2brain/beeep
+  - go get -u github.com/gen2brain/dlgs
+  - go get -u github.com/getlantern/systray
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then go get -u github.com/gonutz/w32; fi
+script:
+  - npm run build
+  - go-bindata templates/... icon.ico
+  # building MacOS binary
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then mkdir QVNote.app; mkdir QVNote.app/Contents; mkdir QVNote.app/Contents/MacOS; mkdir QVNote.app/Contents/Resources; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cp Info.plist QVNote.app/Contents; cp icon.icns QVNote.app/Contents/Resources; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then go build -o QVNote.app/Contents/MacOS/QVNote && chmod a+x QVNote.app/Contents/MacOS/QVNote; fi
+  # building Linux binary
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go build -o qvnote-linux-x64 && chmod a+x qvnote-linux-x64; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CGO_ENABLED=0; export GOOS=linux; export GOARCH=386; go build -o qvnote-linux-x86 && chmod a+x qvnote-linux-x86; fi
+  # building Windows binary
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then goversioninfo; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -o QVNote-windows-x64.exe; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CGO_ENABLED=0; export GOOS=windows; export GOARCH=386; go build -o QVNote-windows-x86.exe; fi
+
+before_deploy:
+  - export RELEASE_TITLE=$(date '+%Y%m%d%H%M%S')-$TRAVIS_JOB_NUMBER
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 7z a -tzip qvnote-$TRAVIS_TAG-linux-x86.zip notes qvnote-linux-x86; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 7z a -tzip qvnote-$TRAVIS_TAG-linux-x64.zip notes qvnote-linux-x64; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 7z a -tzip qvnote-$TRAVIS_TAG-mac-x64.zip notes QVNote.app; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then 7z.exe a -tzip qvnote-$TRAVIS_TAG-win-x86.zip notes QVNote-windows-x86.exe; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then 7z.exe a -tzip qvnote-$TRAVIS_TAG-win-x64.zip notes QVNote-windows-x64.exe; fi
+deploy:
+  provider: releases
+  name: Release $TRAVIS_TAG ($RELEASE_TITLE)
+  file_glob: true
+  skip_cleanup: true
+  api_key:
+    secure: Xux7SYhUqyYo99TGewxKMhQOW5V83LeCLKu+vYJEKekrHpyWtpqE7dVjce3sUjakZaYRIggDvQH7GAtVpKRkk+Ux+L5jUnpQsQMs5CAKw8xHZ6NgMi/+iJ63N1LCd6WEmuuigjZ+R0IMCQahmQmYRJleUSxYcybiqAOuMVfrfo+fHPpMiG8xunLtWYRu/A1XCKeCe8SdtShv2PI0ED2SeHLU2Y9/cV7PMu5XQG4Tozd4KCnvYIr0zATDd7KcjgVk9nQCyMvQjmQ5GpROOO8eiCz16X8sGrPZ21UZfzd3lx18Dr8p0D++7p7J1mDYmy8DHFlLeIk7aG0UpoeBhpB0u4lxUw4HHozu+jrCEhov94MMKPuSCCemkuy2czEEvzoyHBfCzWxCsITOWEt3daW+WnKJpspkQPa+MF+NL5okqk/JyEsJBKByyzJ6wupaEfylTftHSHk9rkSuWjjO+Dzxa1hLI6qcKjZfn0l0AF11GRDOzEJ6YOWX3BIEewpsh4+KQl7RddNGS24XS/dqfURwSBtTSuvR1wBC4LbyJpCh4LnnNtZWI2sxe0kQCpeds6DTBks9HvwvLAfQnygtFsVzZmnT4r01h5NcsouDv90voVXtv2fU42v+E5iDeb55eDzSHCSOIUu7CQeZem9hwRpoVnca9uMWs6DvaKi0FXjBb5c=
+  file:
+    - qvnote-$TRAVIS_TAG-win-x86.zip
+    - qvnote-$TRAVIS_TAG-win-x64.zip
+    - qvnote-$TRAVIS_TAG-linux-x86.zip
+    - qvnote-$TRAVIS_TAG-linux-x64.zip
+    - qvnote-$TRAVIS_TAG-mac-x64.zip
+  draft: true
+  on:
+    repo: NightMan-1/QVNote
+    tags: true
+    all_branches: true
