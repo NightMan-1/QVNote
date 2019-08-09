@@ -38,7 +38,7 @@
             <div class="main-content" :class="{'d-none':settingsPageType !== 'global'}">
                 <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="m-0 font-weight-bold">{{$t('setting.global.settingsTitle')}}</h5>
+                    <h5 class="m-0 ">{{$t('setting.global.settingsTitle')}}</h5>
                 </div>
                 <div class="card-body">
                     <p>
@@ -63,47 +63,62 @@
                 </div>
                 </div>
 
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="m-0 ">{{$t('setting.global.actionsTitle')}}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            <span>{{$t('setting.global.requestIndexing')}}:</span>&nbsp; <span class="text-success" v-if="!config.requestIndexing">{{$t('general.no')}}</span><span class="text-danger" v-if="config.requestIndexing">{{$t('general.yes')}}</span>
+                        </p>
+                        <button class="btn btn-primary mr-2" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="refreshData('reload')">{{$t('setting.global.btnRefreshData')}}</button>
+                        <button class="btn btn-success mr-2" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="indexingStart">{{$t('setting.global.btnIndexChanges')}}</button>
+                        <button class="btn btn-warning" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="refreshData('reloadAll')">{{$t('setting.global.btnFullReload')}}</button>
+
+                        <br>
+                        <button class="btn btn-dark mt-4" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="optimizationStart">{{$t('setting.global.btnDownloadImages')}}</button>
+                        <br>
+                        <i>{{$t('setting.global.downloadWarnLine1')}}<br><span class="text-danger">{{$t('setting.global.downloadWarnLine2')}}</span></i>
+
+                        <div v-if="searchStatus.status === 'indexing'">
+                            <p class="mt-3"><b>{{$t('setting.global.msgIndexing', [searchStatus.notesCurrent, searchStatus.notesTotal])}}:</b></p>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped bg-info progress-bar-animated" role="progressbar" v-bind:style="{ width: searchStatus.persent + '%' }" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">{{searchStatus.persent}}%</div>
+                            </div>
+                        </div>
+                        <div v-if="searchStatus.status === 'refresh'">
+                            <p class="mt-3"><b>{{$t('setting.global.msgSearchNewData')}}</b></p>
+                        </div>
+                        <div v-if="searchStatus.status === 'done'">
+                            <p class="mt-3"><b>{{$t('setting.global.msgSearchComplete')}}</b></p>
+                        </div>
+
+                        <div v-if="optimizationStatus.status === 'processing'">
+                            <p class="mt-3"><b>{{$t('setting.global.msgOptimizationStatus', [optimizationStatus.notesCurrent, optimizationStatus.notesTotal])}}:</b></p>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped bg-info progress-bar-animated" role="progressbar" v-bind:style="{ width: optimizationStatus.persent + '%' }" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">{{optimizationStatus.persent}}%</div>
+                            </div>
+                        </div>
+                        <div v-if="optimizationStatus.status === 'done'">
+                            <p class="mt-3"><b>{{$t('setting.global.msgOptimizationComplete')}}</b></p>
+                        </div>
+
+                    </div>
+                </div>
+
                 <div class="card">
-                <div class="card-header">
-                    <h5 class="m-0 font-weight-bold">{{$t('setting.global.actionsTitle')}}</h5>
-                </div>
-                <div class="card-body">
-                    <p>
-                        <span>{{$t('setting.global.requestIndexing')}}:</span>&nbsp; <span class="text-success" v-if="!config.requestIndexing">{{$t('general.no')}}</span><span class="text-danger" v-if="config.requestIndexing">{{$t('general.yes')}}</span>
-                    </p>
-                    <button class="btn btn-primary mr-2" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="refreshData('reload')">{{$t('setting.global.btnRefreshData')}}</button>
-                    <button class="btn btn-success mr-2" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="indexingStart">{{$t('setting.global.btnIndexChanges')}}</button>
-                    <button class="btn btn-warning" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="refreshData('reloadAll')">{{$t('setting.global.btnFullReload')}}</button>
-
-                    <br>
-                    <button class="btn btn-dark mt-4" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="optimizationStart">{{$t('setting.global.btnDownloadImages')}}</button>
-                    <br>
-                    <i>{{$t('setting.global.downloadWarnLine1')}}<br><span class="text-danger">{{$t('setting.global.downloadWarnLine2')}}</span></i>
-
-                    <div v-if="searchStatus.status === 'indexing'">
-                        <p class="mt-3"><b>{{$t('setting.global.msgIndexing', [searchStatus.notesCurrent, searchStatus.notesTotal])}}:</b></p>
-                        <div class="progress">
-                            <div class="progress-bar progress-bar-striped bg-info progress-bar-animated" role="progressbar" v-bind:style="{ width: searchStatus.persent + '%' }" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">{{searchStatus.persent}}%</div>
-                        </div>
+                    <div class="card-header">
+                        <h5 class="m-0 ">{{$t('setting.global.favorites')}}</h5>
                     </div>
-                    <div v-if="searchStatus.status === 'refresh'">
-                        <p class="mt-3"><b>{{$t('setting.global.msgSearchNewData')}}</b></p>
+                    <div class="card-body">
+                        <a :href="$store.getters.apiFolder + '/favorites.json'" download="favorites.json" class="btn btn-primary mr-2">
+                            <i class="fas fa-file-export mr-1"></i> {{$t('setting.global.btnFavoritesExport')}}
+                        </a>
+                        <label for="favorites-upload" class="btn btn-success mr-2 mb-0">
+                            <i class="fas fa-file-import mr-1"></i> {{$t('setting.global.btnFavoritesImport')}}
+                        </label>
+                        <input id="favorites-upload" type="file" v-on:change="favoritesImportSelected"/>
                     </div>
-                    <div v-if="searchStatus.status === 'done'">
-                        <p class="mt-3"><b>{{$t('setting.global.msgSearchComplete')}}</b></p>
-                    </div>
-
-                    <div v-if="optimizationStatus.status === 'processing'">
-                        <p class="mt-3"><b>{{$t('setting.global.msgOptimizationStatus', [optimizationStatus.notesCurrent, optimizationStatus.notesTotal])}}:</b></p>
-                        <div class="progress">
-                            <div class="progress-bar progress-bar-striped bg-info progress-bar-animated" role="progressbar" v-bind:style="{ width: optimizationStatus.persent + '%' }" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">{{optimizationStatus.persent}}%</div>
-                        </div>
-                    </div>
-                    <div v-if="optimizationStatus.status === 'done'">
-                        <p class="mt-3"><b>{{$t('setting.global.msgOptimizationComplete')}}</b></p>
-                    </div>
-
-                </div>
                 </div>
 
             </div>
@@ -196,6 +211,27 @@ export default {
 
     },
     methods: {
+        favoritesImportSelected: function (event) {
+            let globalThis = this
+            if (event.target.files[0].type === 'application/json') {
+                let reader = new FileReader()
+                reader.onload = () => {
+                    let dataFavoritesRaw = reader.result
+                    try {
+                        let dataFavorites = JSON.parse(dataFavoritesRaw)
+                        dataFavorites.forEach(function (element) {
+                            fetch(globalThis.$store.getters.apiFolder + '/favorites.json', { method: 'POST', body: JSON.stringify({ 'action': 'add', 'UUID': element }) })
+                        })
+                        this.$store.commit('setStatus', { errorType: 5, errorText: this.$t('setting.global.favoritesImportDone') })
+                    } catch (e) {
+                        this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.global.favoritesImportWrongData') })
+                    }
+                }
+                reader.readAsText(event.target.files[0])
+            } else {
+                this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.global.favoritesImportWrongType') })
+            }
+        },
         saveSettings: function () {
             var newConfig = { 'postEditor': this.editorSelected.toString(), 'atStartOpenBrowser': this.checkboxOpenBrowser.toString(), 'atStartShowConsole': this.checkboxShowConsole.toString(), 'atStartCheckNewNotes': this.checkboxCheckNew.toString() }
             fetch(this.$store.getters.apiFolder + '/config.json', { method: 'POST', body: JSON.stringify(newConfig) }).then(response => { return response.text() })
