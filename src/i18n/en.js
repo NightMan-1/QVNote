@@ -79,7 +79,13 @@ export default {
             msgOptimizationComplete: 'Processing completed successfully!',
             notificationErrorGetSearchStatus: 'Error retrieving search status...',
             notificationAddDataRefreshed: 'Data successfully updated...',
-            editor: 'Editor'
+            editor: 'Editor',
+            favorites: 'Favorites',
+            btnFavoritesExport: 'export',
+            btnFavoritesImport: 'import',
+            favoritesImportWrongType: 'Wrong file type',
+            favoritesImportWrongData: 'Wrong file data',
+            favoritesImportDone: 'Import successful'
 
         },
         notebooks: {

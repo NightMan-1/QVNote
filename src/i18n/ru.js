@@ -79,7 +79,13 @@ export default {
             msgOptimizationComplete: 'Обработка успешно завершена!',
             notificationErrorGetSearchStatus: 'Ошибка получения статуса поиска...',
             notificationAddDataRefreshed: 'Данные успешно обновлены...',
-            editor: 'Редактор'
+            editor: 'Редактор',
+            favorites: 'Закладки',
+            btnFavoritesExport: 'экспортировать',
+            btnFavoritesImport: 'импортировать',
+            favoritesImportWrongType: 'Ошибка типа файла',
+            favoritesImportWrongData: 'Неверный формат файла',
+            favoritesImportDone: 'Импорт завершен'
         },
         notebooks: {
             title: 'Управление блокнотами',
