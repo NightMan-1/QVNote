@@ -16,7 +16,7 @@ More info here - https://qvnote.fsky.info/
 
 ## Project request
 
-GoLang >1.10
+GoLang >1.10 
 NodeJS  >10.x
 
 ## Project setup
