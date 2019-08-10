@@ -4,6 +4,7 @@ const PurgecssPlugin = require('purgecss-webpack-plugin')
 const glob = require('glob-all')
 const webpack = require('webpack')
 const TerserPlugin = require('terser-webpack-plugin')
+const { DuplicatesPlugin } = require("inspectpack/plugin")
 
 const cssWhiteList = []
 const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/, /^ql-/, /^toast/]
@@ -11,6 +12,15 @@ const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/, /^ql-/, /^toast
 module.exports = {
     configureWebpack: {
         plugins: [
+            new DuplicatesPlugin({
+                // Emit compilation warning or error? (Default: `false`)
+                emitErrors: false,
+                // Handle all messages with handler function (`(report: string)`)
+                // Overrides `emitErrors` output.
+                emitHandler: undefined,
+                // Display full duplicates information? (Default: `false`)
+                verbose: false
+            }),
             // Remove unused CSS using purgecss. See https://github.com/FullHuman/purgecss
             // for more information about purgecss.
             new PurgecssPlugin({
