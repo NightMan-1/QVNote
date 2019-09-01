@@ -25,7 +25,7 @@ import (
 	"github.com/blevesearch/snowballstem/russian"
 	"github.com/dustin/go-humanize"
 	"github.com/go-ini/ini"
-	"github.com/gofrs/uuid" // "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/imroc/req"
 	"github.com/iris-contrib/middleware/cors"
 	"github.com/kataras/iris"
@@ -1335,7 +1335,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			NoteBookDB.Set([]byte(request.UUID), enc)
 		case request.Action == "new" && request.UUID == "":
 			//TODO verify the uniqueness of the UUID
-			u1 := strings.ToUpper(uuid.Must(uuid.NewV4()).String())
+			u1 := strings.ToUpper(uuid.Must(uuid.NewRandom()).String())
 
 			//new file
 			notebookDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + u1 + ".qvnotebook")
@@ -1526,7 +1526,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		var noteData NoteType
 		if request.UUID == "" {
 			//TODO verify the uniqueness of the UUID
-			noteUUID = strings.ToUpper(uuid.Must(uuid.NewV4()).String())
+			noteUUID = strings.ToUpper(uuid.Must(uuid.NewRandom()).String())
 			notebookUUID = "Inbox"
 			noteData.NoteBookUUID = notebookUUID
 			noteData.UUID = noteUUID

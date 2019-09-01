@@ -34,7 +34,7 @@ go get -u github.com/imroc/req
 go get -u github.com/json-iterator/go
 go get -u github.com/kataras/iris
 go get -u github.com/iris-contrib/middleware/cors
-go get -u github.com/gofrs/uuid
+go get -u github.com/google/uuid
 go get -u github.com/siddontang/ledisdb/config
 go get -u github.com/siddontang/ledisdb/ledis
 go get -u github.com/json-iterator/go
