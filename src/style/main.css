@@ -8,6 +8,7 @@ html, body {
     font-feature-settings: "kern", "liga", "clig", "calt";
     font-size: 100%; /* 16px */
     font-weight: 400;
+    font-variant-numeric: tabular-nums;
     /*line-height: 1.42857143;*/
     font-display: swap; /* or block */
     background-color: white;

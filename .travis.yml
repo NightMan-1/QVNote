@@ -3,7 +3,7 @@ os:
   - windows
 language: go
 go:
-  - 1.12.x
+  - 1.13.x
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade node; fi
