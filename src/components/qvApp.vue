@@ -64,9 +64,14 @@
                 <button class="btn btn-outline-secondary" :title="$t('articleList.btnDelete')" @click="deleteArticle"><i class="fas fa-trash text-danger"></i></button>
                 <button class="btn btn-outline-secondary" :title="$t('articleList.btnMove')" @click="moveArticle"><i class="fas fa-people-carry- fa-exchange-alt text-black-50"></i></button>
             </div>
-            <button class="btn btn-outline-secondary mr-2" :class="{'btn-secondary':readerMode}" :title="$t('articleList.btnReaderMode')" @click="$store.commit('toggleReaderMode')">
-                <i class="fas text-black-50 fa-book-reader"></i>
-            </button>
+            <div class="btn-group mr-2" role="group">
+                <button class="btn btn-outline-secondary" :class="{'btn-secondary':readerMode}" :title="$t('articleList.btnReaderMode')" @click="$store.commit('toggleReaderMode')">
+                    <i class="fas text-black-50 fa-book-reader"></i>
+                </button>
+                <button class="btn btn-outline-secondary" :class="{'btn-secondary':layoutBig, 'btn-disabled':readerMode}" :title="$t('articleList.btnReaderMode')" @click="$store.commit('toggleLayoutMode')">
+                    <i class="fas text-black-50 fa-expand-alt"></i>
+                </button>
+            </div>
             <button class="btn btn-outline-secondary" :title="$t('articleList.btnFavorites')" @click="addToFavorites">
                 <i class="far fa-star text-black-50" :class="{'fas':articleCurrent.favorites}"></i>
             </button>
@@ -91,7 +96,7 @@
                     Поисковые индекс:{{ $qvGlobalData.articleCurrent.SearchIndex }}<br>
                     -->
                 </div>
-                <div class="article-text" :class="{'article-main':readerMode}">
+                <div :class="{'article-main':readerMode, 'article-text-big':layoutBig, 'article-text':!layoutBig,}">
                     <article>
                         <h1 class="text-success mb-3 mt-2">{{ articleCurrent.title }}</h1>
                         <div class="clearfix"></div>

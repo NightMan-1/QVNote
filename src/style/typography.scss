@@ -33,17 +33,22 @@ $mod_2: 1.5; // desktop
 
 .article-main {
   @include fluid-type($min_width, $max_width, $min_font, $max_font);
-  font-family: Georgia, serif;
-  line-height: 1.4;
-  max-width: 25em;
+  max-width: 43rem;
 }
-#grid.hidden .article-main {margin: 0 auto;}
+#grid.hidden .article-main, .article-main.article-text-big {margin: 0 auto;}
+
 
 .article-main h1 {  
+  font-family: Georgia, serif;
   font-weight: normal;
-  max-width: 10em;
+  /*max-width: 10em;*/
   font-size: $mod_1*$mod_1*$mod_1*$mod_1 *1rem; 
   @include fluid-type($min_width, $max_width, $mod_1*$mod_1*$mod_1 *$min_font, $mod_2*$mod_2*$mod_2 *$min_font);
+}
+
+.article-main .h2, .article-main .h3, .article-main .h4, .article-main .h5, .article-main .h6,
+.article-main h2, .article-main h3, .article-main h4, .article-main h5, .article-main h6{
+  line-height: 1.4;
 }
 
 .article-main p {

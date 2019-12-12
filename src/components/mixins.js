@@ -45,6 +45,9 @@ const mixin = {
         readerMode () {
             return this.$store.state.readerMode
         },
+        layoutBig () {
+            return this.$store.state.layoutBig
+        },
         notebookCount () {
             return this.$store.getters.getNotebooksCount
         },
