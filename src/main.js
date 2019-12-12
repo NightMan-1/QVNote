@@ -77,6 +77,7 @@ new Vue({
     mounted: function () {
         this.$store.commit('setShowAdvancedNoteInfo', Vue.ls.get('showAdvancedNoteInfo', false))
         this.$store.commit('setReaderMode', Vue.ls.get('readerMode', false))
+        this.$store.commit('setLayoutMode', Vue.ls.get('layoutBig', false))
 
         let thisGlobal = this
         setInterval(function () {

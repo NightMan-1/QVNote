@@ -34,6 +34,7 @@ export default new Vuex.Store({
         currentTagURL: '',
         showAdvancedNoteInfo: false,
         readerMode: false,
+        layoutBig: false, // big
         gridClass: 'grid-v1',
         localesList: {
             'en-US': 'English',
@@ -128,6 +129,10 @@ export default new Vuex.Store({
             Vue.ls.set('readerMode', data)
             state.readerMode = data
         },
+        setLayoutMode: (state, data) => {
+            Vue.ls.set('layoutBig', data)
+            state.layoutBig = data
+        },
         toggleShowAdvancedNoteInfo: (state) => {
             if (Vue.ls.get('showAdvancedNoteInfo', false) === true) {
                 Vue.ls.set('showAdvancedNoteInfo', false)
@@ -144,6 +149,15 @@ export default new Vuex.Store({
             } else {
                 Vue.ls.set('readerMode', true)
                 state.readerMode = true
+            }
+        },
+        toggleLayoutMode: (state) => {
+            if (Vue.ls.get('layoutBig', false) === true) {
+                Vue.ls.set('layoutBig', false)
+                state.layoutBig = false
+            } else {
+                Vue.ls.set('layoutBig', true)
+                state.layoutBig = true
             }
         }
     },
