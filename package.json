@@ -22,7 +22,7 @@
     "prismjs": "^1.19.0",
     "purgecss-webpack-plugin": "^1.6.0",
     "quill-image-drop-module": "^1.0.3",
-    "quill-image-resize-module": "^3.0.0",
+    "quill-image-resize-module": "git+https://github.com/dkstjs2/quill-image-resize-module.git",
     "screenfull": "^5.0.0",
     "tingle.js": "^0.15.2",
     "v-charts": "^1.19.0",
