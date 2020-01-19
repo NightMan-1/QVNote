@@ -68,8 +68,8 @@
                 <button class="btn btn-outline-secondary" :class="{'btn-secondary':readerMode}" :title="$t('articleList.btnReaderMode')" @click="$store.commit('toggleReaderMode')">
                     <i class="fas text-black-50 fa-book-reader"></i>
                 </button>
-                <button class="btn btn-outline-secondary" :class="{'btn-secondary':layoutBig, 'btn-disabled':readerMode}" :title="$t('articleList.btnReaderMode')" @click="$store.commit('toggleLayoutMode')">
-                    <i class="fas text-black-50 fa-expand-alt"></i>
+                <button class="btn btn-outline-secondary" :class="{'btn-secondary-':layoutBig, 'btn-disabled':readerMode}" :title="$t('articleList.btnReaderMode')" @click="$store.commit('toggleLayoutMode')">
+                    <i class="fas text-black-50" :class="{'fa-expand-alt':layoutBig, 'fa-compress-alt':!layoutBig}"></i>
                 </button>
             </div>
             <button class="btn btn-outline-secondary" :title="$t('articleList.btnFavorites')" @click="addToFavorites">
