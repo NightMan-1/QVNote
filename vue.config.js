@@ -7,7 +7,8 @@ const TerserPlugin = require('terser-webpack-plugin')
 // const { DuplicatesPlugin } = require("inspectpack/plugin")
 
 const cssWhiteList = []
-const cssWhiteListPatterns = [/^simplebar/, /^cxlt-vue2-toastr/, /^ql-/, /^toast/]
+const cssWhiteListPatterns = [/^ql-/, /^toast/]
+const whitelistPatternsChildren = [/vch/]
 
 module.exports = {
     configureWebpack: {
@@ -31,7 +32,8 @@ module.exports = {
                     path.join(__dirname, './../src/**/*.js')
                 ]),
                 whitelist: cssWhiteList,
-                whitelistPatterns: cssWhiteListPatterns
+                whitelistPatterns: cssWhiteListPatterns,
+                whitelistPatternsChildren: whitelistPatternsChildren
             }),
             new webpack.ProvidePlugin({
                 'window.Quill': 'quill/dist/quill.js'
