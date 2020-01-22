@@ -53,17 +53,17 @@ export default new Vuex.Store({
                 return '/api'
             }
         },
-        getNotebooksCount: state => {
+        getNotebooksCount: (state) => {
             return Object.keys(state.notebooksList).length
         },
-        getTagsCount: state => {
-            if (state.tagsList == null) {
+        getTagsCount: (state) => {
+            if (state.tagsList === null) {
                 return 0
             } else {
                 return Object.keys(state.tagsList).length
             }
         },
-        getStatus: state => () => state.status.errorType
+        getStatus: (state) => () => state.status.errorType
     },
     mutations: {
         setConfig: (state, config) => {
@@ -163,8 +163,8 @@ export default new Vuex.Store({
     },
     actions: {
         getAllData (store) {
-            fetch(this.getters.apiFolder + '/notebooks.json').then(response => { return response.json() })
-                .then(jsonData => {
+            fetch(this.getters.apiFolder + '/notebooks.json').then((response) => { return response.json() })
+                .then((jsonData) => {
                     this.commit('setNotebooksList', jsonData)
                     this.commit('setNotesCountTotal', 0)
 
@@ -178,16 +178,16 @@ export default new Vuex.Store({
                         }
                     }
                 })
-                .catch(error => {
+                .catch((error) => {
                     this.commit('setStatus', { errorType: 2, errorText: 'Error downloading notebooks list...' })
                     console.error('Error fetching notebooks.json:', error)
                 })
 
-            fetch(this.getters.apiFolder + '/tags.json').then(response => { return response.json() })
-                .then(jsonData => {
+            fetch(this.getters.apiFolder + '/tags.json').then((response) => { return response.json() })
+                .then((jsonData) => {
                     this.commit('setTags', jsonData)
                 })
-                .catch(error => {
+                .catch((error) => {
                     this.commit('setStatus', { errorType: 2, errorText: 'Error downloading tags list...' })
                     console.error('Error fetching tags.json:', error)
                 })
@@ -196,18 +196,18 @@ export default new Vuex.Store({
             if (this.state.currentArticle.content !== undefined) {
                 this.commit('setCurrentArticle', {})
             } // нужно для скрола списка вверх, иначе будет на предыдущей позиции
-            fetch(this.getters.apiFolder + '/note.json', { method: 'POST', body: JSON.stringify({ NoteID: noteUUID }) }).then(response => { return response.json() })
-                .then(jsonData => {
+            fetch(this.getters.apiFolder + '/note.json', { method: 'POST', body: JSON.stringify({ NoteID: noteUUID }) }).then((response) => { return response.json() })
+                .then((jsonData) => {
                     this.commit('setCurrentArticle', jsonData)
                 })
-                .catch(error => {
+                .catch((error) => {
                     console.error('Error fetching note.json:', error)
                     this.commit('setStatus', { errorType: 2, errorText: 'Error downloading note...' })
                 })
         },
         getFavoritesCount (store, noteUUID) {
-            fetch(this.getters.apiFolder + '/favorites.json').then(response => { return response.json() })
-                .then(jsonData => {
+            fetch(this.getters.apiFolder + '/favorites.json').then((response) => { return response.json() })
+                .then((jsonData) => {
                     this.commit('setFavoritesCount', jsonData.length)
                 })
                 .catch(() => {

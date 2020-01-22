@@ -80,9 +80,9 @@ new Vue({
         this.$store.commit('setLayoutMode', Vue.ls.get('layoutBig', false))
 
         let thisGlobal = this
-        setInterval(function () {
-            fetch(thisGlobal.$store.getters.apiFolder + '/ping').then(response => { return response.json() })
-                .then(jsonData => {
+        setInterval(() => {
+            fetch(thisGlobal.$store.getters.apiFolder + '/ping').then((response) => { return response.json() })
+                .then((jsonData) => {
                     if (jsonData.result === 'pong') {
                         if (thisGlobal.$route.name === 'qvShutdown') {
                             thisGlobal.$store.commit('setCurrentNotebookID', '')
@@ -99,20 +99,14 @@ new Vue({
                 })
         }, 2000)
 
-        fetch(this.$store.getters.apiFolder + '/config.json').then(response => { return response.json() })
-            .then(jsonData => {
+        fetch(this.$store.getters.apiFolder + '/config.json').then((response) => { return response.json() })
+            .then((jsonData) => {
                 this.$store.commit('setConfig', jsonData)
                 if (!this.$store.state.config.installed) {
                     this.$router.push({ name: 'qvInstaller', params: { initialized: true } })
-                } else if (this.$route.params.nbUUID !== undefined && this.$route.params.noteUUID !== undefined) {
-                    // this.$router.push('/app/' + this.$route.params.nbUUID + '/' + this.$route.params.noteUUID)
-                } else if (this.$route.name === 'qvSettings') {
-                    // nothing
-                } else {
-                    // this.$router.push('/')
                 }
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error('Error fetching config.json:', error)
                 if (this.$route.name !== 'qvShutdown') {
                     this.$store.commit('setStatus', { errorType: 1, errorText: this.$t('general.messageErrorDownloadConfiguration') })
