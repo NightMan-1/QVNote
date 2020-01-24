@@ -77,7 +77,6 @@ import Quill from 'quill'
 import '../style/quill.snow.css'
 import { ImageDrop } from 'quill-image-drop-module'
 import ImageResize from 'quill-image-resize-module'
-import screenfull from 'screenfull'
 Quill.register('modules/imageDrop', ImageDrop)
 Quill.register('modules/imageResize', ImageResize)
 let BeautifyHtml = require('js-beautify').html
@@ -133,12 +132,14 @@ export default {
         }
 
         document.querySelector('.ql-fullscreen').addEventListener('click', function () {
-            if (screenfull.enabled) {
-                console.log('requesting fullscreen')
-                var quillEditor = document.querySelector('.quill-editor')
-                screenfull.request(quillEditor)
+            if (!document.fullscreenElement) {
+                // console.log('requesting fullscreen')
+                document.querySelector('.quill-editor').requestFullscreen()
             } else {
-                console.log('Screenfull not enabled')
+                if (document.exitFullscreen) {
+                    // console.log('disable fullscreen')
+                    document.exitFullscreen()
+                }
             }
         })
 
