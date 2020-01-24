@@ -23,7 +23,6 @@
     "purgecss-webpack-plugin": "^2.0.5",
     "quill-image-drop-module": "^1.0.3",
     "quill-image-resize-module": "git+https://github.com/dkstjs2/quill-image-resize-module.git",
-    "screenfull": "^5.0.1",
     "tingle.js": "^0.15.2",
     "v-charts": "^1.19.0",
     "vue": "^2.6.11",
