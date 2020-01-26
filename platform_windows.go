@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"time"
 
 	"github.com/gen2brain/beeep"
 	"github.com/gen2brain/dlgs"
@@ -45,6 +46,7 @@ func showNotification(messageText string, messageType string) {
 			tmpIcon.Write(iconData)
 			tmpIcon.Close()
 			beeep.Notify("QVNote", messageText, tmpIcon.Name())
+			time.Sleep(50 * time.Millisecond)
 			os.Remove(tmpIcon.Name())
 		} else {
 			beeep.Notify("QVNote", messageText, "") // icon not work on MacOS
