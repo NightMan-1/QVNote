@@ -21,7 +21,8 @@ html, body {
     font-feature-settings: "kern", "liga", "clig", "calt";
     font-size: 100%; /* 16px */
     font-weight: 400;
-        font-variant-numeric: tabular-nums;
+    font-variation-settings: 'wght' 400;
+    font-variant-numeric: tabular-nums;
     font-display: swap; /* or block */
     line-height: 1.5;
 
@@ -37,7 +38,8 @@ html, body {
 }
 
 b, strong {
-    font-weight: 650;
+    font-weight: normal;
+    font-variation-settings: 'wght' 650;
 }
 
 p {
@@ -94,7 +96,7 @@ pre {
 }
 .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
     margin-bottom: .5em;
-    font-weight: 650;
+    font-variation-settings: 'wght' 650;
     line-height: normal;
 }
 p + .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
@@ -177,7 +179,7 @@ i.mr-1 {width: 1.1em; text-align: center;}
     background: white;
     color: var(--nord10) !important;
     font-size: 1.1em;
-    font-weight: 700;
+    font-variation-settings: 'wght' 700;
     padding: .75em 1em .75em 0.5em;
     cursor: pointer;
 }
@@ -207,8 +209,7 @@ i.mr-1 {width: 1.1em; text-align: center;}
 }
 .sidebar-nav .nav-title {
     padding: 1.1rem 1rem 0;
-    font-weight: 600;
-
+    font-variation-settings: 'wght' 600;
 }
 .sidebar-nav .nav-link, .article-title-list .nav-link {
     padding: 0.3rem 1rem;
@@ -359,7 +360,7 @@ i.mr-1 {width: 1.1em; text-align: center;}
 
 /* Set options to normal weight */
 .select-css option {
-    font-weight:normal;
+    font-variation-settings: 'wght' 400;
 }
 
 /* Support for rtl text, explicit support for Arabic and Hebrew */
