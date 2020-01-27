@@ -96,16 +96,42 @@ export default {
             tagsListFormatted: [],
             editorSettings: {
                 modules: {
-                    toolbar: [
-                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                        ['bold', 'italic', 'underline'],
-                        ['blockquote', 'code-block'],
-                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                        [{ 'color': [] }, { 'background': [] }],
-                        [{ 'align': [] }],
-                        ['clean'],
-                        ['link', 'image'], [], ['eraser', 'fullscreen']
-                    ],
+                    toolbar: {
+                        container: [
+                            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                            ['bold', 'italic', 'underline'],
+                            ['blockquote', 'code-block'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            [{ 'color': [] }, { 'background': [] }],
+                            [{ 'align': [] }],
+                            ['clean'],
+                            ['link', 'image'], [], ['eraser', 'fullscreen']
+                        ],
+                        handlers: {
+                            'eraser': () => {
+                                fetch(this.$store.getters.apiFolder + '/cleanup_html.json',
+                                    { method: 'POST',
+                                        body: JSON.stringify({ 'content': this.articleCurrentEditable.content }) }).then(response => { return response.json() })
+                                    .then(jsonData => {
+                                        this.articleCurrentEditable.content = jsonData.content
+                                    })
+                                    .catch(error => {
+                                        console.error('Error cleanup html:', error)
+                                    })
+                            },
+                            'fullscreen': () => {
+                                if (!document.fullscreenElement) {
+                                    // console.log('requesting fullscreen')
+                                    document.querySelector('.quill-editor').requestFullscreen()
+                                } else {
+                                    if (document.exitFullscreen) {
+                                        // console.log('disable fullscreen')
+                                        document.exitFullscreen()
+                                    }
+                                }
+                            }
+                        }
+                    },
                     imageDrop: true,
                     imageResize: { modules: [ 'Resize', 'DisplaySize' ] } // + 'Toolbar'
                 }
@@ -130,30 +156,6 @@ export default {
                 this.tagsListFormatted.push(this.tagsList[tag].name)
             }
         }
-
-        document.querySelector('.ql-fullscreen').addEventListener('click', function () {
-            if (!document.fullscreenElement) {
-                // console.log('requesting fullscreen')
-                document.querySelector('.quill-editor').requestFullscreen()
-            } else {
-                if (document.exitFullscreen) {
-                    // console.log('disable fullscreen')
-                    document.exitFullscreen()
-                }
-            }
-        })
-
-        document.querySelector('.ql-eraser').addEventListener('click', () => {
-            fetch(this.$store.getters.apiFolder + '/cleanup_html.json',
-                { method: 'POST',
-                    body: JSON.stringify({ 'content': this.articleCurrentEditable.content }) }).then(response => { return response.json() })
-                .then(jsonData => {
-                    this.articleCurrentEditable.content = jsonData.content
-                })
-                .catch(error => {
-                    console.error('Error cleanup html:', error)
-                })
-        })
     },
     methods: {
         saveData () {
