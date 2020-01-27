@@ -48,8 +48,10 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CGO_ENABLED=0; export GOOS=linux; export GOARCH=386; go build -o qvnote-linux-x86 && chmod a+x qvnote-linux-x86; fi
   # building Windows binary
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then goversioninfo; fi
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -o QVNote-windows-x64.exe; fi
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CGO_ENABLED=0; export GOOS=windows; export GOARCH=386; go build -o QVNote-windows-x86.exe; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -ldflags -H=windowsgui -o QVNote-windows-x64.exe; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CGO_ENABLED=0; export GOOS=windows; export GOARCH=386; go build -ldflags -H=windowsgui -o QVNote-windows-x86.exe; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -o QVNote-windows-x64-console.exe; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CGO_ENABLED=0; export GOOS=windows; export GOARCH=386; go build -o QVNote-windows-x86-console.exe; fi
 
 before_deploy:
   - export RELEASE_TITLE=$(date '+%Y%m%d%H%M%S')-$TRAVIS_JOB_NUMBER
@@ -58,6 +60,8 @@ before_deploy:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 7z a -tzip qvnote-$TRAVIS_TAG-mac-x64.zip notes QVNote.app; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then 7z.exe a -tzip qvnote-$TRAVIS_TAG-win-x86.zip notes QVNote-windows-x86.exe; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then 7z.exe a -tzip qvnote-$TRAVIS_TAG-win-x64.zip notes QVNote-windows-x64.exe; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then 7z.exe a -tzip qvnote-$TRAVIS_TAG-win-x86-console.zip notes QVNote-windows-x86-console.exe; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then 7z.exe a -tzip qvnote-$TRAVIS_TAG-win-x64-console.zip notes QVNote-windows-x64-console.exe; fi
 deploy:
   provider: releases
   name: Release $TRAVIS_TAG ($RELEASE_TITLE)
@@ -68,6 +72,8 @@ deploy:
   file:
     - qvnote-$TRAVIS_TAG-win-x86.zip
     - qvnote-$TRAVIS_TAG-win-x64.zip
+    - qvnote-$TRAVIS_TAG-win-x86-console.zip
+    - qvnote-$TRAVIS_TAG-win-x64-console.zip
     - qvnote-$TRAVIS_TAG-linux-x86.zip
     - qvnote-$TRAVIS_TAG-linux-x64.zip
     - qvnote-$TRAVIS_TAG-mac-x64.zip
