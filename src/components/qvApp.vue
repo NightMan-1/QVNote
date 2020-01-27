@@ -281,7 +281,7 @@ export default {
                             if (noteUUID !== undefined) {
                                 articleCurrentUUID = noteUUID
                             }
-                            this.$router.push('/notes/' + this.currentNotebookID + '/' + articleCurrentUUID) // сразу более правильные ссылки
+                            this.$router.push('/notes/' + this.currentNotebookID + '/' + articleCurrentUUID).catch(() => {}) // сразу более правильные ссылки
                         }
                     })
                     .catch(error => {
