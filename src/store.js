@@ -213,6 +213,15 @@ export default new Vuex.Store({
                 .catch(() => {
                     this.commit('setFavoritesCount', 0)
                 })
+        },
+        getConfig (store) {
+            fetch(this.getters.apiFolder + '/config.json').then(response => { return response.json() })
+                .then(jsonData => {
+                    this.commit('setConfig', jsonData)
+                })
+                .catch(error => {
+                    console.error('Error fetching config.json:', error)
+                })
         }
     },
     strict: process.env.NODE_ENV !== 'production'

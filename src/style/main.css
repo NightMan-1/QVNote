@@ -308,6 +308,8 @@ i.mr-1 {width: 1.1em; text-align: center;}
 #favorites-upload{
     display: none;
 }
+
+.custom-switch .custom-control-label::before {box-sizing: border-box;}
 /*
 .articleCell ol {
     counter-reset: counter;

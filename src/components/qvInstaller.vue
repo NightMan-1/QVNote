@@ -9,7 +9,7 @@
                             <div class="card p-4 animated- fadeIn-">
                                 <div class="card-body">
                                     <form content="multipart/form-data" id="formInstaller">
-                                        <h1>{{$t('installer.title')}}</h1>
+                                        <h1 class="h3">{{$t('installer.title')}}</h1>
                                         <div class="alert alert-danger" v-if="errorData.error">{{ errorData.errorText }}</div>
                                         <p class="text-muted">{{$t('installer.selectDataFolder')}}:</p>
 
@@ -25,6 +25,14 @@
                                         <div class="form-group form-check">
                                             <input type="checkbox" class="form-check-input" id="sourceFolderCreateIfNotExist" name="sourceFolderCreateIfNotExist" v-model="formData.sourceFolderCreateIfNotExist">
                                             <label class="form-check-label" for="sourceFolderCreateIfNotExist">{{$t('installer.sourceFolderCreateIfNotExist')}}</label>
+                                        </div>
+
+                                        <div class="mb-2">
+                                        <label for="StartingMode">{{$t('setting.global.runningMode')}}</label>
+                                        <select class="custom-select w-25 select-css ml-3" v-model="formData.startingMode" id="StartingMode">
+                                            <option value="independent">{{$t('setting.global.runningModeIndependent')}}</option>
+                                            <option value="browser">{{$t('setting.global.runningModeBrowser')}}</option>
+                                        </select>
                                         </div>
 
                                         <div class="row">
@@ -65,7 +73,8 @@ export default {
             loader: false,
             formData: {
                 sourceFolder: this.$store.state.config.sourceFolder,
-                sourceFolderCreateIfNotExist: true
+                sourceFolderCreateIfNotExist: true,
+                startingMode: 'independent'
             }
 
         }

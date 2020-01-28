@@ -14,6 +14,7 @@ go get -u github.com/marcsauter/single
 go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo
 go get -u github.com/syndtr/goleveldb/leveldb
 go get -u github.com/go-ini/ini
+go get -u github.com/zserge/lorca
 
 go get -u github.com/gen2brain/beeep
 go get -u github.com/gen2brain/dlgs

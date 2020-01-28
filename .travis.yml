@@ -35,6 +35,7 @@ install:
   - go get -u github.com/gen2brain/beeep
   - go get -u github.com/gen2brain/dlgs
   - go get -u github.com/getlantern/systray
+  - go get -u github.com/zserge/lorca
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then go get -u github.com/gonutz/w32; fi
 script:
   - npm run build
