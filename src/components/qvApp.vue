@@ -86,7 +86,7 @@
                         <b>{{$t('articleList.infoTags')}}: </b>
                         <button class="btn badge badge-primary mr-1 font-weight-normal"
                                 v-for="tag in articleCurrent.tags"
-                                :key="tag" @click="$router.push('/tags/'+tag+'/'+articleCurrent.uuid)">
+                                :key="tag" @click="$router.push('/tags/'+tag+'/'+articleCurrent.uuid, () => {})">
                             {{tag}}
                         </button>
                         <br>
@@ -213,7 +213,7 @@ export default {
                     })
             } else {
                 // console.log('restore search')
-                if (this.notesListBackup.length >= 1) {
+                if (this.notesListBackup !== null && this.notesListBackup.length >= 1) {
                     this.mutableNotesList = this.notesListBackup
                 }
             }
@@ -243,7 +243,7 @@ export default {
                             if (noteUUID !== undefined) {
                                 articleCurrentUUID = noteUUID
                             }
-                            this.$router.push('/tags/' + this.currentTagURL + '/' + articleCurrentUUID) // сразу более правильные ссылки
+                            this.$router.push('/tags/' + this.currentTagURL + '/' + articleCurrentUUID, () => {}) // сразу более правильные ссылки
                         }
                     })
                     .catch(error => {
@@ -353,7 +353,7 @@ export default {
                         }) })
                     .then(() => {
                         thisGlobal.$store.dispatch('getAllData')
-                        thisGlobal.$router.push('/notes/' + document.getElementById('notebookTarget').value + '/' + thisGlobal.articleCurrent.uuid)
+                        thisGlobal.$router.push('/notes/' + document.getElementById('notebookTarget').value + '/' + thisGlobal.articleCurrent.uuid, () => {})
                         modal.destroy()
                     })
                     .catch(error => {
@@ -397,7 +397,7 @@ export default {
                     .then(() => {
                         modal.destroy()
                         thisGlobal.$store.dispatch('getAllData')
-                        thisGlobal.$router.push('/notes/' + thisGlobal.articleCurrent.NoteBookUUID)
+                        thisGlobal.$router.push('/notes/' + thisGlobal.articleCurrent.NoteBookUUID, () => {})
                     })
                     .catch(error => {
                         modal.destroy()
