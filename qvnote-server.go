@@ -29,7 +29,6 @@ import (
 	"github.com/imroc/req"
 	"github.com/iris-contrib/middleware/cors"
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
 	"github.com/marcsauter/single"
 	lediscfg "github.com/siddontang/ledisdb/config"
@@ -854,7 +853,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	app := iris.New()
 	app.Use(iris.Gzip)
 	app.Use(recover.New())
-	app.Use(logger.New())
+	//app.Use(logger.New())
 
 	app.Use(cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
@@ -1267,7 +1266,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 			ss.index.Close()
 			time.Sleep(1 * time.Second)
-			indexName, _ := filepath.Abs(configGlobal.dataDir + "/data/search.bleve")
+			indexName, _ := filepath.Abs(configGlobal.dataDir + "/search.bleve")
 			os.RemoveAll(indexName)
 			time.Sleep(1 * time.Second)
 			index, err := bleve.Open(indexName)
