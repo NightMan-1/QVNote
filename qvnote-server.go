@@ -1385,6 +1385,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			var notebookNew NoteBookType
 			notebookNew.Name = request.Title
 			notebookNew.UUID = u1
+			notebookNew.Notes = make(map[string]int64)
 			enc, err := json.Marshal(notebookNew)
 			checkQuiet(err)
 			NoteBookDB.Set([]byte(u1), enc)
