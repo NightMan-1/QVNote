@@ -109,6 +109,8 @@ func initSystem() {
 	portTMP := 8000
 	configGlobal.cmdPortable = false
 	configGlobal.cmdServerMode = false
+	configGlobal.appStartingMode = "independent"
+	configGlobal.appStartingModeForce = false
 
 	//read configuration file
 	cfgFile := configGlobal.execDir + "/config.ini"
@@ -131,6 +133,16 @@ func initSystem() {
 		if cfg.Section("").Key("datadir").String() != "" {
 			if _, err := os.Stat(cfgFile); err == nil {
 				configGlobal.dataDir = cfg.Section("").Key("datadir").String()
+			}
+		}
+
+		tM := cfg.Section("").Key("startingmode").String()
+		if tM != "" {
+			configGlobal.appStartingModeForce = true
+			if tM == "independent" {
+				configGlobal.appStartingMode = "independent"
+			} else {
+				configGlobal.appStartingMode = "browser"
 			}
 		}
 	}
@@ -248,6 +260,12 @@ func initSystem() {
 		configGlobal.postEditor = "quill"
 	}
 
+	if !configGlobal.appStartingModeForce {
+		data, _ = ConfigDB.Get([]byte("startingMode"))
+		if BytesToString(data) == "browser" { // independent by default
+			configGlobal.appStartingMode = "browser"
+		}
+	}
 }
 
 func addToIndex(path string, uuid string) error {
@@ -451,6 +469,10 @@ func SaveConfig() bool {
 	if err != nil {
 		return false
 	}
+	err = ConfigDB.Set([]byte("startingMode"), []byte(configGlobal.appStartingMode))
+	if err != nil {
+		return false
+	}
 	tmp := "false"
 	if configGlobal.appInstalled {
 		tmp = "true"
@@ -495,7 +517,6 @@ func SaveConfig() bool {
 	if err != nil { //nolint:gosimple
 		return false
 	}
-
 	return true
 }
 
@@ -507,7 +528,7 @@ func FixNoteImagesLinks(note NoteTypeWithContentAPI, content string, ctx iris.Co
 	return content
 }
 
-//TODO ClearHTML
+//clear HTML
 func ClearHTML(content string) string {
 	r := regexp.MustCompile(`<pre (.*?)>`)
 	content = r.ReplaceAllString(content, "<pre>")
@@ -842,8 +863,8 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 	//app.StaticWeb("/static", configGlobal.execDir + "/templates/static")
 	//app.StaticEmbedded("/", "./templates", Asset, AssetNames)
-	app.HandleDir("/", "./templates", iris.DirOptions { Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames, Gzip: false, })
-	
+	app.HandleDir("/", "./templates", iris.DirOptions{Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames, Gzip: false})
+
 	var err error
 
 	// Register custom handler for specific http errors.
@@ -877,12 +898,15 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		var config struct {
 			Sourcefolder                 string `json:"sourceFolder"`
 			SourceFolderCreateIfNotExist bool   `json:"sourceFolderCreateIfNotExist"`
+			StartingMode                 string `json:"startingMode"`
 		}
 		ctx.ReadJSON(&config)
 		if _, err := os.Stat(config.Sourcefolder); err == nil {
 			if CheckNotebooksFolderStructure(config.Sourcefolder) {
 				configGlobal.sourceFolder = config.Sourcefolder
 				configGlobal.appInstalled = true
+				configGlobal.appStartingMode = config.StartingMode
+				fmt.Println(configGlobal.appStartingMode)
 				if SaveConfig() {
 					FindAllNotes()
 					ctx.JSON(iris.Map{
@@ -961,6 +985,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			CheckNewNotes string `json:"atStartCheckNewNotes"`
 			ShowConsole   string `json:"atStartShowConsole"`
 			PostEditor    string `json:"postEditor"`
+			StartingMode  string `json:"startingMode"`
 		}
 		ctx.ReadJSON(&request)
 
@@ -989,6 +1014,10 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			configGlobal.postEditor = request.PostEditor
 		}
 
+		if request.StartingMode != "" {
+			configGlobal.appStartingMode = request.StartingMode
+		}
+
 		SaveConfig()
 
 		ctx.JSON(iris.Map{
@@ -998,7 +1027,9 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			"atStartOpenBrowser":   configGlobal.atStartOpenBrowser,
 			"atStartCheckNewNotes": configGlobal.atStartCheckNewNotes,
 			"atStartShowConsole":   configGlobal.atStartShowConsole,
+			"consolePresent":       configGlobal.consolePresent,
 			"postEditor":           configGlobal.postEditor,
+			"startingMode":         configGlobal.appStartingMode,
 		})
 	})
 
@@ -1334,7 +1365,6 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			checkQuiet(err)
 			NoteBookDB.Set([]byte(request.UUID), enc)
 		case request.Action == "new" && request.UUID == "":
-			//TODO verify the uniqueness of the UUID
 			u1 := strings.ToUpper(uuid.Must(uuid.NewRandom()).String())
 
 			//new file
@@ -1520,12 +1550,10 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		}
 		ctx.ReadJSON(&request)
 
-		//TODO подумать над проверкой пустых полей ... скорее вполне можно позволить оставить все пустым ...
 		var noteUUID string
 		var notebookUUID string
 		var noteData NoteType
 		if request.UUID == "" {
-			//TODO verify the uniqueness of the UUID
 			noteUUID = strings.ToUpper(uuid.Must(uuid.NewRandom()).String())
 			notebookUUID = "Inbox"
 			noteData.NoteBookUUID = notebookUUID
@@ -1542,7 +1570,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		noteData.Title = request.Title
 		noteData.URL = request.URL
 		noteData.SearchIndex = false
-		configGlobal.requestIndexing = true
+		// configGlobal.requestIndexing = true
 
 		if request.UUID == "" {
 			noteData.CreatedAt = int32(time.Now().Unix())
@@ -1637,6 +1665,10 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			err = TagsDB.Set([]byte(tagID), enc)
 			checkQuiet(err)
 		}
+
+		//add to search index
+		addToIndex(noteDir+"/content.json", noteUUID)
+		noteData.SearchIndex = true
 
 		// update database
 		noteData.Tags = request.Tags
@@ -1922,13 +1954,17 @@ func main() {
 
 	//start web server
 	println("Starting web server...")
-	if configGlobal.atStartOpenBrowser && !configGlobal.cmdServerMode {
+	if configGlobal.atStartOpenBrowser && !configGlobal.cmdServerMode && configGlobal.appStartingMode != "independent" {
 		go openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
 	}
 	webserverChan := make(chan bool)
 	go WebServer(webserverChan)
 
-	<-webserverChan
+	if configGlobal.appStartingMode == "independent" {
+		startStadaloneGUI()
+	} else {
+		<-webserverChan
+	}
 
 	MemStat()
 	fmt.Printf("page took %s\n", time.Since(start))

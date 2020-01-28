@@ -132,6 +132,7 @@ export default {
         }
     },
     beforeMount: function () {
+        this.$store.dispatch('getConfig')
         this.$store.dispatch('getAllData')
         this.$store.dispatch('getFavoritesCount')
     },

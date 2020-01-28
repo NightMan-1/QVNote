@@ -53,6 +53,9 @@ const mixin = {
         },
         tagsCount () {
             return this.$store.getters.getTagsCount
+        },
+        config () {
+            return this.$store.state.config
         }
     }
 }

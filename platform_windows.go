@@ -5,6 +5,8 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -14,6 +16,7 @@ import (
 	"github.com/gen2brain/dlgs"
 	"github.com/getlantern/systray"
 	"github.com/gonutz/w32"
+	"github.com/zserge/lorca"
 )
 
 var consoleWindows w32.HWND
@@ -83,12 +86,13 @@ func onReadySysTray() {
 	systray.SetTitle("QVNote")
 
 	mBrowser := systray.AddMenuItem("Open browser", "open default browser with this app page")
+	mOpenLorcaGUI := systray.AddMenuItem("Run independent mode", "Open Chrome based GUI")
 	mRelod := systray.AddMenuItem("Reload notes", "may be slow")
 	mShowConsoleHide := systray.AddMenuItem("Hide console", "debug")
 	mShowConsoleShow := systray.AddMenuItem("Show console", "debug")
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
-	if consolePresent {
+	if configGlobal.consolePresent {
 		if consoleWindowsVisible {
 			mShowConsoleShow.Hide()
 		} else {
@@ -118,6 +122,8 @@ func onReadySysTray() {
 			systray.Quit()
 			beeep.Notify("QVNote", "Good buy!", "")
 			fmt.Println("Good buy!")
+		case <-mOpenLorcaGUI.ClickedCh:
+			startStadaloneGUI()
 		}
 	}
 
@@ -131,6 +137,20 @@ func onExitSysTray() {
 func runSystray() {
 }
 
+func startStadaloneGUI() {
+	// Create UI with basic HTML passed via data URI
+	ui, err := lorca.New("data:text/html,"+url.PathEscape(`<html><head><title>QVNote</title></head><body>Loading...</body></html>`), "", 1380, 768)
+	if err != nil {
+		showNotification("Can not start Google Chrome", "dialog_warning")
+		log.Fatalf("Can not start Google Chrome: %v", err)
+		os.Exit(1)
+	}
+	defer ui.Close()
+	ui.Load("http://localhost:8000")
+	// Wait until UI window is closed
+	<-ui.Done()
+}
+
 func initPlatformSpecific() {
 	if configGlobal.cmdServerMode {
 		return
@@ -141,14 +161,21 @@ func initPlatformSpecific() {
 
 	_, consoleProcID := w32.GetWindowThreadProcessId(consoleWindows)
 	if w32.GetCurrentProcessId() == consoleProcID {
-		consolePresent = true
+		configGlobal.consolePresent = true
 	} else {
-		consolePresent = false
+		configGlobal.consolePresent = false
+	}
+
+	if configGlobal.appStartingMode == "independent" {
+		configGlobal.atStartShowConsole = false
 	}
 
 	if configGlobal.atStartShowConsole == false {
 		consoleHide()
 	}
-	go systray.Run(onReadySysTray, onExitSysTray)
+
+	if configGlobal.appStartingMode != "independent" {
+		go systray.Run(onReadySysTray, onExitSysTray)
+	}
 
 }

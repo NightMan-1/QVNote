@@ -7,7 +7,7 @@ export default {
         addNewNote: 'New note',
         addNewNotebook: 'Add a notebook',
         buttonSettings: 'Settings',
-        buttonExit: 'Shutdown',
+        buttonExit: 'Shutdown server',
         sidebarLibrary: 'LIBRARY',
         sidebarInbox: 'Inbox',
         sidebarFavorites: 'Favorite',
@@ -85,7 +85,10 @@ export default {
             btnFavoritesImport: 'import',
             favoritesImportWrongType: 'Wrong file type',
             favoritesImportWrongData: 'Wrong file data',
-            favoritesImportDone: 'Import successful'
+            favoritesImportDone: 'Import successful',
+            runningMode: 'Launch mode',
+            runningModeIndependent: 'independent',
+            runningModeBrowser: 'in browser'
 
         },
         notebooks: {

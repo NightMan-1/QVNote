@@ -8,24 +8,30 @@ English/Russian languages
 
 All data stored in Quiver like format (http://happenapps.com/)
 
-GoLang server + VueJS frontend
+Written with GoLang and VueJS
+
+**Requires Chrome/Chromium >= 70 to be installed**
 
 More info here - https://qvnote.fsky.info/
 
 ![Screenshot eng](screenshot_eng.png)
 
-## Project request
+## Usage
 
-GoLang >1.10 
-NodeJS  >10.x
+You can always download latest stable binary from here - https://github.com/NightMan-1/QVNote/releases/latest - or build from sources
 
-## Project setup
+## Build from source
 
-Download
-Unzip archive
-_(you also need install git command line program for download the source)_
+#### Project request
+
+GoLang >1.13 
+NodeJS  >12.x
+
+#### Project setup
 
 ```
+git clone https://github.com/NightMan-1/QVNote
+cd QVNote
 go get -u github.com/go-bindata/go-bindata/...
 go get -u github.com/blevesearch/bleve
 go get -u github.com/blevesearch/snowballstem
@@ -42,6 +48,7 @@ go get -u github.com/marcsauter/single
 go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo
 go get -u github.com/syndtr/goleveldb/leveldb
 go get -u github.com/go-ini/ini
+go get -u github.com/zserge/lorca
 
 npm install
 ```
@@ -62,17 +69,16 @@ go get -u github.com/getlantern/systray
 ```
 
 
-
-## Compiles for production
+#### Compiles for production
 ```
 npm run build
 go-bindata templates/... icon.ico
 goversioninfo
 go build
 ```
-now you can run QVNote binary and open http://localhost:8000 in your browser
+now you can run QVNote binary
 
-## GUI development
+#### GUI development
 
 run server (QVNote.exe)
 npm run serve

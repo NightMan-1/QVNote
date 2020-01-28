@@ -7,7 +7,7 @@ export default {
         addNewNote: 'Создать запись',
         addNewNotebook: 'Добавить блокнот',
         buttonSettings: 'Настройки',
-        buttonExit: 'Выключить',
+        buttonExit: 'Выключить сервер',
         sidebarLibrary: 'LIBRARY',
         sidebarInbox: 'Inbox',
         sidebarFavorites: 'Favorite',
@@ -85,7 +85,11 @@ export default {
             btnFavoritesImport: 'импортировать',
             favoritesImportWrongType: 'Ошибка типа файла',
             favoritesImportWrongData: 'Неверный формат файла',
-            favoritesImportDone: 'Импорт завершен'
+            favoritesImportDone: 'Импорт завершен',
+            runningMode: 'Режим запуска',
+            runningModeIndependent: 'самостоятельно',
+            runningModeBrowser: 'в браузере'
+
         },
         notebooks: {
             title: 'Управление блокнотами',

@@ -44,15 +44,24 @@
                     <p>
                         <span>{{$t('setting.global.folder')}}:</span> {{config.sourceFolder}}
                     </p>
-                    <div class="custom-control custom-switch mb-2">
+
+                    <div class="mb-2">
+                    <label for="StartingMode">{{$t('setting.global.runningMode')}}</label>
+                    <select class="custom-select w-25 select-css ml-3" v-model="startingMode" id="StartingMode">
+                        <option value="independent">{{$t('setting.global.runningModeIndependent')}}</option>
+                        <option value="browser">{{$t('setting.global.runningModeBrowser')}}</option>
+                    </select>
+                    </div>
+
+                    <div class="custom-control custom-switch mb-3" v-if="startingMode === 'browser'">
                     <input type="checkbox" class="custom-control-input" id="OpenBrowserSwitch" v-model="checkboxOpenBrowser">
                     <label class="custom-control-label" for="OpenBrowserSwitch">{{$t('setting.global.switchOpenBrowser')}}</label>
                     </div>
-                    <div class="custom-control custom-switch mb-2">
+                    <div class="custom-control custom-switch mb-3">
                     <input type="checkbox" class="custom-control-input" id="CheckNewSwitch" v-model="checkboxCheckNew">
                     <label class="custom-control-label" for="CheckNewSwitch">{{$t('setting.global.switchCheckNew')}}</label>
                     </div>
-                    <div class="custom-control custom-switch mb-2">
+                    <div class="custom-control custom-switch mb-2" v-if="consolePresent">
                     <input type="checkbox" class="custom-control-input" id="ShowConsoleSwitch" v-model="checkboxShowConsole">
                     <label class="custom-control-label" for="ShowConsoleSwitch">{{$t('setting.global.switchShowConsole')}}</label>
                     </div>
@@ -175,6 +184,8 @@ export default {
             checkboxOpenBrowser: this.$store.state.config.atStartOpenBrowser,
             checkboxCheckNew: this.$store.state.config.atStartCheckNewNotes,
             checkboxShowConsole: this.$store.state.config.atStartShowConsole,
+            consolePresent: this.$store.state.config.consolePresent,
+            startingMode: this.$store.state.config.startingMode,
             searchStatus: {
                 'notesCurrent': 0,
                 'notesTotal': 0,
@@ -199,6 +210,9 @@ export default {
             this.saveSettings()
         },
         'checkboxShowConsole' () {
+            this.saveSettings()
+        },
+        'startingMode' () {
             this.saveSettings()
         },
         'langSelected' () {
@@ -233,7 +247,7 @@ export default {
             }
         },
         saveSettings: function () {
-            var newConfig = { 'postEditor': this.editorSelected.toString(), 'atStartOpenBrowser': this.checkboxOpenBrowser.toString(), 'atStartShowConsole': this.checkboxShowConsole.toString(), 'atStartCheckNewNotes': this.checkboxCheckNew.toString() }
+            var newConfig = { 'startingMode': this.startingMode.toString(), 'postEditor': this.editorSelected.toString(), 'atStartOpenBrowser': this.checkboxOpenBrowser.toString(), 'atStartShowConsole': this.checkboxShowConsole.toString(), 'atStartCheckNewNotes': this.checkboxCheckNew.toString() }
             fetch(this.$store.getters.apiFolder + '/config.json', { method: 'POST', body: JSON.stringify(newConfig) }).then(response => { return response.text() })
                 .then(() => {
                     fetch(this.$store.getters.apiFolder + '/config.json').then(response => { return response.json() })
@@ -345,13 +359,7 @@ export default {
                         this.searchStatus.persent = parseInt((jsonData.notesCurrent * 100) / jsonData.notesTotal)
                     }
 
-                    fetch(this.$store.getters.apiFolder + '/config.json').then(response => { return response.json() })
-                        .then(jsonData => {
-                            this.$store.commit('setConfig', jsonData)
-                        })
-                        .catch(error => {
-                            console.error('Error fetching config.json:', error)
-                        })
+                    this.$store.dispatch('getConfig')
                 })
                 .catch(error => {
                     console.error('Error fetching search_index.json:', error)
@@ -422,9 +430,6 @@ export default {
     computed: {
         settingsPageType () {
             return this.$store.state.settingsPageType
-        },
-        config () {
-            return this.$store.state.config
         },
         localesList () {
             return this.$store.state.localesList

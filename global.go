@@ -22,13 +22,16 @@ type configGlobalStruct struct {
 	dataDir              string
 	appInstalled         bool
 	requestIndexing      bool //необходимость запустить переиндексацию поиска
-	atStartOpenBrowser   bool
 	atStartCheckNewNotes bool
+	consolePresent       bool
 	atStartShowConsole   bool
 	postEditor           string
 	cmdPort              string
 	cmdPortable          bool
+	appStartingMode      string
+	appStartingModeForce bool
 	cmdServerMode        bool
+	atStartOpenBrowser   bool
 }
 
 var configGlobal (configGlobalStruct)
