@@ -303,11 +303,11 @@ export default {
         },
         openArticle (UUID, nbUUID) {
             if (this.$route.params.nbUUID === 'Allnotes') {
-                this.$router.push('/notes/Allnotes' + '/' + UUID)
+                this.$router.push('/notes/Allnotes' + '/' + UUID, () => {})
             } else if (this.articleListType === 'tags' && this.currentTagURL !== '') {
-                this.$router.push('/tags/' + this.currentTagURL + '/' + UUID)
+                this.$router.push('/tags/' + this.currentTagURL + '/' + UUID, () => {})
             } else {
-                this.$router.push('/notes/' + nbUUID + '/' + UUID)
+                this.$router.push('/notes/' + nbUUID + '/' + UUID, () => {})
             }
         },
         doShowAdvancedInfo () {
