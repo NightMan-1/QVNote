@@ -12,6 +12,8 @@ func showNotification(messageText string, messageType string) {
 func runSystray() {
 }
 
+func startStadaloneGUI() {}
+
 func initPlatformSpecific() {
 	configGlobal.atStartOpenBrowser = false
 
