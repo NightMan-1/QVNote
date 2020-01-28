@@ -8,7 +8,7 @@
                     <li class="nav-item">
                         <button class="nav-link"
                                 :class="{ 'active': currentNotebookID === 'Inbox' }"
-                                @click="$router.push('/notes/Inbox')">
+                                @click="$router.push('/notes/Inbox', () => {})">
                             <span class="badge badge-primary">{{notesCountInbox}}</span>
                             <i class="fas fa-inbox mr-1"></i> {{$t('general.sidebarInbox')}}
                         </button>
@@ -16,7 +16,7 @@
                     <li class="nav-item">
                         <button class="nav-link"
                                 :class="{ 'active': currentNotebookID === 'Favorites' }"
-                                @click="$router.push('/notes/Favorites')">
+                                @click="$router.push('/notes/Favorites', () => {})">
                             <span class="badge badge-primary">{{notesCountFavorites}}</span>
                             <i class="fas fa-star mr-1"></i> {{$t('general.sidebarFavorites')}}
                         </button>
@@ -24,7 +24,7 @@
                     <li class="nav-item">
                         <button class="nav-link"
                                 :class="{ 'active': currentNotebookID === 'Trash' }"
-                                @click="$router.push('/notes/Trash')">
+                                @click="$router.push('/notes/Trash', () => {})">
                             <span class="badge badge-primary">{{notesCountTrash}}</span>
                             <i class="fas fa-trash-alt mr-1"></i> {{$t('general.sidebarTrash')}}
                         </button>
@@ -32,7 +32,7 @@
                     <li class="nav-item">
                         <button class="nav-link"
                                 :class="{ 'active': currentNotebookID === 'Allnotes' }"
-                                @click="$router.push('/notes/Allnotes')">
+                                @click="$router.push('/notes/Allnotes', () => {})">
                             <span class="badge badge-primary" v-if="notesCountTotal > 0">{{notesCountTotal}}</span>
                             <i class="fas fa-archive mr-1"></i> {{$t('general.sidebarAllNotes')}}
                         </button>
@@ -45,7 +45,7 @@
                         :key="item.uuid"
                     >
                         <button class="nav-link nav-link-notebook"
-                                @click="$router.push('/notes/' + item.uuid)"
+                                @click="$router.push('/notes/' + item.uuid, () => {})"
                                 :class="{ 'active': item.uuid === currentNotebookID }">
                             <span class="badge badge-primary">{{item.notesCount}}</span>
                                 {{item.name}}
@@ -61,7 +61,7 @@
                         :key="item.url"
                     >
                         <button class="nav-link nav-link-notebook bg-primary- border-0 w-100 text-left"
-                                @click="$router.push('/tags/'+item.url)"
+                                @click="$router.push('/tags/'+item.url, () => {})"
                                 :class="{ 'active': item.name === currentTagURL }">
                             <span class="badge badge-primary">{{item.count}}</span>
                             {{item.name}}
