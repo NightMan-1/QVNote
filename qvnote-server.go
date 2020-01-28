@@ -73,7 +73,8 @@ func (ss *SearchService) buildMapping() *mapping.IndexMappingImpl {
 }
 
 func (ss *SearchService) IndexMessage(data SearchContent) error {
-	err := ss.index.Index(data.UUID, data)
+	err := ss.index.Delete(data.UUID)
+	err = ss.index.Index(data.UUID, data)
 	checkQuiet(err)
 	return nil
 }
@@ -1881,6 +1882,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 				noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote")
 				os.RemoveAll(noteDirSrc)
+				ss.index.Delete(note.UUID) // delete from search index
 
 			} else {
 				//move to trash
