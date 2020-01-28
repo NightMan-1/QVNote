@@ -75,6 +75,8 @@ func onExitSysTray() {
 	os.Exit(0)
 }
 
+func startStadaloneGUI() {}
+
 func initPlatformSpecific() error {
 	cwd, err := os.Getwd()
 	if err != nil {
