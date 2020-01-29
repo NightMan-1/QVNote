@@ -14,7 +14,7 @@
     "cxlt-vue2-toastr": "^1.1.1",
     "echarts": "^4.6.0",
     "glob-all": "^3.1.0",
-    "inspectpack": "^4.3.0",
+    "inspectpack": "^4.3.1",
     "js-beautify": "^1.10.3",
     "postcss-import": "^12.0.1",
     "postcss-loader": "^3.0.0",
@@ -47,7 +47,7 @@
     "eslint-plugin-vue": "^6.1.2",
     "node-sass": "^4.13.1",
     "sass-loader": "^8.0.2",
-    "terser-webpack-plugin": "^2.3.2",
+    "terser-webpack-plugin": "^2.3.3",
     "vue-template-compiler": "^2.6.11"
   },
   "eslintConfig": {
