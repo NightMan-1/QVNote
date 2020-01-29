@@ -5,13 +5,16 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 
 	"github.com/gen2brain/beeep"
 	"github.com/gen2brain/dlgs"
 	"github.com/getlantern/systray"
+	"github.com/zserge/lorca"
 )
 
 func openBrowser(url string) error {
@@ -75,20 +78,34 @@ func onExitSysTray() {
 	os.Exit(0)
 }
 
-func startStadaloneGUI() {}
+func startStadaloneGUI() {
+	// Create UI with basic HTML passed via data URI
+	ui, err := lorca.New("data:text/html,"+url.PathEscape(`<html><head><title>QVNote</title></head><body>Loading...</body></html>`), "", 1380, 768)
+	if err != nil {
+		showNotification("Can not start Google Chrome", "dialog_warning")
+		log.Fatalf("Can not start Google Chrome: %v", err)
+		os.Exit(1)
+	}
+	defer ui.Close()
+	ui.Load("http://localhost:8000")
+	// Wait until UI window is closed
+	<-ui.Done()
+}
 
 func initPlatformSpecific() error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
+	if configGlobal.appStartingMode != "independent" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		systrayProcess = exec.Command(os.Args[0], "--systray")
+		systrayProcess.Dir = cwd
+		err = systrayProcess.Start()
+		if err != nil {
+			return err
+		}
+		//systrayProcess.Process.Kill()
+		//systrayProcess.Process.Release()
 	}
-	systrayProcess = exec.Command(os.Args[0], "--systray")
-	systrayProcess.Dir = cwd
-	err = systrayProcess.Start()
-	if err != nil {
-		return err
-	}
-	//systrayProcess.Process.Kill()
-	//systrayProcess.Process.Release()
 	return nil
 }
