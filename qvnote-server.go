@@ -29,6 +29,7 @@ import (
 	"github.com/imroc/req"
 	"github.com/iris-contrib/middleware/cors"
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
 	"github.com/marcsauter/single"
 	lediscfg "github.com/siddontang/ledisdb/config"
@@ -197,6 +198,7 @@ func initSystem() {
 		index, err = bleve.NewUsing(indexName, mapping, "upside_down", kvStore, kvConfig)
 	}
 	check(err, "Can not initialize search database")
+
 	ss.index = index
 	ss.batch = index.NewBatch()
 
@@ -854,7 +856,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	app := iris.New()
 	app.Use(iris.Gzip)
 	app.Use(recover.New())
-	//app.Use(logger.New())
+	app.Use(logger.New())
 
 	app.Use(cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
@@ -1286,9 +1288,6 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			check(err, "Can not initialize search database")
 			ss.index = index
 			ss.batch = index.NewBatch()
-
-			NoteDB.FlushAll()
-			NoteBookDB.FlushAll()
 
 			FindAllNotes()
 
@@ -1962,7 +1961,7 @@ func main() {
 	webserverChan := make(chan bool)
 	go WebServer(webserverChan)
 
-	if configGlobal.appStartingMode == "independent" {
+	if configGlobal.appStartingMode == "independent" && (runtime.GOOS == "windows" || runtime.GOOS == "darwin") {
 		startStadaloneGUI()
 	} else {
 		<-webserverChan
