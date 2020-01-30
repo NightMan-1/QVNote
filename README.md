@@ -6,7 +6,7 @@ The program for storing notes, pages of sites, personal knowledge base.
 
 English/Russian languages
 
-All data stored in Quiver like format (http://happenapps.com/)
+All data stored in JSON format (format based on [Quiver](http://happenapps.com/))
 
 Written with GoLang and VueJS
 
