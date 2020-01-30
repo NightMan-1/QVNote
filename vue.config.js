@@ -8,7 +8,7 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 const cssWhiteList = []
 const cssWhiteListPatterns = [/^ql-/, /^toast/]
-const whitelistPatternsChildren = [/vch/]
+const whitelistPatternsChildren = [/vch/, /^ql-/, /^toast/]
 
 module.exports = {
     configureWebpack: {
