@@ -36,7 +36,7 @@
     	<div class="grid-footer-1 bg-dark"></div>
     	<div class="grid-head-2"></div>
     	<div class="grid-body-1">
-            <div class="main-content" :class="{'d-none':settingsPageType !== 'global'}">
+            <div class="main-content pt-0" :class="{'d-none':settingsPageType !== 'global'}">
                 <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="m-0 ">{{$t('setting.global.settingsTitle')}}</h5>
@@ -132,8 +132,8 @@
                 </div>
 
             </div>
-            <div class="main-content" :class="{'d-none':settingsPageType !== 'notebooks'}">
-                <h3 class="mt-1">{{$t('setting.notebooks.title')}}</h3>
+            <div class="main-content pt-0" :class="{'d-none':settingsPageType !== 'notebooks'}">
+                <h3 class="mt-2">{{$t('setting.notebooks.title')}}</h3>
                 <p class="text-muted"><i>{{$t('setting.notebooks.tips')}}</i></p>
                 <div class="row" id="notebooksList">
                     <div
@@ -150,8 +150,8 @@
                 </div>
 
             </div>
-            <div class="main-content" :class="{'d-none':settingsPageType !== 'tags'}">
-                <h3 class="mt-1">{{$t('setting.tags.title')}}</h3>
+            <div class="main-content pt-0" :class="{'d-none':settingsPageType !== 'tags'}">
+                <h3 class="mt-2">{{$t('setting.tags.title')}}</h3>
                 <p class="text-muted"><i>{{$t('setting.tags.tips')}}</i></p>
                 <div class="row" id="tagsList">
                     <div
