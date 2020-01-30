@@ -3,6 +3,7 @@
     	<div class="grid-head-1">
             <qv-header-logo></qv-header-logo>
         </div>
+        <div class="grid-sidebar-wrap"></div>
     	<div class="grid-sidebar-1">
             <nav class="sidebar-nav">
             <ul class="nav">
