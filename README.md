@@ -2,7 +2,7 @@
 
 # QVNote
 
-The program for storing notes, pages of sites, personal knowledge base.
+The program for storing notes, pages of sites, personal knowledge base and any other text data
 
 English/Russian languages
 
