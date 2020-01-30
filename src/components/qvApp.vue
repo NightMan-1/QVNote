@@ -25,6 +25,9 @@
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
                     </div>
                     <input type="text" class="form-control" :placeholder="$t('articleList.searchPlaceholder')" v-model="searchInput">
+                    <div class="input-group-append" v-if="searchInput">
+                        <button class="input-group-text" @click="searchInput = ''"><i class="fas fa-eraser text-info"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -212,9 +215,17 @@ export default {
                         this.mutableNotesList = this.notesListBackup
                     })
             } else {
-                // console.log('restore search')
                 if (this.notesListBackup !== null && this.notesListBackup.length >= 1) {
-                    this.mutableNotesList = this.notesListBackup
+                    if (this.articleCurrent.uuid !== null && this.articleCurrent.NoteBookUUID !== null) {
+                        // console.log('restore search v1')
+                        this.$store.commit('setCurrentNotebookID', '')
+                        this.notesListBackup = null
+                        this.notebookSelect(this.articleCurrent.NoteBookUUID, this.articleCurrent.uuid)
+                    } else {
+                        // console.log('restore search v2')
+                        this.mutableNotesList = this.notesListBackup
+                        this.notesListBackup = null
+                    }
                 }
             }
         },
