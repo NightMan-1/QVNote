@@ -1,14 +1,14 @@
 {
     "FixedFileInfo": {
         "FileVersion": {
-            "Major": 0,
-            "Minor": 9,
+            "Major": 1,
+            "Minor": 0,
             "Patch": 0,
             "Build": 0
         },
         "ProductVersion": {
-            "Major": 0,
-            "Minor": 9,
+            "Major": 1,
+            "Minor": 0,
             "Patch": 0,
             "Build": 0
         }
@@ -19,12 +19,12 @@
         "FileDescription": "QVNote is a simple and convenient place to store notes, pages of websites, to-do lists, creating knowledge bases ...",
         "FileVersion": "",
         "InternalName": "",
-        "LegalCopyright": "(c) 2019 Sergey Gurinovich",
+        "LegalCopyright": "(c) 2019-2020 Sergey Gurinovich",
         "LegalTrademarks": "",
         "OriginalFilename": "QVNote.exe",
         "PrivateBuild": "",
         "ProductName": "QVNote",
-        "ProductVersion": "0.9.0",
+        "ProductVersion": "1.0.0",
         "SpecialBuild": ""
     },
     "VarFileInfo": {
