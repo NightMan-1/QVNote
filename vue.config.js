@@ -7,8 +7,8 @@ const TerserPlugin = require('terser-webpack-plugin')
 // const { DuplicatesPlugin } = require("inspectpack/plugin")
 
 const cssWhiteList = []
-const cssWhiteListPatterns = [/^ql-/, /^toast/]
-const whitelistPatternsChildren = [/vch/, /^ql-/, /^toast/]
+const cssWhiteListPatterns = []
+const whitelistPatternsChildren = [/vch/, /^ql-/, /^toast/, /^tingle/]
 
 module.exports = {
     configureWebpack: {
