@@ -1,14 +1,14 @@
-const path = require('path')
+// const path = require('path')
 // import Purgecss webpack plugin and glob-all
-const PurgecssPlugin = require('purgecss-webpack-plugin')
-const glob = require('glob-all')
+// const PurgecssPlugin = require('purgecss-webpack-plugin')
+// const glob = require('glob-all')
 const webpack = require('webpack')
 const TerserPlugin = require('terser-webpack-plugin')
 // const { DuplicatesPlugin } = require("inspectpack/plugin")
 
-const cssWhiteList = []
-const cssWhiteListPatterns = []
-const whitelistPatternsChildren = [/vch/, /^ql-/, /^toast/, /^tingle/]
+// const cssWhiteList = []
+// const cssWhiteListPatterns = []
+// const whitelistPatternsChildren = [/vch/, /^ql-/, /^toast/, /^tingle/]
 
 module.exports = {
     configureWebpack: {
@@ -25,16 +25,16 @@ module.exports = {
             }), */
             // Remove unused CSS using purgecss. See https://github.com/FullHuman/purgecss
             // for more information about purgecss.
-            new PurgecssPlugin({
-                paths: glob.sync([
-                    path.join(__dirname, './../public/index.html'),
-                    path.join(__dirname, './../**/*.vue'),
-                    path.join(__dirname, './../src/**/*.js')
-                ]),
-                whitelist: cssWhiteList,
-                whitelistPatterns: cssWhiteListPatterns,
-                whitelistPatternsChildren: whitelistPatternsChildren
-            }),
+            // new PurgecssPlugin({
+            //    paths: glob.sync([
+            //        path.join(__dirname, './../public/index.html'),
+            //        path.join(__dirname, './../**/*.vue'),
+            //        path.join(__dirname, './../src/**/*.js')
+            //    ]),
+            //    whitelist: cssWhiteList,
+            //    whitelistPatterns: cssWhiteListPatterns,
+            //    whitelistPatternsChildren: whitelistPatternsChildren
+            // }),
             new webpack.ProvidePlugin({
                 'window.Quill': 'quill/dist/quill.js'
             })
