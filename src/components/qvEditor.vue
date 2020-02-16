@@ -252,14 +252,16 @@ export default {
         max-height: calc(100vh - 18.5rem);
     }
     .ql-container{
-        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+        font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;;
         font-kerning: normal;
         font-variant-ligatures: common-ligatures contextual;
         font-feature-settings: "kern", "liga", "clig", "calt";
-        font-size: 16px;
+        font-size: 100%; /* 16px */
         font-weight: 400;
-        line-height: 1.42857143;
+        font-variation-settings: 'wght' 400;
+        font-variant-numeric: tabular-nums;
         font-display: swap; /* or block */
+        line-height: 1.5;
         border-radius: 0 0 .25rem .25rem !important;
     }
     .ql-toolbar.ql-snow{border-radius: .25rem .25rem 0 0 !important;}
