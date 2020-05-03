@@ -15,9 +15,9 @@ before_install:
 install:
   - npm install -g npm@latest
   - npm install
-  - npm audit fix
   - npm ddp
-  - go get -u github.com/go-bindata/go-bindata/...
+  - export GO111MODULE=off; go get -u github.com/go-bindata/go-bindata/...
+  - export GO111MODULE=off; go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo
 #  - go mod download
 #  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then go get -u github.com/gonutz/w32; fi
 script:
