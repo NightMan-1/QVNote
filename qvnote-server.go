@@ -28,12 +28,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/imroc/req"
 	"github.com/iris-contrib/middleware/cors"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/logger"
-	"github.com/kataras/iris/middleware/recover"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/logger"
+	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/marcsauter/single"
-	lediscfg "github.com/siddontang/ledisdb/config"
-	"github.com/siddontang/ledisdb/ledis"
+	lediscfg "github.com/ledisdb/ledisdb/config"
+	"github.com/ledisdb/ledisdb/ledis"
 )
 
 func check(e error, message string) {

@@ -3,7 +3,7 @@ os:
   - windows
 language: go
 go:
-  - 1.13.x
+  - 1.14.x
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade node; fi
@@ -18,26 +18,8 @@ install:
   - npm audit fix
   - npm ddp
   - go get -u github.com/go-bindata/go-bindata/...
-  - go get -u github.com/blevesearch/bleve
-  - go get -u github.com/blevesearch/snowballstem
-  - go get -u github.com/dustin/go-humanize
-  - go get -u github.com/imroc/req
-  - go get -u github.com/json-iterator/go
-  - go get -u github.com/kataras/iris
-  - go get -u github.com/iris-contrib/middleware/cors
-  - go get -u github.com/google/uuid
-  - go get -u github.com/siddontang/ledisdb/config
-  - go get -u github.com/siddontang/ledisdb/ledis
-  - go get -u github.com/json-iterator/go
-  - go get -u github.com/marcsauter/single
-  - go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo
-  - go get -u github.com/syndtr/goleveldb/leveldb
-  - go get -u github.com/go-ini/ini
-  - go get -u github.com/gen2brain/beeep
-  - go get -u github.com/gen2brain/dlgs
-  - go get -u github.com/getlantern/systray
-  - go get -u github.com/zserge/lorca
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then go get -u github.com/gonutz/w32; fi
+#  - go mod download
+#  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then go get -u github.com/gonutz/w32; fi
 script:
   - npm run build
   - go-bindata templates/... icon.ico

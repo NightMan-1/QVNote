@@ -12,7 +12,8 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/dustin/go-humanize"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/siddontang/ledisdb/ledis"
+	"github.com/ledisdb/ledisdb/ledis"
+
 )
 
 type configGlobalStruct struct {
