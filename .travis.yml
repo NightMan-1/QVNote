@@ -5,8 +5,6 @@ language: go
 go:
   - 1.14.x
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade node; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then nvm install 12; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install p7zip; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install nodejs; fi
@@ -50,8 +48,7 @@ deploy:
   provider: releases
   name: Release $TRAVIS_TAG ($RELEASE_TITLE)
   file_glob: true
-  skip_cleanup: true
-  api_key:
+  token:
     secure: Xux7SYhUqyYo99TGewxKMhQOW5V83LeCLKu+vYJEKekrHpyWtpqE7dVjce3sUjakZaYRIggDvQH7GAtVpKRkk+Ux+L5jUnpQsQMs5CAKw8xHZ6NgMi/+iJ63N1LCd6WEmuuigjZ+R0IMCQahmQmYRJleUSxYcybiqAOuMVfrfo+fHPpMiG8xunLtWYRu/A1XCKeCe8SdtShv2PI0ED2SeHLU2Y9/cV7PMu5XQG4Tozd4KCnvYIr0zATDd7KcjgVk9nQCyMvQjmQ5GpROOO8eiCz16X8sGrPZ21UZfzd3lx18Dr8p0D++7p7J1mDYmy8DHFlLeIk7aG0UpoeBhpB0u4lxUw4HHozu+jrCEhov94MMKPuSCCemkuy2czEEvzoyHBfCzWxCsITOWEt3daW+WnKJpspkQPa+MF+NL5okqk/JyEsJBKByyzJ6wupaEfylTftHSHk9rkSuWjjO+Dzxa1hLI6qcKjZfn0l0AF11GRDOzEJ6YOWX3BIEewpsh4+KQl7RddNGS24XS/dqfURwSBtTSuvR1wBC4LbyJpCh4LnnNtZWI2sxe0kQCpeds6DTBks9HvwvLAfQnygtFsVzZmnT4r01h5NcsouDv90voVXtv2fU42v+E5iDeb55eDzSHCSOIUu7CQeZem9hwRpoVnca9uMWs6DvaKi0FXjBb5c=
   file:
     - qvnote-$TRAVIS_TAG-win-x86.zip
