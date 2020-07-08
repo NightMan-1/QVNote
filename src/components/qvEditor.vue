@@ -76,7 +76,7 @@ import Multiselect from 'vue-multiselect'
 import Quill from 'quill'
 import '../style/quill.snow.css'
 import { ImageDrop } from 'quill-image-drop-module'
-import ImageResize from 'quill-image-resize-module'
+import ImageResize from 'quill-image-resize-vue'
 Quill.register('modules/imageDrop', ImageDrop)
 Quill.register('modules/imageResize', ImageResize)
 let BeautifyHtml = require('js-beautify').html
