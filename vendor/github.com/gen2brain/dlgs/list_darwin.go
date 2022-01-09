@@ -3,6 +3,7 @@
 package dlgs
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -10,20 +11,18 @@ import (
 
 // List displays a list dialog, returning the selected value and a bool for success.
 func List(title, text string, items []string) (string, bool, error) {
-	osa, err := exec.LookPath("osascript")
-	if err != nil {
-		return "", false, err
-	}
-
 	list := ""
 	for i, l := range items {
-		list += `"` + l + `"`
+		if l == "false" {
+			return "", false, fmt.Errorf("Cannot use 'false' in items, as it's reserved by osascript's returned value.")
+		}
+		list += osaEscapeString(l)
 		if i != len(items)-1 {
 			list += ", "
 		}
 	}
 
-	o, err := exec.Command(osa, "-e", `choose from list {`+list+`} with prompt "`+text+`" with title "`+title+`"`).Output()
+	o, err := osaExecute(`choose from list {` + list + `} with prompt ` + osaEscapeString(text) + ` with title ` + osaEscapeString(title))
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			ws := exitError.Sys().(syscall.WaitStatus)
@@ -31,31 +30,28 @@ func List(title, text string, items []string) (string, bool, error) {
 		}
 	}
 
-	ret := true
-	out := strings.TrimSpace(string(o))
-	if out == "" {
-		ret = false
+	out := strings.TrimSpace(o)
+	if out == "false" {
+		return "", false, nil
 	}
 
-	return out, ret, err
+	return out, true, err
 }
 
 // ListMulti displays a multiple list dialog, returning the selected values and a bool for success.
 func ListMulti(title, text string, items []string) ([]string, bool, error) {
-	osa, err := exec.LookPath("osascript")
-	if err != nil {
-		return []string{}, false, err
-	}
-
 	list := ""
 	for i, l := range items {
-		list += `"` + l + `"`
+		if l == "false" {
+			return nil, false, fmt.Errorf("Cannot use 'false' in items, as it's reserved by osascript's returned value.")
+		}
+		list += osaEscapeString(l)
 		if i != len(items)-1 {
 			list += ", "
 		}
 	}
 
-	o, err := exec.Command(osa, "-e", `choose from list {`+list+`} with multiple selections allowed with prompt "`+text+`" with title "`+title+`"`).Output()
+	o, err := osaExecute(`choose from list {` + list + `} with multiple selections allowed with prompt ` + osaEscapeString(text) + ` with title ` + osaEscapeString(title))
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			ws := exitError.Sys().(syscall.WaitStatus)
@@ -63,11 +59,10 @@ func ListMulti(title, text string, items []string) ([]string, bool, error) {
 		}
 	}
 
-	ret := true
-	out := strings.TrimSpace(string(o))
-	if out == "" {
-		ret = false
+	out := strings.TrimSpace(o)
+	if out == "false" {
+		return nil, false, nil
 	}
 
-	return strings.Split(out, ", "), ret, err
+	return strings.Split(out, ", "), true, err
 }

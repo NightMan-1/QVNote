@@ -21,21 +21,9 @@ type ExecutionRules struct {
 	Main ExecutionOptions
 }
 
-func handlersNames(handlers context.Handlers) (names []string) {
-	for _, h := range handlers {
-		if h == nil {
-			continue
-		}
-
-		names = append(names, context.HandlerName(h))
-	}
-
-	return
-}
-
 func applyExecutionRules(rules ExecutionRules, begin, done, main *context.Handlers) {
 	if !rules.Begin.Force && !rules.Done.Force && !rules.Main.Force {
-		return // do not proceed and spend buld-time here if nothing changed.
+		return // do not proceed and spend build-time here if nothing changed.
 	}
 
 	beginOK := rules.Begin.apply(begin)
@@ -84,7 +72,7 @@ func (e ExecutionOptions) buildHandler(h context.Handler) context.Handler {
 		return h
 	}
 
-	return func(ctx context.Context) {
+	return func(ctx *context.Context) {
 		// Proceed will fire the handler and return false here if it doesn't contain a `ctx.Next()`,
 		// so we add the `ctx.Next()` wherever is necessary in order to eliminate any dev's misuse.
 		if !ctx.Proceed(h) {

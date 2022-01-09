@@ -18,7 +18,7 @@ func Parse(fullpath string, paramTypes []ast.ParamType) ([]*ast.ParamStatement, 
 		return nil, fmt.Errorf("empty parameter types")
 	}
 
-	pathParts := strings.SplitN(fullpath, "/", -1)
+	pathParts := strings.Split(fullpath, "/")
 	p := new(ParamParser)
 	statements := make([]*ast.ParamStatement, 0)
 	for i, s := range pathParts {
@@ -39,7 +39,7 @@ func Parse(fullpath string, paramTypes []ast.ParamType) ([]*ast.ParamStatement, 
 		}
 		// if we have param type path but it's not the last path part
 		if ast.IsTrailing(stmt.Type) && i < len(pathParts)-1 {
-			return nil, fmt.Errorf("%s: parameter type \"%s\" should be registered to the very last of a path", s, stmt.Type.Indent())
+			return nil, fmt.Errorf("%s: parameter type \"%s\" should be registered to the very end of a path", s, stmt.Type.Indent())
 		}
 
 		statements = append(statements, stmt)
@@ -82,19 +82,6 @@ const (
 	// the "else" keyword inside a route's path.
 	DefaultParamErrorCode = 404
 )
-
-// func parseParamFuncArg(t token.Token) (a ast.ParamFuncArg, err error) {
-// 	if t.Type == token.INT {
-// 		return ast.ParamFuncArgToInt(t.Literal)
-// 	}
-// 	// act all as strings here, because of int vs int64 vs uint64 and etc.
-// 	return t.Literal, nil
-// }
-
-func parseParamFuncArg(t token.Token) (a string, err error) {
-	// act all as strings here, because of int vs int64 vs uint64 and etc.
-	return t.Literal, nil
-}
 
 func (p ParamParser) Error() error {
 	if len(p.errors) > 0 {
@@ -180,7 +167,6 @@ func (p *ParamParser) Parse(paramTypes []ast.ParamType) (*ast.ParamStatement, er
 			if stmt.Name == "" {
 				p.appendErr("[%d:%d] illegal token: }, forgot '{' ?", t.Start, t.End)
 			}
-			break
 		case token.ILLEGAL:
 			p.appendErr("[%d:%d] illegal token: %s", t.Start, t.End, t.Literal)
 		default:

@@ -24,55 +24,29 @@ You can always download latest stable binary from here - https://github.com/Nigh
 
 #### Project request
 
-GoLang >1.13 
-NodeJS  >12.x
+GoLang >1.17
+NodeJS >16.x
 
 #### Project setup
 
-```
+```bash
 git clone https://github.com/NightMan-1/QVNote
 cd QVNote
-go get -u github.com/go-bindata/go-bindata/...
-go get -u github.com/blevesearch/bleve
-go get -u github.com/blevesearch/snowballstem
-go get -u github.com/dustin/go-humanize
-go get -u github.com/imroc/req
-go get -u github.com/json-iterator/go
-go get -u github.com/kataras/iris
-go get -u github.com/iris-contrib/middleware/cors
-go get -u github.com/google/uuid
-go get -u github.com/siddontang/ledisdb/config
-go get -u github.com/siddontang/ledisdb/ledis
-go get -u github.com/json-iterator/go
-go get -u github.com/marcsauter/single
-go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo
-go get -u github.com/syndtr/goleveldb/leveldb
-go get -u github.com/go-ini/ini
-go get -u github.com/zserge/lorca
+go install github.com/go-bindata/go-bindata/...@latest
+go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+go mod init github.com/NightMan-1/QVNote
+go mod tidy -compat=1.17
 
 npm install
 ```
 
-Addition for Windows system:
-```
-go get -u github.com/gen2brain/beeep
-go get -u github.com/gen2brain/dlgs
-go get -u github.com/getlantern/systray
-go get -u github.com/gonutz/w32
-```
-
-Addition for MacOS:
-```
-go get -u github.com/gen2brain/beeep
-go get -u github.com/gen2brain/dlgs
-go get -u github.com/getlantern/systray
-```
-
-
 #### Compiles for production
-```
+
+```bash
 npm run build
-go-bindata templates/... icon.ico
+cd templates
+go-bindata -o ../bindata.go -fs ./... ../icon.ico
+cd ..
 goversioninfo
 go build
 ```

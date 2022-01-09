@@ -74,11 +74,6 @@ withParentMenuId: (int)theParentMenuId
   systray_ready();
 }
 
-- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
-{
-  return FALSE;
-}
-
 - (void)applicationWillTerminate:(NSNotification *)aNotification
 {
   systray_on_exit();
@@ -126,6 +121,7 @@ withParentMenuId: (int)theParentMenuId
       theMenu = parentItem.submenu;
     } else {
       theMenu = [[NSMenu alloc] init];
+      [theMenu setAutoenablesItems:NO];
       [parentItem setSubmenu:theMenu];
     }
   }
@@ -214,13 +210,21 @@ NSMenuItem *find_menu_item(NSMenu *ourMenu, NSNumber *menuId) {
 
 @end
 
-int nativeLoop(char* title, int width, int height) {
+void registerSystray(void) {
   AppDelegate *delegate = [[AppDelegate alloc] init];
   [[NSApplication sharedApplication] setDelegate:delegate];
-  if (strcmp(title, "") != 0) {
-    configureAppWindow(title, width, height);
+  // A workaround to avoid crashing on macOS versions before Catalina. Somehow
+  // SIGSEGV would happen inside AppKit if [NSApp run] is called from a
+  // different function, even if that function is called right after this.
+  if (floor(NSAppKitVersionNumber) <= /*NSAppKitVersionNumber10_14*/ 1671){
+    [NSApp run];
   }
-  [NSApp run];
+}
+
+int nativeLoop(void) {
+  if (floor(NSAppKitVersionNumber) > /*NSAppKitVersionNumber10_14*/ 1671){
+    [NSApp run];
+  }
   return EXIT_SUCCESS;
 }
 
@@ -262,7 +266,7 @@ void setTooltip(char* ctooltip) {
   runInMainThread(@selector(setTooltip:), (id)tooltip);
 }
 
-void add_or_update_menu_item(int menuId, int parentMenuId, char* title, char* tooltip, short disabled, short checked) {
+void add_or_update_menu_item(int menuId, int parentMenuId, char* title, char* tooltip, short disabled, short checked, short isCheckable) {
   MenuItem* item = [[MenuItem alloc] initWithId: menuId withParentMenuId: parentMenuId withTitle: title withTooltip: tooltip withDisabled: disabled withChecked: checked];
   free(title);
   free(tooltip);
