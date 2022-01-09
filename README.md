@@ -10,7 +10,7 @@ All data stored in JSON format (format based on [Quiver](http://happenapps.com/)
 
 Written with GoLang and VueJS
 
-**Requires Chrome/Chromium >= 70 to be installed**
+**Requires Chrome/Chromium >= 70 or Microsoft Edge >= 90 to be installed**
 
 More info here - https://qvnote.fsky.info/
 
