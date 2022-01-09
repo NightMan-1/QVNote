@@ -31,9 +31,9 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/logger"
 	"github.com/kataras/iris/v12/middleware/recover"
-	"github.com/marcsauter/single"
 	lediscfg "github.com/ledisdb/ledisdb/config"
 	"github.com/ledisdb/ledisdb/ledis"
+	"github.com/marcsauter/single"
 )
 
 func check(e error, message string) {
@@ -150,11 +150,11 @@ func initSystem() {
 
 	//get command line flags
 	flag.IntVar(&portTMP, "port", portTMP, "port number")
-	configGlobal.cmdPort = strconv.Itoa(portTMP)
 	flag.BoolVar(&configGlobal.cmdPortable, "portable", configGlobal.cmdPortable, "portable flag for Windows OS")
 	flag.BoolVar(&configGlobal.cmdServerMode, "server", false, "server mode")
 	flag.StringVar(&configGlobal.dataDir, "datadir", configGlobal.dataDir, "data folder")
 	flag.Parse()
+	configGlobal.cmdPort = strconv.Itoa(portTMP)
 
 	if configGlobal.cmdPortable {
 		configGlobal.dataDir, _ = filepath.Abs(configGlobal.execDir + "/data")
