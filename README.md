@@ -24,7 +24,7 @@ You can always download latest stable binary from here - https://github.com/Nigh
 
 #### Project request
 
-GoLang >1.17
+GoLang >1.17  
 NodeJS >16.x
 
 #### Project setup
@@ -34,8 +34,6 @@ git clone https://github.com/NightMan-1/QVNote
 cd QVNote
 go install github.com/go-bindata/go-bindata/...@latest
 go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
-go mod init github.com/NightMan-1/QVNote
-go mod tidy -compat=1.17
 
 npm install
 ```
