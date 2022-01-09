@@ -10,12 +10,7 @@ import (
 
 // Password displays a dialog, returning the entered value and a bool for success.
 func Password(title, text string) (string, bool, error) {
-	osa, err := exec.LookPath("osascript")
-	if err != nil {
-		return "", false, err
-	}
-
-	o, err := exec.Command(osa, "-e", `set T to text returned of (display dialog "`+text+`" with title "`+title+`" default answer "" with hidden answer)`).Output()
+	o, err := osaExecute(`set T to text returned of (display dialog ` + osaEscapeString(text) + ` with title ` + osaEscapeString(title) + ` default answer "" with hidden answer)`)
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			ws := exitError.Sys().(syscall.WaitStatus)
@@ -23,11 +18,7 @@ func Password(title, text string) (string, bool, error) {
 		}
 	}
 
-	ret := true
-	out := strings.TrimSpace(string(o))
-	if out == "" {
-		ret = false
-	}
+	out := strings.TrimSpace(o)
 
-	return out, ret, err
+	return out, true, err
 }

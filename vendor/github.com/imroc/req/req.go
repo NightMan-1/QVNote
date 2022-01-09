@@ -171,6 +171,13 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 	}
 	resp = &Resp{req: req, r: r}
 
+	// output detail if Debug is enabled
+	if Debug {
+		defer func(resp *Resp) {
+			fmt.Println(resp.Dump())
+		}(resp)
+	}
+
 	var queryParam param
 	var formParam param
 	var uploads []FileUpload
@@ -190,6 +197,10 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 				for _, value := range values {
 					req.Header.Add(key, value)
 				}
+			}
+		case ReservedHeader:
+			for key, value := range vv {
+				req.Header[key] = []string{value}
 			}
 		case *bodyJson:
 			fn, err := setBodyJson(req, resp, r.jsonEncOpts, vv.v)
@@ -340,10 +351,6 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 		response.Body = body
 	}
 
-	// output detail if Debug is enabled
-	if Debug {
-		fmt.Println(resp.Dump())
-	}
 	return
 }
 

@@ -10,7 +10,6 @@ systray is a cross-platform Go library to place an icon and menu in the notifica
 
 ```go
 func main() {
-	// Should be called at the very beginning of main().
 	systray.Run(onReady, onExit)
 }
 
@@ -20,7 +19,7 @@ func onReady() {
 	systray.SetTooltip("Pretty awesome超级棒")
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
-	// Sets the icon of a menu item. Only available on Mac.
+	// Sets the icon of a menu item. Only available on Mac and Windows.
 	mQuit.SetIcon(icon.Data)
 }
 
@@ -28,6 +27,8 @@ func onExit() {
 	// clean up here
 }
 ```
+
+See [full API](https://pkg.go.dev/github.com/getlantern/systray?tab=doc) as well as [CHANGELOG](https://github.com/getlantern/systray/tree/master/CHANGELOG.md).
 
 ## Try the example app!
 
@@ -59,20 +60,23 @@ Now look for *Awesome App* in your menu bar!
 
 ![Awesome App screenshot](example/screenshot.png)
 
+## The Webview example
+
+The code under `webview_example` is to demostrate how it can co-exist with other UI elements. Note that the example doesn't work on macOS versions older than 10.15 Catalina.
+
 ## Platform notes
 
 ### Linux
 
-* Building apps requires the `gtk3`, `libappindicator3` and `libwebkit2gtk-4.0-dev` development headers to be installed. For Debian or Ubuntu, you can may install these using:
+* Building apps requires gcc as well as the `gtk3` and `libappindicator3` development headers to be installed. For Debian or Ubuntu, you may install these using:
 
 ```sh
-sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
+sudo apt-get install gcc libgtk-3-dev libappindicator3-dev
 ```
 
-To build the example, run `go build example/main.go`
+On Linux Mint, `libxapp-dev` is also required .
 
-* Checked menu items are not yet implemented
-
+To build `webview_example`, you also need to install `libwebkit2gtk-4.0-dev` and remove `webview_example/rsrc.syso` which is required on Windows.
 
 ### Windows
 
@@ -81,35 +85,6 @@ To build the example, run `go build example/main.go`
 ```sh
 go build -ldflags -H=windowsgui
 ```
-
-You'll also need to include a Manifest for your windows app. Assuming your executable is named `app.exe`, create a file `app.manifest` like this:
-
-```
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-    <assemblyIdentity version="1.0.0.0" processorArchitecture="*" name="App Name Here" type="win32"/>
-    <dependency>
-        <dependentAssembly>
-            <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"/>
-        </dependentAssembly>
-    </dependency>
-    <application xmlns="urn:schemas-microsoft-com:asm.v3">
-        <windowsSettings>
-            <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
-            <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">True</dpiAware>
-        </windowsSettings>
-    </application>
-</assembly>
-```
-
-Then either compile the manifest using the [rsrc](https://github.com/akavel/rsrc) tool, like this:
-
-```
-go get github.com/akavel/rsrc
-rsrc -manifest app.manifest -o rsrc.syso
-```
-
-or rename the app.manifest file to app.exe.manifest and distribute it with the application instead.
 
 ### macOS
 

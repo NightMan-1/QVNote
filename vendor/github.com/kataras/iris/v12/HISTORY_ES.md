@@ -21,17 +21,9 @@ Los desarrolladores no están obligados a actualizar si realmente no lo necesita
 
 **Cómo actualizar**: Abra su línea de comandos y ejecute este comando: `go get github.com/kataras/iris/v12@latest`.
 
-# Th, 19 December 2019 | v12.1.2
+# Su, 16 February 2020 | v12.1.8
 
-Not translated yet, please navigate to the [english version](HISTORY.md#th-19-december-2019--v1212) instead.
-
-# Mo, 16 December 2019 | v12.1.1
-
-Not translated yet, please navigate to the [english version](HISTORY.md#mo-16-december-2019--v1211) instead.
-
-# Fr, 13 December 2019 | v12.1.0
-
-Not translated yet, please navigate to the [english version](HISTORY.md#fr-13-december-2019--v1210) instead.
+Not translated yet, please navigate to the [english version](HISTORY.md#su-16-february-2020--v1218) instead.
 
 # Sábado, 26 de octubre 2019 | v12.0.0
 
@@ -116,7 +108,7 @@ Registro de commits: https://github.com/kataras/iris/compare/v11.2.3...v11.2.4
 
 - [Nueva característica: Manejar diferentes tipos de parámetros en la misma ruta](https://github.com/kataras/iris/issues/1315)
 - [Nueva característica: Negociación de contenido](https://github.com/kataras/iris/issues/1319)
-- [Context.ReadYAML](https://github.com/kataras/iris/tree/master/_examples/http_request/read-yaml)
+- [Context.ReadYAML](https://github.com/kataras/iris/tree/master/_examples/request-body/read-yaml)
 - Ajustes https://github.com/kataras/neffos/issues/1#issuecomment-515698536
 
 # Miércoles, 24 de julio 2019 | v11.2.2

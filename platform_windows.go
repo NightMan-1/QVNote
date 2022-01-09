@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package main
@@ -44,7 +45,8 @@ func showNotification(messageText string, messageType string) {
 	case "notify":
 		if runtime.GOOS == string("windows") {
 			var tmpIcon *os.File
-			iconData, _ := Asset("icon.ico")
+			//TODO дважды извлекается один файл
+			iconData, _ := Asset("../icon.ico")
 			tmpIcon, _ = ioutil.TempFile("", "icon.*.ico")
 			tmpIcon.Write(iconData)
 			tmpIcon.Close()
@@ -80,7 +82,7 @@ func consoleHide() {
 }
 
 func onReadySysTray() {
-	iconData, _ := Asset("icon.ico")
+	iconData, _ := Asset("../icon.ico")
 
 	systray.SetIcon(iconData)
 	systray.SetTitle("QVNote")
@@ -179,4 +181,3 @@ func initPlatformSpecific() {
 	}
 
 }
-

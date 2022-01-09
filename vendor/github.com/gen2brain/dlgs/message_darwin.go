@@ -8,6 +8,11 @@ import (
 	"syscall"
 )
 
+// MessageBox displays message box and ok button without icon.
+func MessageBox(title, text string) (bool, error) {
+	return osaDialog(title, text, "")
+}
+
 // Info displays information dialog.
 func Info(title, text string) (bool, error) {
 	return osaDialog(title, text, "note")
@@ -25,17 +30,12 @@ func Error(title, text string) (bool, error) {
 
 // Question displays question dialog.
 func Question(title, text string, defaultCancel bool) (bool, error) {
-	osa, err := exec.LookPath("osascript")
-	if err != nil {
-		return false, err
-	}
-
 	btn := "Yes"
 	if defaultCancel {
 		btn = "No"
 	}
 
-	out, err := exec.Command(osa, "-e", `set T to button returned of (display dialog "`+text+`" with title "`+title+`" buttons {"No", "Yes"} default button "`+btn+`")`).Output()
+	out, err := osaExecute(`set T to button returned of (display dialog ` + osaEscapeString(text) + ` with title ` + osaEscapeString(title) + ` buttons {"No", "Yes"} default button ` + osaEscapeString(btn) + `)`)
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			ws := exitError.Sys().(syscall.WaitStatus)
@@ -44,7 +44,7 @@ func Question(title, text string, defaultCancel bool) (bool, error) {
 	}
 
 	ret := false
-	if strings.TrimSpace(string(out)) == "Yes" {
+	if strings.TrimSpace(out) == "Yes" {
 		ret = true
 	}
 
@@ -53,12 +53,11 @@ func Question(title, text string, defaultCancel bool) (bool, error) {
 
 // osaDialog displays dialog.
 func osaDialog(title, text, icon string) (bool, error) {
-	osa, err := exec.LookPath("osascript")
-	if err != nil {
-		return false, err
+	iconScript := ""
+	if icon != "" {
+		iconScript = ` with icon ` + icon
 	}
-
-	out, err := exec.Command(osa, "-e", `tell application "System Events" to display dialog "`+text+`" with title "`+title+`" buttons {"OK"} default button "OK" with icon `+icon+``).Output()
+	out, err := osaExecute(`display dialog ` + osaEscapeString(text) + ` with title ` + osaEscapeString(title) + ` buttons {"OK"} default button "OK"` + iconScript)
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			ws := exitError.Sys().(syscall.WaitStatus)
@@ -67,7 +66,7 @@ func osaDialog(title, text, icon string) (bool, error) {
 	}
 
 	ret := false
-	if strings.TrimSpace(string(out)) == "OK" {
+	if strings.TrimSpace(out) == "OK" {
 		ret = true
 	}
 

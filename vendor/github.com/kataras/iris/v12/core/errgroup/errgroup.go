@@ -182,7 +182,7 @@ const delim = "\n"
 
 func (g *Group) Error() (s string) {
 	if len(g.Errors) > 0 {
-		msgs := make([]string, len(g.Errors), len(g.Errors))
+		msgs := make([]string, len(g.Errors))
 		for i, err := range g.Errors {
 			msgs[i] = err.Error()
 		}
@@ -210,7 +210,7 @@ func (g *Group) Error() (s string) {
 }
 
 func (g *Group) getAllErrors() []error {
-	list := g.Errors[:]
+	list := g.Errors
 
 	if len(g.children) > 0 {
 		// return with order of definition.
@@ -284,7 +284,7 @@ func (g *Group) Addf(format string, args ...interface{}) error {
 	return err
 }
 
-// Err adds an error the the group, it transforms it to an Error type if necessary and returns it.
+// Err adds an error to the group, it transforms it to an Error type if necessary and returns it.
 func (g *Group) Err(err error) error {
 	if err == nil {
 		return nil
@@ -318,21 +318,6 @@ func sortGroups(groups []*Group) {
 	sort.Slice(groups, func(i, j int) bool {
 		return groups[i].index < groups[j].index
 	})
-}
-
-func tryGetTypeText(typ interface{}) string {
-	if typ == nil {
-		return ""
-	}
-
-	switch v := typ.(type) {
-	case string:
-		return v
-	case fmt.Stringer:
-		return v.String()
-	default:
-		return ""
-	}
 }
 
 func isNotNil(err error) bool {

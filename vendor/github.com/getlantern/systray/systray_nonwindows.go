@@ -3,10 +3,9 @@
 package systray
 
 /*
-#cgo linux CFLAGS: -DWEBVIEW_GTK=1
-#cgo linux pkg-config: gtk+-3.0 webkit2gtk-4.0 appindicator3-0.1
+#cgo linux pkg-config: gtk+-3.0 appindicator3-0.1
 #cgo darwin CFLAGS: -DDARWIN -x objective-c -fobjc-arc
-#cgo darwin LDFLAGS: -framework Cocoa -framework WebKit
+#cgo darwin LDFLAGS: -framework Cocoa
 
 #include "systray.h"
 */
@@ -16,18 +15,16 @@ import (
 	"unsafe"
 )
 
-func nativeLoop(title string, width int, height int) {
-	C.nativeLoop(C.CString(title), C.int(width), C.int(height))
+func registerSystray() {
+	C.registerSystray()
+}
+
+func nativeLoop() {
+	C.nativeLoop()
 }
 
 func quit() {
 	C.quit()
-}
-
-// ShowAppWindow shows the given URL in the application window. Only works if
-// configureAppWindow has been called first.
-func ShowAppWindow(url string) {
-	C.showAppWindow(C.CString(url))
 }
 
 // SetIcon sets the systray icon.
@@ -38,7 +35,7 @@ func SetIcon(iconBytes []byte) {
 	C.setIcon(cstr, (C.int)(len(iconBytes)), false)
 }
 
-// SetTitle sets the systray title, only available on Mac.
+// SetTitle sets the systray title, only available on Mac and Linux.
 func SetTitle(title string) {
 	C.setTitle(C.CString(title))
 }
@@ -58,7 +55,11 @@ func addOrUpdateMenuItem(item *MenuItem) {
 	if item.checked {
 		checked = 1
 	}
-	var parentID int32 = 0
+	var isCheckable C.short
+	if item.isCheckable {
+		isCheckable = 1
+	}
+	var parentID uint32 = 0
 	if item.parent != nil {
 		parentID = item.parent.id
 	}
@@ -69,10 +70,11 @@ func addOrUpdateMenuItem(item *MenuItem) {
 		C.CString(item.tooltip),
 		disabled,
 		checked,
+		isCheckable,
 	)
 }
 
-func addSeparator(id int32) {
+func addSeparator(id uint32) {
 	C.add_separator(C.int(id))
 }
 
@@ -100,5 +102,5 @@ func systray_on_exit() {
 
 //export systray_menu_item_selected
 func systray_menu_item_selected(cID C.int) {
-	systrayMenuItemSelected(int32(cID))
+	systrayMenuItemSelected(uint32(cID))
 }

@@ -1,4 +1,5 @@
-﻿// +build darwin
+﻿//go:build darwin
+// +build darwin
 
 package main
 
@@ -47,6 +48,7 @@ func onReadySysTray() {
 	for {
 		select {
 		case <-mBrowser.ClickedCh:
+			//TODO dinamic port
 			openBrowser("http://localhost:8000/")
 		case <-mRelod.ClickedCh:
 			url := "http://localhost:8000/api/refresh_data.json"
