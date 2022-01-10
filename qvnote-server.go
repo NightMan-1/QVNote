@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/blevesearch/bleve"
@@ -25,13 +26,13 @@ import (
 	"github.com/imroc/req"
 	lediscfg "github.com/ledisdb/ledisdb/config"
 	"github.com/ledisdb/ledisdb/ledis"
-	"github.com/marcsauter/single"
+	"github.com/postfinance/single"
 )
 
 func check(e error, message string) {
 	if e != nil {
 		fmt.Println(message)
-		showNotification(message, "dialog_warning")
+		showNotificationDialog(message)
 		panic(e)
 	}
 }
@@ -39,7 +40,6 @@ func check(e error, message string) {
 func checkQuiet(e error) { //check_no_exit
 	if e != nil {
 		fmt.Println(e)
-		showNotification(fmt.Sprintf("%s", e), "notify")
 	}
 }
 
@@ -103,7 +103,7 @@ func initSystem() {
 	configGlobal.cmdPortable = false
 	configGlobal.cmdServerMode = false
 	configGlobal.appStartingMode = "independent"
-	configGlobal.appStartingModeForce = false
+	configGlobal.appStartingModeForce = false //You need to prioritize config.ini over the settings in the database
 
 	//read configuration file
 	cfgFile := configGlobal.execDir + "/config.ini"
@@ -114,8 +114,8 @@ func initSystem() {
 			os.Exit(1)
 		}
 
-		if cfg.Section("").Key("port").MustInt(9999) > 0 && cfg.Section("").Key("port").MustInt(9999) < 65535 {
-			portTMP = cfg.Section("").Key("port").MustInt(9999)
+		if cfg.Section("").Key("port").MustInt(portTMP) > 0 && cfg.Section("").Key("port").MustInt(portTMP) < 65535 {
+			portTMP = cfg.Section("").Key("port").MustInt(portTMP)
 		}
 		if runtime.GOOS == "windows" {
 			configGlobal.cmdPortable = cfg.Section("").Key("portable").MustBool(false)
@@ -129,8 +129,7 @@ func initSystem() {
 			}
 		}
 
-		tM := cfg.Section("").Key("startingmode").String()
-		if tM != "" {
+		if tM := cfg.Section("").Key("startingmode").String(); tM != "" {
 			configGlobal.appStartingModeForce = true
 			if tM == "independent" {
 				configGlobal.appStartingMode = "independent"
@@ -196,23 +195,23 @@ func initSystem() {
 
 	searchStatus.Status = "idle"
 
-	//читаем настройки
+	//read the settings
 	data, _ := ConfigDB.Get([]byte("appInstalled"))
-	if BytesToString(data) != "" && BytesToString(data) == "true" {
+	if string(data) != "" && string(data) == "true" {
 		configGlobal.appInstalled = true
 	} else {
 		configGlobal.appInstalled = false
 	}
 
 	data, _ = ConfigDB.Get([]byte("requestIndexing"))
-	if BytesToString(data) != "" && BytesToString(data) == "true" {
+	if string(data) != "" && string(data) == "true" {
 		configGlobal.appInstalled = true
 	} else {
 		configGlobal.requestIndexing = false
 	}
 
 	data, _ = ConfigDB.Get([]byte("sourceFolder"))
-	if BytesToString(data) == "" {
+	if string(data) == "" {
 		configGlobal.appInstalled = false
 		switch runtime.GOOS {
 		case "windows":
@@ -221,42 +220,42 @@ func initSystem() {
 			configGlobal.sourceFolder = os.Getenv("HOME") + "/notes"
 		}
 	} else {
-		configGlobal.sourceFolder = BytesToString(data)
+		configGlobal.sourceFolder = string(data)
 	}
 	if !CheckNotebooksFolderStructure(configGlobal.sourceFolder) {
 		configGlobal.appInstalled = false
 	}
 
 	data, _ = ConfigDB.Get([]byte("atStartOpenBrowser"))
-	if BytesToString(data) == "false" {
+	if string(data) == "false" {
 		configGlobal.atStartOpenBrowser = false
 	} else {
 		configGlobal.atStartOpenBrowser = true
 	}
 
 	data, _ = ConfigDB.Get([]byte("atStartCheckNewNotes"))
-	if BytesToString(data) != "" && BytesToString(data) == "true" {
+	if string(data) != "" && string(data) == "true" {
 		configGlobal.atStartCheckNewNotes = true
 	} else {
 		configGlobal.atStartCheckNewNotes = false
 	}
 	data, _ = ConfigDB.Get([]byte("atStartShowConsole"))
-	if BytesToString(data) != "" && BytesToString(data) == "true" {
+	if string(data) != "" && string(data) == "true" {
 		configGlobal.atStartShowConsole = true
 	} else {
 		configGlobal.atStartShowConsole = false
 	}
 
 	data, _ = ConfigDB.Get([]byte("postEditor"))
-	if BytesToString(data) != "" {
-		configGlobal.postEditor = BytesToString(data)
+	if string(data) != "" {
+		configGlobal.postEditor = string(data)
 	} else {
 		configGlobal.postEditor = "quill"
 	}
 
 	if !configGlobal.appStartingModeForce {
 		data, _ = ConfigDB.Get([]byte("startingMode"))
-		if BytesToString(data) == "browser" { // independent by default
+		if string(data) == "browser" { // independent by default
 			configGlobal.appStartingMode = "browser"
 		}
 	}
@@ -325,7 +324,7 @@ func FindAllNotes() {
 			err = json.Unmarshal(data, &note)
 			//checkQuiet(err)
 			check(err, "Ошибка:")
-			NoteOld[BytesToString(NoteID)] = note
+			NoteOld[string(NoteID)] = note
 		}
 	}
 
@@ -403,7 +402,6 @@ func FindAllNotes() {
 
 	SaveConfig()
 	fmt.Println("Done!")
-	showNotification("The list of notes has been updated.", "notify")
 }
 
 //creating a structure for new notes
@@ -769,7 +767,7 @@ func indexingAllNotes() {
 		}
 		for _, NoteID := range allDBData {
 			cursor = NoteID
-			//fmt.Println(BytesToString(NoteID))
+			//fmt.Println(string(NoteID))
 			data, _ := NoteDB.Get(NoteID)
 			var note NoteType
 			err := json.Unmarshal(data, &note)
@@ -817,7 +815,7 @@ func optimizeAllNotes() {
 		}
 		for _, NoteID := range allDBData {
 			cursor = NoteID
-			NotesForOptimization = append(NotesForOptimization, BytesToString(NoteID))
+			NotesForOptimization = append(NotesForOptimization, string(NoteID))
 		}
 	}
 
@@ -832,31 +830,62 @@ func optimizeAllNotes() {
 		}
 	}
 	optimizationStatus.Status = "done"
-	showNotification("Optimization is complete.", "notify")
 
 }
 
 func main() {
+	start := time.Now()
+
+	//TODO попробовать не запускать как отдельный процесс
 	if len(os.Args) == 2 && os.Args[1] == string("--systray") && runtime.GOOS == string("darwin") {
 		runSystray()
 		os.Exit(0)
 	}
 
-	s := single.New("QVNote")
-	if err := s.CheckLock(); err != nil && err == single.ErrAlreadyRunning {
-		showNotification("another instance of the app is already running, exiting", "dialog_warning")
-		log.Fatal("another instance of the app is already running, exiting")
-		os.Exit(1)
-	} else if err != nil {
-		// Another error occurred, might be worth handling it as well
-		showNotification("failed to acquire exclusive app lock", "dialog_warning")
-		log.Fatalf("failed to acquire exclusive app lock: %v", err)
+	//checking for simultaneous launch of multiple copies of the program
+	s, _ := single.New("QVNote")
+	if err := s.Lock(); err != nil {
+		if err == single.ErrAlreadyRunning {
+			showNotificationDialog("another instance of the app is already running, exiting")
+			log.Fatal("another instance of the app is already running, exiting")
+		} else {
+			showNotificationDialog("failed to acquire exclusive app lock")
+			log.Fatalf("failed to acquire exclusive app lock: %v", err)
+		}
 		os.Exit(1)
 	}
-	defer s.TryUnlock()
+	defer s.Unlock()
 
-	start := time.Now()
-	println("Initializing...")
+	//check console and start new one if not present
+	if runtime.GOOS == "windows" {
+		modkernel32 := syscall.NewLazyDLL("kernel32.dll")
+		procAllocConsole := modkernel32.NewProc("AllocConsole")
+		r0, _, _ := syscall.Syscall(procAllocConsole.Addr(), 0, 0, 0, 0)
+		if r0 == 0 { // Allocation failed, probably process already has a console
+			//fmt.Printf("Could not allocate console: %s. Check build flags..", err0)
+			configGlobal.consoleControl = false
+		} else {
+			hout, err1 := syscall.GetStdHandle(syscall.STD_OUTPUT_HANDLE)
+			hin, err2 := syscall.GetStdHandle(syscall.STD_INPUT_HANDLE)
+			if err1 == nil && err2 == nil { // nowhere to print the error
+				os.Stdout = os.NewFile(uintptr(hout), "/dev/stdout")
+				os.Stdin = os.NewFile(uintptr(hin), "/dev/stdin")
+				configGlobal.consoleControl = true
+
+				// needed for show/hide console
+				getConsoleWindow := modkernel32.NewProc("GetConsoleWindow")
+				if getConsoleWindow.Find() == nil {
+					showWindow = syscall.NewLazyDLL("user32.dll").NewProc("ShowWindow")
+					if showWindow.Find() == nil {
+						hwnd, _, _ = getConsoleWindow.Call()
+					}
+				}
+
+			}
+		}
+	}
+
+	fmt.Println("Initializing...")
 	initSystem()
 	initPlatformSpecific()
 
@@ -868,7 +897,7 @@ func main() {
 	}
 
 	//start web server
-	println("Starting web server...")
+	fmt.Println("Starting web server...")
 	if configGlobal.atStartOpenBrowser && !configGlobal.cmdServerMode && configGlobal.appStartingMode != "independent" {
 		go openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
 	}
@@ -882,6 +911,6 @@ func main() {
 	}
 
 	MemStat()
-	fmt.Printf("page took %s\n", time.Since(start))
+	fmt.Printf("Execution took %s\n", time.Since(start))
 
 }

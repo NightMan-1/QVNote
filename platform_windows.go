@@ -1,84 +1,39 @@
 //go:build windows
-// +build windows
 
 package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
-	"net/url"
 	"os"
 	"os/exec"
-	"runtime"
-	"time"
+	"syscall"
 
-	"github.com/gen2brain/beeep"
-	"github.com/gen2brain/dlgs"
 	"github.com/getlantern/systray"
-	"github.com/gonutz/w32"
-	"github.com/zserge/lorca"
 )
 
-var consoleWindows w32.HWND
 var consoleWindowsVisible bool
-var consolePresent bool
+
+var showWindow *syscall.LazyProc
+var hwnd uintptr
 
 func openBrowser(url string) error {
-	var cmd string
-	var args []string
-
-	cmd = "cmd"
-	args = []string{"/c", "start"}
-
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
-}
-
-func showNotification(messageText string, messageType string) {
-	if configGlobal.cmdServerMode {
-		return
-	}
-	switch messageType {
-	case "dialog_warning":
-		dlgs.Warning("QVNote error!", messageText)
-	case "notify":
-		if runtime.GOOS == string("windows") {
-			var tmpIcon *os.File
-			//TODO дважды извлекается один файл
-			iconData, _ := Asset("../icon.ico")
-			tmpIcon, _ = ioutil.TempFile("", "icon.*.ico")
-			tmpIcon.Write(iconData)
-			tmpIcon.Close()
-			beeep.Notify("QVNote", messageText, tmpIcon.Name())
-			time.Sleep(50 * time.Millisecond)
-			os.Remove(tmpIcon.Name())
-		} else {
-			beeep.Notify("QVNote", messageText, "") // icon not work on MacOS
-		}
-
-	}
+	return exec.Command("cmd", "/c", "start", url).Start()
 }
 
 func consoleShow() {
-	if consoleWindows != 0 {
-		_, consoleProcID := w32.GetWindowThreadProcessId(consoleWindows)
-		if w32.GetCurrentProcessId() == consoleProcID {
-			w32.ShowWindowAsync(consoleWindows, w32.SW_SHOW)
-			consoleWindowsVisible = true
-		}
+	if hwnd == 0 {
+		return
 	}
-
+	showWindow.Call(hwnd, 9)
+	consoleWindowsVisible = true
 }
 
 func consoleHide() {
-	if consoleWindows != 0 {
-		_, consoleProcID := w32.GetWindowThreadProcessId(consoleWindows)
-		if w32.GetCurrentProcessId() == consoleProcID {
-			w32.ShowWindowAsync(consoleWindows, w32.SW_HIDE)
-			consoleWindowsVisible = false
-		}
+	if hwnd == 0 {
+		return
 	}
+	showWindow.Call(hwnd, 0)
+	consoleWindowsVisible = false
 }
 
 func onReadySysTray() {
@@ -89,12 +44,21 @@ func onReadySysTray() {
 
 	mBrowser := systray.AddMenuItem("Open browser", "open default browser with this app page")
 	mOpenLorcaGUI := systray.AddMenuItem("Run independent mode", "Open Chrome based GUI")
-	mRelod := systray.AddMenuItem("Reload notes", "may be slow")
-	mShowConsoleHide := systray.AddMenuItem("Hide console", "debug")
-	mShowConsoleShow := systray.AddMenuItem("Show console", "debug")
-	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
-	if configGlobal.consolePresent {
+	mRelod := systray.AddMenuItem("Reload notes", "may be slow")
+	mRelod.SetIcon(iconRepeat)
+
+	mShowConsoleHide := systray.AddMenuItem("Hide console", "debug")
+	mShowConsoleHide.SetIcon(iconWindowsX)
+	mShowConsoleShow := systray.AddMenuItem("Show console", "debug")
+	mShowConsoleShow.SetIcon(iconWindows)
+
+	systray.AddSeparator()
+
+	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
+	mQuit.SetIcon(iconPower)
+
+	if configGlobal.consoleControl {
 		if consoleWindowsVisible {
 			mShowConsoleShow.Hide()
 		} else {
@@ -119,65 +83,55 @@ func onReadySysTray() {
 			openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
 		case <-mRelod.ClickedCh:
 			FindAllNotes()
-			beeep.Notify("QVNote", "All data reloaded", "")
 		case <-mQuit.ClickedCh:
-			systray.Quit()
-			beeep.Notify("QVNote", "Good buy!", "")
 			fmt.Println("Good buy!")
+			if configGlobal.consoleControl {
+				os.Exit(0)
+			} else {
+				SendInterrupt()
+			}
 		case <-mOpenLorcaGUI.ClickedCh:
+			systray.Quit()
 			startStadaloneGUI()
 		}
 	}
 
 }
 
-func onExitSysTray() {
-	// clean up here
-	os.Exit(0)
+//https://stackoverflow.com/questions/40498371/how-to-send-an-interrupt-signal
+func SendInterrupt() error {
+	d, e := syscall.LoadDLL("kernel32.dll")
+	if e != nil {
+		return fmt.Errorf("LoadDLL: %v", e)
+	}
+	p, e := d.FindProc("GenerateConsoleCtrlEvent")
+	if e != nil {
+		return fmt.Errorf("FindProc: %v", e)
+	}
+	r, _, e := p.Call(syscall.CTRL_BREAK_EVENT, uintptr(syscall.Getpid()))
+	if r == 0 {
+		return fmt.Errorf("GenerateConsoleCtrlEvent: %v", e)
+	}
+	return nil
 }
 
 func runSystray() {
 }
 
-func startStadaloneGUI() {
-	// Create UI with basic HTML passed via data URI
-	ui, err := lorca.New("data:text/html,"+url.PathEscape(`<html><head><title>QVNote</title></head><body>Loading...</body></html>`), "", 1380, 768)
-	if err != nil {
-		showNotification("Can not start Google Chrome", "dialog_warning")
-		log.Fatalf("Can not start Google Chrome: %v", err)
-		os.Exit(1)
-	}
-	defer ui.Close()
-	ui.Load("http://localhost:8000")
-	// Wait until UI window is closed
-	<-ui.Done()
-}
-
 func initPlatformSpecific() {
 	if configGlobal.cmdServerMode {
+		configGlobal.consoleControl = false
 		return
 	}
 
-	consoleWindows = w32.GetConsoleWindow()
-	consoleWindowsVisible = true
-
-	_, consoleProcID := w32.GetWindowThreadProcessId(consoleWindows)
-	if w32.GetCurrentProcessId() == consoleProcID {
-		configGlobal.consolePresent = true
-	} else {
-		configGlobal.consolePresent = false
-	}
-
 	if configGlobal.appStartingMode == "independent" {
-		configGlobal.atStartShowConsole = false
+		configGlobal.consoleControl = true
+	} else {
+		go systray.Run(onReadySysTray, nil)
 	}
 
-	if configGlobal.atStartShowConsole == false {
+	if configGlobal.consoleControl {
 		consoleHide()
-	}
-
-	if configGlobal.appStartingMode != "independent" {
-		go systray.Run(onReadySysTray, onExitSysTray)
 	}
 
 }

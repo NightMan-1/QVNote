@@ -6,18 +6,17 @@ require (
 	github.com/blevesearch/bleve v1.0.14
 	github.com/blevesearch/snowballstem v0.9.0
 	github.com/dustin/go-humanize v1.0.0
-	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
 	github.com/gen2brain/dlgs v0.0.0-20211108104213-bade24837f0b
 	github.com/getlantern/systray v1.1.0
 	github.com/go-ini/ini v1.66.2
-	github.com/gonutz/w32 v1.0.0
 	github.com/google/uuid v1.3.0
 	github.com/imroc/req v0.3.2
 	github.com/iris-contrib/middleware/cors v0.0.0-20211207164801-081c558a02bb
 	github.com/json-iterator/go v1.1.12
 	github.com/kataras/iris/v12 v12.2.0-alpha5
 	github.com/ledisdb/ledisdb v0.0.0-20200510135210-d35789ec47e6
-	github.com/marcsauter/single v0.0.0-20201009143647-9f8d81240be2
+	github.com/mattn/go-colorable v0.1.12
+	github.com/postfinance/single v0.0.1
 	github.com/zserge/lorca v0.1.10
 )
 
@@ -52,12 +51,9 @@ require (
 	github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20181221182339-f9677308dec2 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
-	github.com/godbus/dbus/v5 v5.0.3 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20190910122728-9d188e94fb99 // indirect
-	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/iris-contrib/jade v1.1.4 // indirect
 	github.com/iris-contrib/schema v0.0.6 // indirect
@@ -69,11 +65,11 @@ require (
 	github.com/kataras/tunnel v0.0.3 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.16 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
-	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect
@@ -84,7 +80,6 @@ require (
 	github.com/siddontang/rdb v0.0.0-20150307021120-fc89ed2e418d // indirect
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
-	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/tdewolff/minify/v2 v2.9.22 // indirect
 	github.com/tdewolff/parse/v2 v2.5.22 // indirect
 	github.com/tinylib/msgp v1.1.0 // indirect
