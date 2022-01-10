@@ -59,7 +59,7 @@
                     <quill-editor v-model="articleCurrentEditable.content" :options="editorSettings"></quill-editor>
                 </div>
                 <div class="editor prism mt-2" v-if="articleCurrentEditable.type === 'code'">
-                    <prism-editor v-model="articleCurrentEditable.content" language="html" :line-numbers="true"></prism-editor>
+                    <prism-editor v-model="articleCurrentEditable.content" language="html" :line-numbers="true" :highlight="highlighter"></prism-editor>
                 </div>
                 <div class="clearfix"></div>
         </div>
@@ -70,7 +70,14 @@
 import mixin from './mixins'
 import 'prismjs'
 import 'prismjs/themes/prism.css'
-import PrismEditor from 'vue-prism-editor'
+import { PrismEditor } from 'vue-prism-editor'
+import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
+// import highlighting library (you can use any library you want just return html string)
+import { highlight, languages } from 'prismjs/components/prism-core';
+import 'prismjs/components/prism-clike'
+import 'prismjs/components/prism-javascript'
+import 'prismjs/themes/prism-tomorrow.css' // import syntax highlighting styles
+
 import { quillEditor } from 'vue-quill-editor'
 import Multiselect from 'vue-multiselect'
 import Quill from 'quill'
@@ -158,6 +165,9 @@ export default {
         }
     },
     methods: {
+        highlighter (code) {
+            return highlight(code, languages.js) // languages.<insert language> to return html with markup
+        },
         saveData () {
             fetch(this.$store.getters.apiFolder + '/note_edit.json',
                 { method: 'POST',
@@ -229,6 +239,15 @@ export default {
       background-color: rgb(240, 243, 245);
       height: 70vh;
       overflow: auto;
+      font-size: .85rem;
+    }
+
+    .prism-editor__editor {
+        background: none !important;
+    }
+    .prism-editor-wrapper .prism-editor__container {
+        background: white;
+        padding-left: 5px;
     }
 
     .vmd-body {

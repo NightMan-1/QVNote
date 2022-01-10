@@ -27,10 +27,12 @@
             <button class="dropdown-item" @click="openSettings"><i class="fas fa-cog mr-2 text-nord3"></i>
                 {{$t('general.buttonSettings')}}
             </button>
+            <!--
             <div class="dropdown-divider" v-if="config.startingMode === 'browser'"></div>
             <button class="dropdown-item" @click="powerOFF" v-if="config.startingMode === 'browser'"><i class="fas fa-power-off mr-2 text-nord3"></i>
                 {{$t('general.buttonExit')}}
             </button>
+            -->
         </div>
     </div>
   </div>
