@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -185,20 +186,21 @@ func inArray(val string, array []string) (exists bool) {
 	return
 }
 
-func startStadaloneGUI() {
+func startStadaloneGUI() error {
 	// Create UI with basic HTML passed via data URI
 	ui, err := lorca.New("data:text/html,"+url.PathEscape(`<html><head><title>QVNote</title></head><body>Loading...</body></html>`), "", 1380, 768)
 	if err != nil {
-		showNotificationDialog("Can not start app in standalone mode (please install Google Chrome)")
-		log.Fatalf("Can not start app in standalone mode (please install Google Chrome): %v", err)
-		os.Exit(1)
+		message := "Can not start app in standalone mode (please install Google Chrome)"
+		showNotificationDialog(message)
+		log.Printf(message+": %v", err)
+		return errors.New("123")
 	}
 	defer ui.Close()
 	ui.Load("http://localhost:" + configGlobal.cmdPort + "")
 	// Wait until UI window is closed
 	<-ui.Done()
 
-	os.Exit(0)
+	return nil
 }
 
 func showNotificationDialog(messageText string) {

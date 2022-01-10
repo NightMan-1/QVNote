@@ -25,7 +25,7 @@ import (
 	"github.com/imroc/req"
 	lediscfg "github.com/ledisdb/ledisdb/config"
 	"github.com/ledisdb/ledisdb/ledis"
-	"github.com/postfinance/single"
+	"github.com/marcsauter/single"
 )
 
 func check(e error, message string) {
@@ -140,7 +140,9 @@ func initSystem() {
 
 	//get command line flags
 	flag.IntVar(&portTMP, "port", portTMP, "port number")
-	flag.BoolVar(&configGlobal.cmdPortable, "portable", configGlobal.cmdPortable, "portable flag for Windows OS")
+	if runtime.GOOS == "windows" {
+		flag.BoolVar(&configGlobal.cmdPortable, "portable", configGlobal.cmdPortable, "portable flag")
+	}
 	flag.BoolVar(&configGlobal.cmdServerMode, "server", false, "server mode")
 	flag.StringVar(&configGlobal.dataDir, "datadir", configGlobal.dataDir, "data folder")
 	flag.Parse()
@@ -835,15 +837,16 @@ func optimizeAllNotes() {
 func main() {
 	start := time.Now()
 
-	//TODO попробовать не запускать как отдельный процесс
-	if len(os.Args) == 2 && os.Args[1] == string("--systray") && runtime.GOOS == string("darwin") {
+	//systray on mac only works like this :(
+	if len(os.Args) == 3 && os.Args[1] == string("--systray") && runtime.GOOS == string("darwin") {
+		configGlobal.cmdPort = os.Args[2]
 		runSystray()
 		os.Exit(0)
 	}
 
 	//checking for simultaneous launch of multiple copies of the program
-	s, _ := single.New("QVNote")
-	if err := s.Lock(); err != nil {
+	s := single.New("QVNote")
+	if err := s.CheckLock(); err != nil {
 		if err == single.ErrAlreadyRunning {
 			showNotificationDialog("another instance of the app is already running, exiting")
 			log.Fatal("another instance of the app is already running, exiting")
@@ -853,7 +856,7 @@ func main() {
 		}
 		os.Exit(1)
 	}
-	defer s.Unlock()
+	defer s.TryUnlock()
 
 	//check console and start new one if not present
 	initConsole()
@@ -878,7 +881,10 @@ func main() {
 	go WebServer(webserverChan)
 
 	if configGlobal.appStartingMode == "independent" && (runtime.GOOS == "windows" || runtime.GOOS == "darwin") {
-		startStadaloneGUI()
+		if startStadaloneGUI() != nil {
+			go openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
+			<-webserverChan
+		}
 	} else {
 		<-webserverChan
 	}
