@@ -62,6 +62,8 @@ func onExitSysTray() {
 	os.Exit(0)
 }
 
+func initConsole() {}
+
 func initPlatformSpecific() error {
 	if configGlobal.appStartingMode != "independent" {
 		cwd, err := os.Getwd()
