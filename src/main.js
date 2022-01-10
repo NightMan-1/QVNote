@@ -79,6 +79,7 @@ new Vue({
         this.$store.commit('setReaderMode', Vue.ls.get('readerMode', false))
         this.$store.commit('setLayoutMode', Vue.ls.get('layoutBig', false))
 
+        /*
         let thisGlobal = this
         setInterval(() => {
             fetch(thisGlobal.$store.getters.apiFolder + '/ping').then((response) => { return response.json() })
@@ -98,6 +99,7 @@ new Vue({
                     }
                 })
         }, 2000)
+        */
 
         fetch(this.$store.getters.apiFolder + '/config.json').then((response) => { return response.json() })
             .then((jsonData) => {
