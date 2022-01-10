@@ -6,11 +6,9 @@ func openBrowser(url string) error {
 	return nil
 }
 
-func showNotificationDialog(messageText string) {
-	//do nothing
-}
-func runSystray() {
-}
+func runSystray() {}
+
+func initConsole() {}
 
 func initPlatformSpecific() {
 	configGlobal.atStartOpenBrowser = false
