@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,9 +13,10 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/dustin/go-humanize"
+	"github.com/gen2brain/dlgs"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/ledisdb/ledisdb/ledis"
-
+	"github.com/zserge/lorca"
 )
 
 type configGlobalStruct struct {
@@ -24,7 +27,7 @@ type configGlobalStruct struct {
 	appInstalled         bool
 	requestIndexing      bool //необходимость запустить переиндексацию поиска
 	atStartCheckNewNotes bool
-	consolePresent       bool
+	consoleControl       bool
 	atStartShowConsole   bool
 	postEditor           string
 	cmdPort              string
@@ -33,6 +36,7 @@ type configGlobalStruct struct {
 	appStartingModeForce bool
 	cmdServerMode        bool
 	atStartOpenBrowser   bool
+	accessLog            bool
 }
 
 var configGlobal (configGlobalStruct)
@@ -139,10 +143,6 @@ var FilesForIndex = []FilesForIndexType{}
 
 var systrayProcess *exec.Cmd
 
-func BytesToString(data []byte) string {
-	return string(data)
-}
-
 func RandStringBytes(n int) string {
 	const letterBytes = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	b := make([]byte, n)
@@ -156,7 +156,7 @@ func MemStat() {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 	//fmt.Printf("\nAlloc = %v\nTotalAlloc = %v\nSys = %v\nNumGC = %v\n\n", humanize.Bytes(mem.Alloc), humanize.Bytes(mem.TotalAlloc), humanize.Bytes(mem.Sys), mem.NumGC)
-	fmt.Printf("\nSys = %v\n\n", humanize.Bytes(mem.Sys))
+	fmt.Printf("\nSystem memory usage: %v\n", humanize.Bytes(mem.Sys))
 }
 
 //https://www.codesd.com/item/golang-how-to-get-the-total-size-of-the-directory.html
@@ -183,4 +183,27 @@ func inArray(val string, array []string) (exists bool) {
 		}
 	}
 	return
+}
+
+func startStadaloneGUI() {
+	// Create UI with basic HTML passed via data URI
+	ui, err := lorca.New("data:text/html,"+url.PathEscape(`<html><head><title>QVNote</title></head><body>Loading...</body></html>`), "", 1380, 768)
+	if err != nil {
+		showNotificationDialog("Can not start app in standalone mode (please install Google Chrome)")
+		log.Fatalf("Can not start app in standalone mode (please install Google Chrome): %v", err)
+		os.Exit(1)
+	}
+	defer ui.Close()
+	ui.Load("http://localhost:" + configGlobal.cmdPort + "")
+	// Wait until UI window is closed
+	<-ui.Done()
+
+	os.Exit(0)
+}
+
+func showNotificationDialog(messageText string) {
+	if configGlobal.cmdServerMode {
+		return
+	}
+	dlgs.Warning("QVNote error!", messageText)
 }

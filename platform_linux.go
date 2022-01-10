@@ -1,4 +1,4 @@
-﻿// +build linux
+﻿//go:build linux
 
 package main
 
@@ -6,15 +6,12 @@ func openBrowser(url string) error {
 	return nil
 }
 
-func showNotification(messageText string, messageType string) {
+func showNotificationDialog(messageText string) {
 	//do nothing
 }
 func runSystray() {
 }
 
-func startStadaloneGUI() {}
-
 func initPlatformSpecific() {
 	configGlobal.atStartOpenBrowser = false
-
 }

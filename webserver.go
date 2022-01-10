@@ -20,6 +20,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/logger"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/ledisdb/ledisdb/ledis"
+	"github.com/mattn/go-colorable"
 )
 
 func WebServer(webserverChan chan bool) { //nolint:gocyclo
@@ -27,6 +28,9 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	app.Use(iris.Compression)
 	app.Use(recover.New())
 	app.Use(logger.New())
+
+	// fix console colors
+	app.Logger().SetOutput(colorable.NewColorableStdout())
 
 	app.Use(cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
@@ -154,7 +158,6 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	})
 
 	app.Handle("ANY", "/api/exit", func(ctx iris.Context) {
-		showNotification("Good buy!", "notify")
 		fmt.Println("Good buy!")
 		if systrayProcess != nil {
 			systrayProcess.Process.Kill()
@@ -214,7 +217,6 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			"atStartOpenBrowser":   configGlobal.atStartOpenBrowser,
 			"atStartCheckNewNotes": configGlobal.atStartCheckNewNotes,
 			"atStartShowConsole":   configGlobal.atStartShowConsole,
-			"consolePresent":       configGlobal.consolePresent,
 			"postEditor":           configGlobal.postEditor,
 			"startingMode":         configGlobal.appStartingMode,
 		})
@@ -245,7 +247,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			}
 			for _, FavoriteID := range allDBData {
 				cursor = FavoriteID
-				favoritesList = append(favoritesList, BytesToString(FavoriteID))
+				favoritesList = append(favoritesList, string(FavoriteID))
 
 			}
 		}
@@ -306,7 +308,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				var tagsData []string
 				err := json.Unmarshal(data, &tagsData)
 				checkQuiet(err)
-				TagsCloud = append(TagsCloud, TagsListStruct{len(tagsData), strings.Trim(BytesToString(TagID), " "), url.PathEscape(BytesToString(TagID))})
+				TagsCloud = append(TagsCloud, TagsListStruct{len(tagsData), strings.Trim(string(TagID), " "), url.PathEscape(string(TagID))})
 
 			}
 		}
@@ -806,8 +808,6 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		err = ioutil.WriteFile(noteDir+"/content.json", buf.Bytes(), 0644)
 		checkQuiet(err)
 
-		//TODO add image processing
-
 		//remove old tags from cloud
 		for _, tagID := range noteData.Tags {
 			data, _ := TagsDB.Get([]byte(tagID))
@@ -834,7 +834,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		//Add new tags to cloud
 		for _, tagID := range request.Tags {
 			data, _ := TagsDB.Get([]byte(tagID))
-			dataString := BytesToString(data)
+			dataString := string(data)
 			var notesList []string
 			if dataString == "" {
 				//new tag
@@ -897,14 +897,14 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 		if request.URL != "" || (request.Action == "rename" && request.URL != "" && request.URL != request.Title) {
 			data, _ := TagsDB.Get([]byte(request.URL))
-			if BytesToString(data) != "" {
+			if string(data) != "" {
 				var tagsData []string
 				err := json.Unmarshal(data, &tagsData)
 				checkQuiet(err)
 				for _, noteID := range tagsData {
 					//change files
 					dataNote, _ := NoteDB.Get([]byte(noteID))
-					if BytesToString(dataNote) != "" {
+					if string(dataNote) != "" {
 						var note NoteType
 						err := json.Unmarshal(dataNote, &note)
 						checkQuiet(err)
@@ -967,7 +967,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 					//add new data
 					data, _ := TagsDB.Get([]byte(request.Title)) //check the existence of a new tag (required for merging)
-					if BytesToString(data) != "" {
+					if string(data) != "" {
 						var tagsDataExist []string
 						err := json.Unmarshal(data, &tagsDataExist)
 						checkQuiet(err)
@@ -1039,11 +1039,11 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 					os.RemoveAll(noteDirSrc)
 
 				} else { //nolint:staticcheck
-					//TODO показывать ошибку о переносе папки
+					go showNotificationDialog("Error! Can not move folder " + noteDirSrc + " to " + noteDirDst)
 				}
 
 			} else { //nolint:staticcheck
-				//TODO показывать ошибку о несуществующем блокноте
+				go showNotificationDialog("Error! Notebook " + notebookDST.UUID + " not exist")
 			}
 		case request.UUID != "" && request.Action == "delete":
 			//get note info
@@ -1093,7 +1093,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 					os.RemoveAll(noteDirSrc)
 
 				} else { //nolint:staticcheck
-					//TODO показывать ошибку о переносе папки
+					go showNotificationDialog("Error! Can not move folder " + noteDirSrc + " to " + noteDirDst)
 				}
 
 			}
