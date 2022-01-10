@@ -15,8 +15,8 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/kataras/iris/v12 v12.2.0-alpha5
 	github.com/ledisdb/ledisdb v0.0.0-20200510135210-d35789ec47e6
+	github.com/marcsauter/single v0.0.0-20201009143647-9f8d81240be2
 	github.com/mattn/go-colorable v0.1.12
-	github.com/postfinance/single v0.0.1
 	github.com/zserge/lorca v0.1.10
 )
 

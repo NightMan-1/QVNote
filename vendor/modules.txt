@@ -257,6 +257,9 @@ github.com/mailru/easyjson
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
+# github.com/marcsauter/single v0.0.0-20201009143647-9f8d81240be2
+## explicit
+github.com/marcsauter/single
 # github.com/mattn/go-colorable v0.1.12
 ## explicit; go 1.13
 github.com/mattn/go-colorable
@@ -287,9 +290,6 @@ github.com/pelletier/go-toml
 # github.com/philhofer/fwd v1.0.0
 ## explicit
 github.com/philhofer/fwd
-# github.com/postfinance/single v0.0.1
-## explicit; go 1.15
-github.com/postfinance/single
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
 github.com/russross/blackfriday/v2

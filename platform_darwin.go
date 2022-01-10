@@ -5,9 +5,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 
@@ -19,13 +17,14 @@ func openBrowser(url string) error {
 }
 
 func onReadySysTray() {
-	iconData, _ := Asset("icon.ico")
+	iconData, _ := Asset("../icon.ico")
 
 	systray.SetIcon(iconData)
 	//systray.SetTitle("QVNote")
 
 	mBrowser := systray.AddMenuItem("Open browser", "open default browser with this app page")
 	mRelod := systray.AddMenuItem("Reload notes", "may be slow")
+	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
 	for {
@@ -65,12 +64,16 @@ func onExitSysTray() {
 func initConsole() {}
 
 func initPlatformSpecific() error {
+	if configGlobal.cmdServerMode {
+		return nil
+	}
+
 	if configGlobal.appStartingMode != "independent" {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		systrayProcess = exec.Command(os.Args[0], "--systray")
+		systrayProcess = exec.Command(os.Args[0], "--systray", configGlobal.cmdPort)
 		systrayProcess.Dir = cwd
 		err = systrayProcess.Start()
 		if err != nil {
