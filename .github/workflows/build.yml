@@ -1,0 +1,70 @@
+﻿name: QVNote Actions
+on: [push]
+jobs:
+  Build-Binary:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - name: Setup GoLang
+        uses: actions/setup-go@v3
+        with:
+          go-version: '^1.17.8'
+
+      - name: Setup ENV
+        run: |
+          export TAG_NAME=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+          if [[ "$TAG_NAME" == "master" ]]; then export TAG_NAME=$(date +'%Y%m%d%H%M%S'); fi
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+
+      - name: Install requests
+        run: |
+          npm i
+          export CGO_ENABLED=1; go mod download
+          export GO111MODULE=off; go get -u github.com/go-bindata/go-bindata/...
+          export GO111MODULE=off; go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo
+
+      - name: Build frontend
+        run: |
+          npm run build
+          cd templates && go-bindata -o ../bindata.go -fs ./... ../icon.ico && cd ..
+
+      - name: Building MacOS binary
+        run: |
+          mkdir QVNote.app; mkdir QVNote.app/Contents; mkdir QVNote.app/Contents/MacOS; mkdir QVNote.app/Contents/Resources
+          cp Info.plist QVNote.app/Contents; cp icon.icns QVNote.app/Contents/Resources
+          export CGO_ENABLED=1; export GOOS=darwin; export GOARCH=amd64; go build -o QVNote.app/Contents/MacOS/QVNote && chmod a+x QVNote.app/Contents/MacOS/QVNote
+
+      - name: Building Linux binary
+        run: |
+          export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go build -o qvnote-linux-x64 && chmod a+x qvnote-linux-x64
+
+      - name: Building Windows binary
+        run: |
+          goversioninfo
+          export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -a -gcflags=all="-l -B" -ldflags="-w -s -H windowsgui" -o QVNote-windows-x64.exe
+
+      - name: Archiving
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          7z a -tzip qvnote-${{ env.TAG_NAME }}-linux-x64.zip notes qvnote-linux-x64
+          7z a -tzip qvnote-${{ env.TAG_NAME }}-mac-x64.zip notes QVNote.app
+          7z a -tzip qvnote-${{ env.TAG_NAME }}-win-x64.zip notes QVNote-windows-x64.exe
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          draft: true
+          files: |
+            qvnote-${{ env.TAG_NAME }}-linux-x64.zip
+            qvnote-${{ env.TAG_NAME }}-mac-x64.zip
+            qvnote-${{ env.TAG_NAME }}-win-x64.zip
+
+
