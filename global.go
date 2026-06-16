@@ -1,23 +1,15 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"math/rand"
-	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dustin/go-humanize"
-	"github.com/gen2brain/dlgs"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/ledisdb/ledisdb/ledis"
-	"github.com/zserge/lorca"
 )
 
 type configGlobalStruct struct {
@@ -28,14 +20,12 @@ type configGlobalStruct struct {
 	appInstalled         bool
 	requestIndexing      bool //необходимость запустить переиндексацию поиска
 	atStartCheckNewNotes bool
-	consoleControl       bool
 	atStartShowConsole   bool
 	postEditor           string
-	cmdPort              string
-	cmdPortable          bool
 	appStartingMode      string
-	appStartingModeForce bool
-	cmdServerMode        bool
+	cmdPort              string
+	cmdPortable      bool
+	cmdServerMode    bool
 	atStartOpenBrowser   bool
 	accessLog            bool
 }
@@ -73,8 +63,6 @@ type SearchResult struct {
 	UUID         string `json:"uuid"`
 	NoteBookUUID string `json:"NoteBookUUID"`
 }
-
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type NoteBookType struct {
 	UUID       string
@@ -142,7 +130,9 @@ type FilesForIndexType struct {
 
 var FilesForIndex = []FilesForIndexType{}
 
-var systrayProcess *exec.Cmd
+func showNotificationDialog(messageText string) {
+	fmt.Println("Notification:", messageText)
+}
 
 func RandStringBytes(n int) string {
 	const letterBytes = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -157,7 +147,20 @@ func MemStat() {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 	//fmt.Printf("\nAlloc = %v\nTotalAlloc = %v\nSys = %v\nNumGC = %v\n\n", humanize.Bytes(mem.Alloc), humanize.Bytes(mem.TotalAlloc), humanize.Bytes(mem.Sys), mem.NumGC)
-	fmt.Printf("\nSystem memory usage: %v\n", humanize.Bytes(mem.Sys))
+	fmt.Printf("\nSystem memory usage: %v\n", formatBytes(mem.Sys))
+}
+
+func formatBytes(b uint64) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := uint64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "kMGTPE"[exp])
 }
 
 //https://www.codesd.com/item/golang-how-to-get-the-total-size-of-the-directory.html
@@ -184,28 +187,4 @@ func inArray(val string, array []string) (exists bool) {
 		}
 	}
 	return
-}
-
-func startStadaloneGUI() error {
-	// Create UI with basic HTML passed via data URI
-	ui, err := lorca.New("data:text/html,"+url.PathEscape(`<html><head><title>QVNote</title></head><body>Loading...</body></html>`), "", 1380, 768)
-	if err != nil {
-		message := "Can not start app in standalone mode (please install Google Chrome)"
-		showNotificationDialog(message)
-		log.Printf(message+": %v", err)
-		return errors.New("123")
-	}
-	defer ui.Close()
-	ui.Load("http://localhost:" + configGlobal.cmdPort + "")
-	// Wait until UI window is closed
-	<-ui.Done()
-
-	return nil
-}
-
-func showNotificationDialog(messageText string) {
-	if configGlobal.cmdServerMode {
-		return
-	}
-	dlgs.Warning("QVNote error!", messageText)
 }

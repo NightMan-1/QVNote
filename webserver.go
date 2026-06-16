@@ -2,8 +2,12 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -13,85 +17,97 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/index/store/goleveldb"
-	"github.com/dustin/go-humanize"
-	"github.com/google/uuid"
-	"github.com/iris-contrib/middleware/cors"
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/middleware/logger"
-	"github.com/kataras/iris/v12/middleware/recover"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/ledisdb/ledisdb/ledis"
-	"github.com/mattn/go-colorable"
 )
 
+func generateUUID() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	b[6] = (b[6] & 0x0f) | 0x40
+	b[8] = (b[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+}
+
+func jsonResponse(w http.ResponseWriter, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(v)
+}
+
+func jsonError(w http.ResponseWriter, msg string, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(map[string]string{"error": msg})
+}
+
+func readJSON(r *http.Request, v interface{}) error {
+	return json.NewDecoder(r.Body).Decode(v)
+}
+
+func spaFallback(w http.ResponseWriter, r *http.Request) {
+	data, err := templateFS.ReadFile("templates/index.html")
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write(data)
+}
+
 func WebServer(webserverChan chan bool) { //nolint:gocyclo
-	app := iris.New()
-	app.Use(iris.Compression)
-	app.Use(recover.New())
-	app.Use(logger.New())
+	r := chi.NewRouter()
 
-	// fix console colors
-	app.Logger().SetOutput(colorable.NewColorableStdout())
+	// Middleware
+	r.Use(middleware.Compress(5))
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Logger)
 
-	app.Use(cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "OPTIONS", "POST", "PATCH", "PUT", "DELETE", "HEAD"},
+	// CORS
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowCredentials: false,
+		MaxAge:           300,
 	}))
 
-	dirOptions := iris.DirOptions{ShowList: false, Compress: true, IndexName: "index.html", ShowHidden: false}
+	// SPA fallback handler for Vue Router history mode
+	r.HandleFunc("/notes/*", spaFallback)
+	r.HandleFunc("/tags/*", spaFallback)
+	r.HandleFunc("/", spaFallback)
 
-	//app.StaticWeb("/static", configGlobal.execDir + "/templates/static")
-	//app.StaticEmbedded("/", "./templates", Asset, AssetNames)
-	//app.HandleDir("/", "./templates", iris.DirOptions{Asset: Asset, AssetInfo: AssetInfo, AssetNames: AssetNames, Compress: false, ShowHidden: false, ShowList: false})
-	app.HandleDir("/", AssetFile(), dirOptions)
+	// 404 handler — redirect to root (matching original Iris behavior)
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	})
 
-	//app.HandleDir("/", iris.Dir("./templates"), dirOptions)
-
-	var err error
-
-	// Register custom handler for specific http errors.
-	app.OnErrorCode(iris.StatusInternalServerError, func(ctx iris.Context) {
-		// .Values are used to communicate between handlers, middleware.
-		errMessage := ctx.Values().GetString("error")
-		if errMessage != "" {
-			ctx.Writef("Internal server error: %s", errMessage)
-			return
+	// Resources route — display images
+	r.Get("/resources/{notebookUUID}/{noteUUID}/{image}", func(w http.ResponseWriter, r *http.Request) {
+		notebookUUID := chi.URLParam(r, "notebookUUID")
+		noteUUID := chi.URLParam(r, "noteUUID")
+		image := chi.URLParam(r, "image")
+		imageFile, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookUUID + ".qvnotebook/" + noteUUID + ".qvnote/resources/" + image)
+		if _, err := os.Stat(imageFile); err == nil {
+			http.ServeFile(w, r, imageFile)
+		} else {
+			http.NotFound(w, r)
 		}
-
-		ctx.Writef("(Unexpected) internal server error")
 	})
 
-	app.Handle("ANY", "/", func(ctx iris.Context) {
-		data, _ := Asset("index.html")
-		ctx.HTML(string(data))
-	})
+	// Static files from embedded filesystem
+	fileServer := http.FileServer(templateFileSystem())
+	r.Handle("/static/*", fileServer)
 
-	app.Handle("ANY", "/notes/*", func(ctx iris.Context) {
-		data, _ := Asset("index.html")
-		ctx.HTML(string(data))
-	})
-
-	app.Handle("ANY", "/tags/*", func(ctx iris.Context) {
-		data, _ := Asset("index.html")
-		ctx.HTML(string(data))
-	})
-
-	app.OnErrorCode(404, func(ctx iris.Context) {
-		//data, _ := Asset("index.html")
-		//fmt.Println(string(data))
-		//ctx.StatusCode(200)
-		//ctx.HTML(string(data))
-		//ctx.WriteString(string(data))
-		ctx.Redirect("/", iris.StatusPermanentRedirect)
-	})
-
-	// for installation
-	app.Handle("ANY", "/api/config.write", func(ctx iris.Context) {
+	// For installation
+	r.HandleFunc("/api/config.write", func(w http.ResponseWriter, r *http.Request) {
 		var config struct {
 			Sourcefolder                 string `json:"sourceFolder"`
 			SourceFolderCreateIfNotExist bool   `json:"sourceFolderCreateIfNotExist"`
 			StartingMode                 string `json:"startingMode"`
 		}
-		ctx.ReadJSON(&config)
+		readJSON(r, &config)
 		if _, err := os.Stat(config.Sourcefolder); err == nil {
 			if CheckNotebooksFolderStructure(config.Sourcefolder) {
 				configGlobal.sourceFolder = config.Sourcefolder
@@ -100,76 +116,67 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				fmt.Println(configGlobal.appStartingMode)
 				if SaveConfig() {
 					FindAllNotes()
-					ctx.JSON(iris.Map{
+					jsonResponse(w, map[string]interface{}{
 						"error":     false,
 						"errorText": "The source folder is successfully connected, you can use.",
 					})
 				} else {
-					ctx.JSON(iris.Map{
+					jsonResponse(w, map[string]interface{}{
 						"error":     true,
 						"errorText": "Error saving settings",
 					})
 				}
-
 			} else {
-				ctx.JSON(iris.Map{
+				jsonResponse(w, map[string]interface{}{
 					"error":     true,
 					"errorText": "Invalid source data format",
 				})
 			}
-
 		} else {
 			if config.SourceFolderCreateIfNotExist {
-				err = os.MkdirAll(config.Sourcefolder, 0777)
+				err := os.MkdirAll(config.Sourcefolder, 0777)
 				if err != nil {
-					ctx.JSON(iris.Map{
+					jsonResponse(w, map[string]interface{}{
 						"error":     true,
 						"errorText": "Error creating directory",
 					})
 				} else {
-					//создание структуры для новых заметок
 					if CreateNewNotebooksFolder(config.Sourcefolder) {
 						configGlobal.sourceFolder = config.Sourcefolder
 						configGlobal.appInstalled = true
 						if SaveConfig() {
 							FindAllNotes()
-							ctx.JSON(iris.Map{
+							jsonResponse(w, map[string]interface{}{
 								"error":     false,
 								"errorText": "A new notebook was successfully created, you can use.",
 							})
-
 						} else {
-							ctx.JSON(iris.Map{
+							jsonResponse(w, map[string]interface{}{
 								"error":     true,
 								"errorText": "Error saving settings",
 							})
 						}
-
 					} else {
-						ctx.JSON(iris.Map{
+						jsonResponse(w, map[string]interface{}{
 							"error":     true,
 							"errorText": "Error initializing a new notebook",
 						})
 					}
-
 				}
 			}
 		}
 	})
 
-	app.Handle("ANY", "/api/exit", func(ctx iris.Context) {
+	r.HandleFunc("/api/exit", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Good buy!")
-		if systrayProcess != nil {
-			systrayProcess.Process.Kill()
-		}
 		os.Exit(0)
 	})
 
-	app.Handle("ANY", "/api/ping", func(ctx iris.Context) {
-		ctx.JSON(iris.Map{"result": "pong"})
+	r.HandleFunc("/api/ping", func(w http.ResponseWriter, r *http.Request) {
+		jsonResponse(w, map[string]string{"result": "pong"})
 	})
 
-	app.Handle("ANY", "/api/config.json", func(ctx iris.Context) {
+	r.HandleFunc("/api/config.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			OpenBrowser   string `json:"atStartOpenBrowser"`
 			CheckNewNotes string `json:"atStartCheckNewNotes"`
@@ -177,7 +184,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			PostEditor    string `json:"postEditor"`
 			StartingMode  string `json:"startingMode"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 
 		switch request.OpenBrowser {
 		case "true":
@@ -210,7 +217,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 		SaveConfig()
 
-		ctx.JSON(iris.Map{
+		jsonResponse(w, map[string]interface{}{
 			"installed":            configGlobal.appInstalled,
 			"sourceFolder":         configGlobal.sourceFolder,
 			"requestIndexing":      configGlobal.requestIndexing,
@@ -222,19 +229,17 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		})
 	})
 
-	app.Handle("ANY", "/api/favorites.json", func(ctx iris.Context) {
-
+	r.HandleFunc("/api/favorites.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Action string `json:"action"`
 			UUID   string `json:"UUID"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 
 		switch request.Action {
 		case "add":
-			err = FavoritesDB.Set([]byte(request.UUID), []byte(""))
+			err := FavoritesDB.Set([]byte(request.UUID), []byte(""))
 			checkQuiet(err)
-
 		case "remove":
 			FavoritesDB.Del([]byte(request.UUID))
 		}
@@ -248,28 +253,13 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			for _, FavoriteID := range allDBData {
 				cursor = FavoriteID
 				favoritesList = append(favoritesList, string(FavoriteID))
-
 			}
 		}
 
-		ctx.JSON(favoritesList)
-
+		jsonResponse(w, favoritesList)
 	})
 
-	//display images
-	app.Get("/resources/{notebookUUID:string}/{noteUUID:string}/{image:string}", func(ctx iris.Context) {
-		notebookUUID := ctx.Params().Get("notebookUUID")
-		noteUUID := ctx.Params().Get("noteUUID")
-		image := ctx.Params().Get("image")
-		imageFile, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookUUID + ".qvnotebook/" + noteUUID + ".qvnote/resources/" + image)
-		if _, err := os.Stat(imageFile); err == nil {
-			ctx.ServeFile(imageFile)
-		} else {
-			ctx.NotFound()
-		}
-	})
-
-	app.Get("/api/notebooks.json", func(ctx iris.Context) {
+	r.Get("/api/notebooks.json", func(w http.ResponseWriter, r *http.Request) {
 		cursor := []byte(nil)
 		var noteBooksList []NoteBookTypeAPI
 		for {
@@ -284,17 +274,16 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				err := json.Unmarshal(data, &notebookData)
 				checkQuiet(err)
 				noteBooksList = append(noteBooksList, NoteBookTypeAPI{notebookData.UUID, notebookData.Name, len(notebookData.Notes)})
-
 			}
 		}
 
 		sort.Slice(noteBooksList, func(i, j int) bool {
 			return strings.ToLower(noteBooksList[i].Name) < strings.ToLower(noteBooksList[j].Name)
 		})
-		ctx.JSON(noteBooksList)
+		jsonResponse(w, noteBooksList)
 	})
 
-	app.Get("/api/tags.json", func(ctx iris.Context) {
+	r.Get("/api/tags.json", func(w http.ResponseWriter, r *http.Request) {
 		cursor := []byte(nil)
 		var TagsCloud []TagsListStruct
 		for {
@@ -309,21 +298,20 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				err := json.Unmarshal(data, &tagsData)
 				checkQuiet(err)
 				TagsCloud = append(TagsCloud, TagsListStruct{len(tagsData), strings.Trim(string(TagID), " "), url.PathEscape(string(TagID))})
-
 			}
 		}
 		sort.Slice(TagsCloud, func(i, j int) bool {
 			return strings.ToLower(TagsCloud[i].Name) < strings.ToLower(TagsCloud[j].Name)
 		})
 
-		ctx.JSON(TagsCloud)
+		jsonResponse(w, TagsCloud)
 	})
 
-	app.Handle("ANY", "/api/notes_at_notebook.json", func(ctx iris.Context) {
+	r.HandleFunc("/api/notes_at_notebook.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			NotebookID string `json:"NotebookID"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 		switch {
 		case request.NotebookID == "Favorites":
 			var NotesList []NoteTypeAPI
@@ -346,8 +334,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			sort.Slice(NotesList, func(i, j int) bool {
 				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
-
-			ctx.JSON(NotesList)
+			jsonResponse(w, NotesList)
 		case request.NotebookID == "Allnotes":
 			var NotesList []NoteTypeAPI
 			cursor := []byte(nil)
@@ -368,7 +355,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			sort.Slice(NotesList, func(i, j int) bool {
 				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
-			ctx.JSON(NotesList)
+			jsonResponse(w, NotesList)
 		case len(request.NotebookID) > 0:
 			var NotesList []NoteTypeAPI
 			data, _ := NoteBookDB.Get([]byte(request.NotebookID))
@@ -385,20 +372,17 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			sort.Slice(NotesList, func(i, j int) bool {
 				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
-			ctx.JSON(NotesList)
-
+			jsonResponse(w, NotesList)
 		default:
-			ctx.JSON(iris.Map{})
+			jsonResponse(w, map[string]interface{}{})
 		}
-
 	})
 
-	app.Handle("ANY", "/api/statistic.json", func(ctx iris.Context) {
+	r.HandleFunc("/api/statistic.json", func(w http.ResponseWriter, r *http.Request) {
 		var dateFirst int32 = 2147483647
 		var dateLast int32
 		var dateSkip = int32(time.Now().Unix()) - (60 * 60 * 24 * 365 * 2)
 		var tagsCount = make(map[int]int)
-		//var chartsCreatedDate  = make(map[string]int)
 		var chartsUpdatedDate = make(map[string]int)
 		cursor := []byte(nil)
 		for {
@@ -423,30 +407,26 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				if note.UpdatedAt >= dateSkip {
 					chartsUpdatedDate[time.Unix(int64(note.UpdatedAt), 0).Format("2006-01-02")]++
 				}
-
 			}
 		}
 
-		//sourceSize, _ := DirSize2(configGlobal.sourceFolder) //take long time
 		dataSize, _ := DirSize2(configGlobal.dataDir)
 
-		ctx.JSON(iris.Map{
+		jsonResponse(w, map[string]interface{}{
 			"dateFirst": dateFirst,
 			"dateLast":  dateLast,
 			"tagsCount": tagsCount,
-			//"chartsCreatedDate": chartsCreatedDate,
 			"chartsUpdatedDate": chartsUpdatedDate,
-			//"sourceSize": humanize.Bytes(uint64(sourceSize)),
-			"dataSize": humanize.Bytes(uint64(dataSize)),
+			"dataSize":  dataSize,
 		})
 	})
 
-	//reload data
-	app.Handle("ANY", "/api/refresh_data.json", func(ctx iris.Context) {
+	// Reload data
+	r.HandleFunc("/api/refresh_data.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Action string `json:"action"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 		if request.Action == "reload" && searchStatus.Status != "indexing" && searchStatus.Status != "refresh" {
 			searchStatus.Status = "refresh"
 			FindAllNotes()
@@ -465,9 +445,6 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				kvStore := goleveldb.Name
 				kvConfig := map[string]interface{}{
 					"create_if_missing": true,
-					//	"write_buffer_size":         536870912,
-					//	"lru_cache_capacity":        536870912,
-					//	"bloom_filter_bits_per_key": 10,
 				}
 
 				index, err = bleve.NewUsing(indexName, mapping, "upside_down", kvStore, kvConfig)
@@ -485,52 +462,57 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 			go indexingAllNotes()
 			time.Sleep(3 * time.Second)
-
 		}
-		ctx.JSON(iris.Map{"status": "done"})
+		jsonResponse(w, map[string]string{"status": "done"})
 	})
 
-	//data optimization
-	app.Handle("ANY", "/api/optimization.json", func(ctx iris.Context) {
+	// Data optimization
+	r.HandleFunc("/api/optimization.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Action string `json:"action"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 		if request.Action == "start" && optimizationStatus.Status != "processing" {
 			optimizationStatus.Status = "processing"
 			go optimizeAllNotes()
-
 		} else if optimizationStatus.Status == "" {
 			optimizationStatus.Status = "idle"
 		}
-		ctx.JSON(iris.Map{"status": optimizationStatus.Status, "notesCurrent": optimizationStatus.NotesCurrent, "notesTotal": optimizationStatus.NotesTotal})
-
+		jsonResponse(w, map[string]interface{}{
+			"status":       optimizationStatus.Status,
+			"notesCurrent": optimizationStatus.NotesCurrent,
+			"notesTotal":   optimizationStatus.NotesTotal,
+		})
 	})
 
-	//search index
-	app.Handle("ANY", "/api/search_index.json", func(ctx iris.Context) {
+	// Search index
+	r.HandleFunc("/api/search_index.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Action string `json:"action"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 		if request.Action == "start" && searchStatus.Status != "indexing" {
 			go indexingAllNotes()
 			time.Sleep(3 * time.Second)
 		}
-		ctx.JSON(iris.Map{"status": searchStatus.Status, "notesCurrent": searchStatus.NotesCurrent, "notesTotal": searchStatus.NotesTotal})
+		jsonResponse(w, map[string]interface{}{
+			"status":       searchStatus.Status,
+			"notesCurrent": searchStatus.NotesCurrent,
+			"notesTotal":   searchStatus.NotesTotal,
+		})
 	})
 
-	//notebook_edit
-	app.Handle("ANY", "/api/notebook_edit.json", func(ctx iris.Context) {
+	// Notebook edit
+	r.HandleFunc("/api/notebook_edit.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Action string `json:"action"`
 			UUID   string `json:"uuid"`
 			Title  string `json:"title"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 		switch {
 		case request.Action == "rename" && request.UUID != "":
-			//update file
+			// update file
 			var meta struct {
 				Name string `json:"name"`
 				UUID string `json:"uuid"`
@@ -539,10 +521,10 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			meta.UUID = request.UUID
 			metaJSON, _ := json.Marshal(meta)
 			jsonFile, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.UUID + ".qvnotebook/meta.json")
-			err = ioutil.WriteFile(jsonFile, metaJSON, 0644)
+			err := ioutil.WriteFile(jsonFile, metaJSON, 0644)
 			checkQuiet(err)
 
-			//update database
+			// update database
 			data, _ := NoteBookDB.Get([]byte(request.UUID))
 			var notebookData NoteBookType
 			json.Unmarshal(data, &notebookData)
@@ -551,9 +533,9 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			checkQuiet(err)
 			NoteBookDB.Set([]byte(request.UUID), enc)
 		case request.Action == "new" && request.UUID == "":
-			u1 := strings.ToUpper(uuid.Must(uuid.NewRandom()).String())
+			u1 := strings.ToUpper(generateUUID())
 
-			//new file
+			// new file
 			notebookDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + u1 + ".qvnotebook")
 			metaFile, _ := filepath.Abs(notebookDir + "/meta.json")
 			var meta struct {
@@ -564,10 +546,10 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			meta.UUID = u1
 			metaJSON, _ := json.MarshalIndent(meta, "", "  ")
 			os.MkdirAll(notebookDir, 0755)
-			err = ioutil.WriteFile(metaFile, metaJSON, 0644)
+			err := ioutil.WriteFile(metaFile, metaJSON, 0644)
 			checkQuiet(err)
 
-			//update database
+			// update database
 			var notebookNew NoteBookType
 			notebookNew.Name = request.Title
 			notebookNew.UUID = u1
@@ -592,7 +574,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 					noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.UUID + ".qvnotebook/" + noteUUID + ".qvnote")
 					noteDirDst, _ := filepath.Abs(configGlobal.sourceFolder + "/Trash.qvnotebook/" + noteUUID + ".qvnote")
 
-					err = CopyDir(noteDirSrc, noteDirDst)
+					err := CopyDir(noteDirSrc, noteDirDst)
 					if err == nil {
 						note.NoteBookUUID = "Trash"
 						enc, _ := json.Marshal(note)
@@ -603,7 +585,6 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 						NoteBookDB.Set([]byte("Trash"), enc)
 
 						os.RemoveAll(noteDirSrc)
-
 					} else {
 						canDelete = false
 					}
@@ -616,15 +597,15 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			}
 		}
 
-		ctx.JSON(iris.Map{})
+		jsonResponse(w, map[string]interface{}{})
 	})
 
-	//search
-	app.Handle("ANY", "/api/search.json", func(ctx iris.Context) {
+	// Search
+	r.HandleFunc("/api/search.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Text string `json:"text"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 
 		var NotesList []SearchResult
 		NoteListDedup := make(map[string]bool)
@@ -638,23 +619,21 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				err := json.Unmarshal(data, &noteShort)
 				checkQuiet(err)
 				if _, ok := NoteListDedup[noteShort.UUID]; ok {
-					//duplicate detected
+					// duplicate detected
 				} else {
 					NoteListDedup[noteShort.UUID] = true
 					NotesList = append(NotesList, noteShort)
 				}
-
 			}
-
 		}
-		ctx.JSON(NotesList)
+		jsonResponse(w, NotesList)
 	})
 
-	app.Handle("ANY", "/api/notes_with_tag.json", func(ctx iris.Context) {
+	r.HandleFunc("/api/notes_with_tag.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			TagName string `json:"tag"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 		if request.TagName != "" {
 			var NotesList []NoteTypeAPI
 			data, _ := TagsDB.Get([]byte(request.TagName))
@@ -671,21 +650,18 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			sort.Slice(NotesList, func(i, j int) bool {
 				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
-			ctx.JSON(NotesList)
-
+			jsonResponse(w, NotesList)
 		} else {
-			ctx.JSON(iris.Map{})
+			jsonResponse(w, map[string]interface{}{})
 		}
 	})
 
-	app.Handle("ANY", "/api/note.json", func(ctx iris.Context) {
+	r.HandleFunc("/api/note.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			NoteID string `json:"NoteID"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 		if request.NoteID != "" {
-			//OptimizeResources(request.NoteID)
-
 			data, _ := NoteDB.Get([]byte(request.NoteID))
 			var noteData NoteTypeWithContentAPI
 			err := json.Unmarshal(data, &noteData)
@@ -708,25 +684,23 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				}
 				noteData.Content = ClearHTML(noteData.Content)
 
-				noteData.Content = FixNoteImagesLinks(noteData, noteData.Content, ctx)
+				noteData.Content = FixNoteImagesLinks(noteData, noteData.Content, r)
 
 				dataExists, _ := FavoritesDB.Exists([]byte(request.NoteID))
 				if dataExists == 1 {
 					noteData.Favorites = true
 				}
 
-				ctx.JSON(noteData)
-
+				jsonResponse(w, noteData)
 			} else {
-				ctx.JSON(iris.Map{})
+				jsonResponse(w, map[string]interface{}{})
 			}
-
 		} else {
-			ctx.JSON(iris.Map{})
+			jsonResponse(w, map[string]interface{}{})
 		}
 	})
 
-	app.Handle("ANY", "/api/note_edit.json", func(ctx iris.Context) {
+	r.HandleFunc("/api/note_edit.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Title   string   `json:"title"`
 			URL     string   `json:"url"`
@@ -735,42 +709,36 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			Content string   `json:"content"`
 			Tags    []string `json:"tags"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 
 		var noteUUID string
 		var notebookUUID string
 		var noteData NoteType
 		if request.UUID == "" {
-			noteUUID = strings.ToUpper(uuid.Must(uuid.NewRandom()).String())
+			noteUUID = strings.ToUpper(generateUUID())
 			notebookUUID = "Inbox"
 			noteData.NoteBookUUID = notebookUUID
 			noteData.UUID = noteUUID
-
 		} else {
 			noteUUID = request.UUID
 			data, _ := NoteDB.Get([]byte(noteUUID))
 			json.Unmarshal(data, &noteData)
 			notebookUUID = noteData.NoteBookUUID
-
 		}
 
 		noteData.Title = request.Title
 		noteData.URL = request.URL
 		noteData.SearchIndex = false
-		// configGlobal.requestIndexing = true
 
 		if request.UUID == "" {
 			noteData.CreatedAt = int32(time.Now().Unix())
 			noteData.UpdatedAt = noteData.CreatedAt
-
 		} else {
 			noteData.UpdatedAt = int32(time.Now().Unix())
 		}
 		if request.Type == "tinymce" {
 			request.Type = "text"
 		}
-
-		//request.Content = ClearHTML(request.Content)
 
 		// update file
 		noteDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookUUID + ".qvnotebook/" + noteUUID + ".qvnote")
@@ -790,7 +758,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		meta.URL = noteData.URL
 		meta.Tags = request.Tags
 		metaJSON, _ := json.MarshalIndent(meta, "", "  ")
-		err = ioutil.WriteFile(noteDir+"/meta.json", metaJSON, 0644)
+		err := ioutil.WriteFile(noteDir+"/meta.json", metaJSON, 0644)
 		checkQuiet(err)
 
 		var content struct {
@@ -808,7 +776,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		err = ioutil.WriteFile(noteDir+"/content.json", buf.Bytes(), 0644)
 		checkQuiet(err)
 
-		//remove old tags from cloud
+		// remove old tags from cloud
 		for _, tagID := range noteData.Tags {
 			data, _ := TagsDB.Get([]byte(tagID))
 			var notesListOld []string
@@ -831,15 +799,15 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			}
 		}
 
-		//Add new tags to cloud
+		// Add new tags to cloud
 		for _, tagID := range request.Tags {
 			data, _ := TagsDB.Get([]byte(tagID))
 			dataString := string(data)
 			var notesList []string
 			if dataString == "" {
-				//new tag
+				// new tag
 			} else {
-				//exist tag
+				// exist tag
 				err := json.Unmarshal(data, &notesList)
 				checkQuiet(err)
 			}
@@ -851,7 +819,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			checkQuiet(err)
 		}
 
-		//add to search index
+		// add to search index
 		addToIndex(noteDir+"/content.json", noteUUID)
 		noteData.SearchIndex = true
 
@@ -873,26 +841,24 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 		SaveConfig()
 
-		//ctx.JSON(iris.Map{"NoteBookUUID": notebookUUID, "uuid": noteUUID, "html": request.Content})
-		ctx.JSON(iris.Map{"NoteBookUUID": notebookUUID, "uuid": noteUUID})
-
+		jsonResponse(w, map[string]interface{}{"NoteBookUUID": notebookUUID, "uuid": noteUUID})
 	})
 
-	app.Handle("ANY", "/api/cleanup_html.json", func(ctx iris.Context) {
+	r.HandleFunc("/api/cleanup_html.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Content string `json:"content"`
 		}
-		ctx.ReadJSON(&request)
-		ctx.JSON(iris.Map{"content": ClearHTML(request.Content)})
+		readJSON(r, &request)
+		jsonResponse(w, map[string]string{"content": ClearHTML(request.Content)})
 	})
 
-	app.Handle("ANY", "/api/tag_edit.json", func(ctx iris.Context) {
+	r.HandleFunc("/api/tag_edit.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Action string `json:"action"`
 			URL    string `json:"url"`
 			Title  string `json:"title"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 		request.URL, _ = url.PathUnescape(request.URL)
 
 		if request.URL != "" || (request.Action == "rename" && request.URL != "" && request.URL != request.Title) {
@@ -902,7 +868,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				err := json.Unmarshal(data, &tagsData)
 				checkQuiet(err)
 				for _, noteID := range tagsData {
-					//change files
+					// change files
 					dataNote, _ := NoteDB.Get([]byte(noteID))
 					if string(dataNote) != "" {
 						var note NoteType
@@ -924,13 +890,13 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 							}
 							switch request.Action {
 							case "rename":
-								tagsNew = append(tagsNew, request.Title) //add new nag name
+								tagsNew = append(tagsNew, request.Title) // add new tag name
 							case "remove":
 								// do nothing
 							}
 							note.Tags = tagsNew
 
-							//save file with meta data
+							// save file with meta data
 							var meta struct {
 								CreatedAt int32    `json:"created_at"`
 								UpdatedAt int32    `json:"updated_at"`
@@ -948,25 +914,23 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 							err = ioutil.WriteFile(metaFile, metaJSON, 0644)
 							checkQuiet(err)
 
-							//update NoteDB
+							// update NoteDB
 							enc, _ := json.Marshal(note)
 							NoteDB.Set([]byte(note.UUID), enc)
-
 						}
 					}
 				}
 
-				//save tags
+				// save tags
 				if request.Action == "remove" {
-					//remove old date
+					// remove old data
 					TagsDB.Del([]byte(request.URL))
-
 				} else if request.Action == "rename" {
-					//remove old date
+					// remove old data
 					TagsDB.Del([]byte(request.URL))
 
-					//add new data
-					data, _ := TagsDB.Get([]byte(request.Title)) //check the existence of a new tag (required for merging)
+					// add new data
+					data, _ := TagsDB.Get([]byte(request.Title)) // check the existence of a new tag (required for merging)
 					if string(data) != "" {
 						var tagsDataExist []string
 						err := json.Unmarshal(data, &tagsDataExist)
@@ -977,53 +941,49 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 								tagsData = append(tagsData, tagName)
 							}
 						}
-
 					}
 
 					enc, err := json.Marshal(tagsData)
 					checkQuiet(err)
 					TagsDB.Set([]byte(request.Title), enc)
-
 				}
 			}
 		}
 
-		ctx.JSON(iris.Map{})
+		jsonResponse(w, map[string]interface{}{})
 	})
 
-	app.Handle("ANY", "/api/note_move.json", func(ctx iris.Context) {
+	r.HandleFunc("/api/note_move.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Action string `json:"action"`
 			UUID   string `json:"uuid"`
 			Target string `json:"target"`
 		}
-		ctx.ReadJSON(&request)
+		readJSON(r, &request)
 		switch {
 		case request.UUID != "" && request.Action == "move":
-			//get note info
+			// get note info
 			var note NoteType
 			data, _ := NoteDB.Get([]byte(request.UUID))
 			json.Unmarshal(data, &note)
 
-			//get source notebook info
+			// get source notebook info
 			var notebookSRC NoteBookType
 			data, _ = NoteBookDB.Get([]byte(note.NoteBookUUID))
 			json.Unmarshal(data, &notebookSRC)
 
-			//get target notebook info
+			// get target notebook info
 			var notebookDST NoteBookType
 			data, _ = NoteBookDB.Get([]byte(request.Target))
 			json.Unmarshal(data, &notebookDST)
 			if notebookDST.UUID != "" {
-
-				//move folder
+				// move folder
 				noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote")
 				noteDirDst, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookDST.UUID + ".qvnotebook/" + note.UUID + ".qvnote")
 
-				err = CopyDir(noteDirSrc, noteDirDst)
+				err := CopyDir(noteDirSrc, noteDirDst)
 				if err == nil {
-
-					//update database
+					// update database
 					note.NoteBookUUID = notebookDST.UUID
 					enc, _ := json.Marshal(note)
 					NoteDB.Set([]byte(note.UUID), enc)
@@ -1037,27 +997,25 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 					NoteBookDB.Set([]byte(notebookDST.UUID), encDST)
 
 					os.RemoveAll(noteDirSrc)
-
 				} else { //nolint:staticcheck
 					go showNotificationDialog("Error! Can not move folder " + noteDirSrc + " to " + noteDirDst)
 				}
-
 			} else { //nolint:staticcheck
 				go showNotificationDialog("Error! Notebook " + notebookDST.UUID + " not exist")
 			}
 		case request.UUID != "" && request.Action == "delete":
-			//get note info
+			// get note info
 			var note NoteType
 			data, _ := NoteDB.Get([]byte(request.UUID))
 			json.Unmarshal(data, &note)
 
-			//get source notebook info
+			// get source notebook info
 			var notebookSRC NoteBookType
 			data, _ = NoteBookDB.Get([]byte(note.NoteBookUUID))
 			json.Unmarshal(data, &notebookSRC)
 
 			if notebookSRC.UUID == "Trash" {
-				//delete
+				// delete
 				delete(notebookSRC.Notes, note.UUID)
 				encSRC, _ := json.Marshal(notebookSRC)
 				NoteBookDB.Set([]byte(notebookSRC.UUID), encSRC)
@@ -1067,17 +1025,16 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote")
 				os.RemoveAll(noteDirSrc)
 				ss.index.Delete(note.UUID) // delete from search index
-
 			} else {
-				//move to trash
+				// move to trash
 				var notebookDST NoteBookType
 				data, _ = NoteBookDB.Get([]byte("Trash"))
 				json.Unmarshal(data, &notebookDST)
 				noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote")
 				noteDirDst, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookDST.UUID + ".qvnotebook/" + note.UUID + ".qvnote")
-				err = CopyDir(noteDirSrc, noteDirDst)
+				err := CopyDir(noteDirSrc, noteDirDst)
 				if err == nil {
-					//update database
+					// update database
 					note.NoteBookUUID = notebookDST.UUID
 					enc, _ := json.Marshal(note)
 					NoteDB.Set([]byte(note.UUID), enc)
@@ -1091,26 +1048,23 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 					NoteBookDB.Set([]byte(notebookDST.UUID), encDST)
 
 					os.RemoveAll(noteDirSrc)
-
 				} else { //nolint:staticcheck
 					go showNotificationDialog("Error! Can not move folder " + noteDirSrc + " to " + noteDirDst)
 				}
-
 			}
 		default:
-			ctx.JSON(iris.Map{})
+			jsonResponse(w, map[string]interface{}{})
 		}
 	})
 
-	app.Run(iris.Addr(":"+configGlobal.cmdPort), iris.WithOptimizations, iris.WithoutPathCorrection)
-
-	webserverChan <- true
+	fmt.Println("Server started on port " + configGlobal.cmdPort)
+	log.Fatal(http.ListenAndServe(":"+configGlobal.cmdPort, r))
 }
 
-func FixNoteImagesLinks(note NoteTypeWithContentAPI, content string, ctx iris.Context) string {
+func FixNoteImagesLinks(note NoteTypeWithContentAPI, content string, r *http.Request) string {
 	ImageURL := "/resources/" + note.NoteBookUUID + "/" + note.UUID + ""
 	content = strings.Replace(content, "quiver-image-url", ImageURL, -1)
 	content = strings.Replace(content, "quiver-file-url", ImageURL, -1)
-	content = strings.Replace(content, "//"+ctx.Host()+"/resources/", "/resources/", -1) // fix for old cleanup
+	content = strings.Replace(content, "//"+r.Host+"/resources/", "/resources/", -1) // fix for old cleanup
 	return content
 }

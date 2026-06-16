@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
-	"log"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -21,17 +24,13 @@ import (
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/blevesearch/snowballstem"
 	"github.com/blevesearch/snowballstem/russian"
-	"github.com/go-ini/ini"
-	"github.com/imroc/req"
 	lediscfg "github.com/ledisdb/ledisdb/config"
 	"github.com/ledisdb/ledisdb/ledis"
-	"github.com/marcsauter/single"
 )
 
 func check(e error, message string) {
 	if e != nil {
 		fmt.Println(message)
-		showNotificationDialog(message)
 		panic(e)
 	}
 }
@@ -78,6 +77,27 @@ func (ss *SearchService) Search(query string) (*bleve.SearchResult, error) {
 	return ss.index.Search(search)
 }
 
+func readINI(path string) (map[string]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	cfg := make(map[string]string)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") || strings.HasPrefix(line, "[") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			cfg[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+		}
+	}
+	return cfg, scanner.Err()
+}
+
 func initSystem() {
 	configGlobal.timeStart = time.Now()
 
@@ -101,40 +121,31 @@ func initSystem() {
 	portTMP := 8000
 	configGlobal.cmdPortable = false
 	configGlobal.cmdServerMode = false
-	configGlobal.appStartingMode = "independent"
-	configGlobal.appStartingModeForce = false //You need to prioritize config.ini over the settings in the database
 
 	//read configuration file
 	cfgFile := configGlobal.execDir + "/config.ini"
 	if _, err := os.Stat(cfgFile); err == nil {
-		cfg, err := ini.Load(cfgFile)
+		cfg, err := readINI(cfgFile)
 		if err != nil {
 			fmt.Printf("Fail to read file: %v", err)
 			os.Exit(1)
 		}
 
-		if cfg.Section("").Key("port").MustInt(portTMP) > 0 && cfg.Section("").Key("port").MustInt(portTMP) < 65535 {
-			portTMP = cfg.Section("").Key("port").MustInt(portTMP)
+		if port, ok := cfg["port"]; ok {
+			if p, err := strconv.Atoi(port); err == nil && p > 0 && p < 65535 {
+				portTMP = p
+			}
 		}
 		if runtime.GOOS == "windows" {
-			configGlobal.cmdPortable = cfg.Section("").Key("portable").MustBool(false)
-		}
-
-		configGlobal.cmdServerMode = cfg.Section("").Key("servermode").MustBool(false)
-
-		if cfg.Section("").Key("datadir").String() != "" {
-			if _, err := os.Stat(cfgFile); err == nil {
-				configGlobal.dataDir = cfg.Section("").Key("datadir").String()
+			if v, ok := cfg["portable"]; ok {
+				configGlobal.cmdPortable = (v == "true")
 			}
 		}
-
-		if tM := cfg.Section("").Key("startingmode").String(); tM != "" {
-			configGlobal.appStartingModeForce = true
-			if tM == "independent" {
-				configGlobal.appStartingMode = "independent"
-			} else {
-				configGlobal.appStartingMode = "browser"
-			}
+		if v, ok := cfg["servermode"]; ok {
+			configGlobal.cmdServerMode = (v == "true")
+		}
+		if v, ok := cfg["datadir"]; ok && v != "" {
+			configGlobal.dataDir = v
 		}
 	}
 
@@ -240,25 +251,12 @@ func initSystem() {
 	} else {
 		configGlobal.atStartCheckNewNotes = false
 	}
-	data, _ = ConfigDB.Get([]byte("atStartShowConsole"))
-	if string(data) != "" && string(data) == "true" {
-		configGlobal.atStartShowConsole = true
-	} else {
-		configGlobal.atStartShowConsole = false
-	}
 
 	data, _ = ConfigDB.Get([]byte("postEditor"))
 	if string(data) != "" {
 		configGlobal.postEditor = string(data)
 	} else {
 		configGlobal.postEditor = "quill"
-	}
-
-	if !configGlobal.appStartingModeForce {
-		data, _ = ConfigDB.Get([]byte("startingMode"))
-		if string(data) == "browser" { // independent by default
-			configGlobal.appStartingMode = "browser"
-		}
 	}
 }
 
@@ -462,10 +460,6 @@ func SaveConfig() bool {
 	if err != nil {
 		return false
 	}
-	err = ConfigDB.Set([]byte("startingMode"), []byte(configGlobal.appStartingMode))
-	if err != nil {
-		return false
-	}
 	tmp := "false"
 	if configGlobal.appInstalled {
 		tmp = "true"
@@ -499,15 +493,6 @@ func SaveConfig() bool {
 	}
 	err = ConfigDB.Set([]byte("atStartCheckNewNotes"), []byte(tmp))
 	if err != nil {
-		return false
-	}
-
-	tmp = "false"
-	if configGlobal.atStartShowConsole {
-		tmp = "true"
-	}
-	err = ConfigDB.Set([]byte("atStartShowConsole"), []byte(tmp))
-	if err != nil { //nolint:gosimple
 		return false
 	}
 	return true
@@ -673,12 +658,11 @@ func OptimizeResources(uuid string) {
 		for _, match := range matchData {
 			ImageURL := match[1]
 			fmt.Println("\tdownloading", ImageURL)
-			r, err := req.Get(ImageURL)
+			resp, err := http.Get(ImageURL)
 			if err == nil {
-				resp := r.Response()
-				if _, ok := resp.Header["Content-Type"]; ok {
+				if ct := resp.Header.Get("Content-Type"); ct != "" {
 					ImageType := ""
-					ContentTypeTrue := strings.Split(resp.Header["Content-Type"][0], ";")
+					ContentTypeTrue := strings.Split(ct, ";")
 					switch ContentTypeTrue[0] {
 					case "image/png":
 						ImageType = ".png"
@@ -695,20 +679,24 @@ func OptimizeResources(uuid string) {
 					if ImageType != "" {
 						FileName := RandStringBytes(32) + ImageType
 						FileNameFull, _ := filepath.Abs(contentDir + "/resources/" + FileName)
-						err = r.ToFile(FileNameFull)
+						out, err := os.Create(FileNameFull)
 						if err == nil {
-							content = strings.Replace(content, ImageURL, "quiver-image-url/"+FileName, 1)
-						} else {
-							checkQuiet(err)
+							_, err = io.Copy(out, resp.Body)
+							out.Close()
+							if err == nil {
+								content = strings.Replace(content, ImageURL, "quiver-image-url/"+FileName, 1)
+							} else {
+								checkQuiet(err)
+							}
 						}
 					} else {
 						fmt.Println("\t\tError: wrong image type:", ContentTypeTrue[0])
 					}
 				} else {
-					fmt.Println("\t\tError: wrong headers:", resp.Header)
+					fmt.Println("\t\tError: wrong headers")
 				}
+				resp.Body.Close()
 			} else {
-				// checkQuiet(err) // disabled, too many messages
 				fmt.Println(err)
 			}
 		}
@@ -837,33 +825,8 @@ func optimizeAllNotes() {
 func main() {
 	start := time.Now()
 
-	//systray on mac only works like this :(
-	if len(os.Args) == 3 && os.Args[1] == string("--systray") && runtime.GOOS == string("darwin") {
-		configGlobal.cmdPort = os.Args[2]
-		runSystray()
-		os.Exit(0)
-	}
-
-	//checking for simultaneous launch of multiple copies of the program
-	s := single.New("QVNote")
-	if err := s.CheckLock(); err != nil {
-		if err == single.ErrAlreadyRunning {
-			showNotificationDialog("another instance of the app is already running, exiting")
-			log.Fatal("another instance of the app is already running, exiting")
-		} else {
-			showNotificationDialog("failed to acquire exclusive app lock")
-			log.Fatalf("failed to acquire exclusive app lock: %v", err)
-		}
-		os.Exit(1)
-	}
-	defer s.TryUnlock()
-
-	//check console and start new one if not present
-	initConsole()
-
 	fmt.Println("Initializing...")
 	initSystem()
-	initPlatformSpecific()
 
 	//update the list of notes
 	if configGlobal.appInstalled {
@@ -874,22 +837,14 @@ func main() {
 
 	//start web server
 	fmt.Println("Starting web server...")
-	if configGlobal.atStartOpenBrowser && !configGlobal.cmdServerMode && configGlobal.appStartingMode != "independent" {
+	if configGlobal.atStartOpenBrowser && !configGlobal.cmdServerMode {
 		go openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
 	}
 	webserverChan := make(chan bool)
 	go WebServer(webserverChan)
 
-	if configGlobal.appStartingMode == "independent" && (runtime.GOOS == "windows" || runtime.GOOS == "darwin") {
-		if startStadaloneGUI() != nil {
-			go openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
-			<-webserverChan
-		}
-	} else {
-		<-webserverChan
-	}
+	<-webserverChan
 
 	MemStat()
 	fmt.Printf("Execution took %s\n", time.Since(start))
-
 }

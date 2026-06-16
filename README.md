@@ -1,6 +1,6 @@
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/NightMan-1/QVNote/QVNote%20Actions?style=flat-square) ![GitHub issues](https://img.shields.io/github/issues/NightMan-1/QVNote?style=flat-square) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/NightMan-1/QVNote?style=flat-square) ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/NightMan-1/QVNote?style=flat-square) ![GitHub All Releases](https://img.shields.io/github/downloads/NightMan-1/QVNote/total?style=flat-square)
 
-# QVNote
+# QVNote v2.0.0
 
 The program for storing notes, pages of sites, personal knowledge base and any other text data
 
@@ -10,7 +10,7 @@ All data stored in JSON format (format based on [Quiver](http://happenapps.com/)
 
 Written with GoLang and VueJS
 
-**Requires Chrome/Chromium >= 70 or Microsoft Edge >= 90 to be installed**
+**Server-only mode** — lightweight HTTP server, no desktop GUI dependencies.
 
 More info here - https://qvnote.fsky.info/
 
@@ -22,19 +22,16 @@ You can always download latest stable binary from here - https://github.com/Nigh
 
 ## Build from source
 
-#### Project request
+#### Project requirements
 
-GoLang >1.17  
-NodeJS >16.x
+GoLang >=1.17  
+NodeJS >=16.x
 
 #### Project setup
 
 ```bash
 git clone https://github.com/NightMan-1/QVNote
 cd QVNote
-go install github.com/go-bindata/go-bindata/...@latest
-go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
-
 npm install
 ```
 
@@ -42,31 +39,28 @@ npm install
 
 ```bash
 npm run build
-cd templates
-go-bindata -o ../bindata.go -fs ./... ../icon.ico
-cd ..
-goversioninfo
 go build
 ```
-now you can run QVNote binary
+Now you can run the QVNote binary.
 
-#### GUI development
+#### Development
 
-run server (QVNote.exe)
-npm run serve
-open http://localhost:8080
+```bash
+./qvnote --server          # backend on :8000
+npm run serve              # frontend dev on :8080 (proxies /api to :8000)
+```
+Open http://localhost:8080
 
-## Command line parameters:
-    --help
-        usage info
-    --port=8000
-        listen port
-    --portable
-        portable mode for Windows OS, data will be stored in app folder
-    --server
-        server mode without systray and other GUI
-    --datadir
-        data folder, default $HOME/.config/QVNote or %USERPROFILE%/.config/QVNote
+## Command line parameters
 
-Also you can you optional configuration file "config.ini"
+```
+--help
+    usage info
+--port=8000
+    listen port
+--datadir
+    data folder, default $HOME/.config/QVNote
+```
+
+Optional configuration file: `config.ini` (same keys as CLI flags).
 
