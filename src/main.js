@@ -21,9 +21,18 @@ import ru from './i18n/ru.js'
 
 const isDev = import.meta.env.DEV
 
+let savedLocale = localStorage.getItem('locale') || 'ru'
+// migrate old locale keys to match the i18n locale codes
+if (savedLocale === 'ru-RU') {
+    savedLocale = 'ru'
+    localStorage.setItem('locale', 'ru')
+} else if (savedLocale === 'en-US') {
+    savedLocale = 'en'
+    localStorage.setItem('locale', 'en')
+}
 const i18n = createI18n({
     legacy: true,
-    locale: 'ru',
+    locale: savedLocale,
     fallbackLocale: 'en',
     messages: { en, ru }
 })

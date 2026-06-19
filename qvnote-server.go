@@ -42,19 +42,19 @@ func checkQuiet(e error) { //check_no_exit
 }
 
 func queryStem(query string) string {
-	queryTMP := query
-	queryArray := strings.Split(query, " ")
+	query = strings.ToLower(strings.TrimSpace(query))
+	words := strings.Fields(query)
 	env := snowballstem.NewEnv("")
-	for _, word := range queryArray {
+	for i, word := range words {
 		env.SetCurrent(word)
 		russian.Stem(env)
-		queryTMP = strings.Replace(queryTMP, word, env.Current(), -1)
+		words[i] = env.Current()
 	}
-	if len(queryArray) == 1 {
-		queryTMP += "*"
+	result := strings.Join(words, " ")
+	if len(words) == 1 {
+		result += "*"
 	}
-	return queryTMP
-
+	return result
 }
 
 func (ss *SearchService) buildMapping() *mapping.IndexMappingImpl {
@@ -217,7 +217,7 @@ func initSystem() {
 
 	data, _ = ConfigDB.Get([]byte("requestIndexing"))
 	if string(data) != "" && string(data) == "true" {
-		configGlobal.appInstalled = true
+		configGlobal.requestIndexing = true
 	} else {
 		configGlobal.requestIndexing = false
 	}
@@ -258,6 +258,16 @@ func initSystem() {
 	} else {
 		configGlobal.postEditor = "quill"
 	}
+
+	data, _ = ConfigDB.Get([]byte("atStartShowConsole"))
+	if string(data) != "" && string(data) == "true" {
+		configGlobal.atStartShowConsole = true
+	} else {
+		configGlobal.atStartShowConsole = false
+	}
+
+	data, _ = ConfigDB.Get([]byte("startingMode"))
+	configGlobal.appStartingMode = string(data)
 }
 
 func addToIndex(path string, uuid string) error {
@@ -356,6 +366,9 @@ func FindAllNotes() {
 						note.UpdatedAt != value.UpdatedAt {
 						note.SearchIndex = false
 						configGlobal.requestIndexing = true
+					} else if configGlobal.requestIndexing {
+						// The application requested a full re-index; do not trust the previous index state.
+						note.SearchIndex = false
 					} else {
 						note.SearchIndex = value.SearchIndex
 					}
@@ -492,6 +505,25 @@ func SaveConfig() bool {
 		tmp = "true"
 	}
 	err = ConfigDB.Set([]byte("atStartCheckNewNotes"), []byte(tmp))
+	if err != nil {
+		return false
+	}
+
+	tmp = "false"
+	if configGlobal.atStartShowConsole {
+		tmp = "true"
+	}
+	err = ConfigDB.Set([]byte("atStartShowConsole"), []byte(tmp))
+	if err != nil {
+		return false
+	}
+
+	err = ConfigDB.Set([]byte("postEditor"), []byte(configGlobal.postEditor))
+	if err != nil {
+		return false
+	}
+
+	err = ConfigDB.Set([]byte("startingMode"), []byte(configGlobal.appStartingMode))
 	if err != nil {
 		return false
 	}
@@ -846,8 +878,11 @@ func main() {
 
 	//update the list of notes
 	if configGlobal.appInstalled {
-		if configGlobal.atStartCheckNewNotes {
+		if configGlobal.atStartCheckNewNotes || configGlobal.requestIndexing {
 			FindAllNotes()
+		}
+		if configGlobal.requestIndexing {
+			go indexingAllNotes()
 		}
 	}
 

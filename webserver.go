@@ -512,6 +512,26 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			ss.index = index
 			ss.batch = index.NewBatch()
 
+			// The search index was deleted, so every note must be re-indexed.
+			cursor := []byte(nil)
+			for {
+				allDBData, err := NoteDB.Scan(ledis.KV, cursor, 0, false, "")
+				if err != nil || len(allDBData) == 0 {
+					break
+				}
+				for _, NoteID := range allDBData {
+					cursor = NoteID
+					data, _ := NoteDB.Get(NoteID)
+					var note NoteType
+					if err := json.Unmarshal(data, &note); err == nil {
+						note.SearchIndex = false
+						if enc, err := json.Marshal(note); err == nil {
+							NoteDB.Set(NoteID, enc)
+						}
+					}
+				}
+			}
+
 			FindAllNotes()
 
 			configGlobal.requestIndexing = true
@@ -666,7 +686,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		}
 		readJSON(r, &request)
 
-		var NotesList []SearchResult
+		NotesList := make([]SearchResult, 0)
 		NoteListDedup := make(map[string]bool)
 		if len(request.Text) >= 3 {
 			query := bleve.NewQueryStringQuery(queryStem(request.Text))

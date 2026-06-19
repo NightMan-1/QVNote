@@ -201,7 +201,7 @@ export default {
                 'status': 'idle',
                 'persent': 0
             },
-            langSelected: localStorage.getItem('locale') || false,
+            langSelected: localStorage.getItem('locale') || 'ru',
             editorSelected: 'hugerte'
         }
     },

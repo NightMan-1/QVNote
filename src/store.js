@@ -38,8 +38,8 @@ export const useNoteStore = defineStore('note', {
         layoutBig: lsGet('layoutBig', false),
         gridClass: 'grid-v1',
         localesList: {
-            'en-US': 'English',
-            'ru-RU': 'Русский'
+            'en': 'English',
+            'ru': 'Русский'
         },
         editorsList: {
             'hugerte': 'HugeRTE'
