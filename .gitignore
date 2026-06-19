@@ -1,0 +1,25 @@
+/!old/
+/!test/
+.gitignore
+bindata.go
+data/
+static/
+templates/
+.DS_Store
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+QVNote*.exe
+package-lock.json
+resource.syso
+.opencode
+.omo
+.rtk
+AGENTS.md
+
+
+# Editor directories and files
+.vscode
+public/static/hugerte/
