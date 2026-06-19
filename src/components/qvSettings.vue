@@ -11,7 +11,7 @@
                 <li class="nav-item mb-1">
                     <button class="nav-link"
                             @click="noteStore.setSettingsPageType('global')" :class="{'active':settingsPageType === 'global'}">
-                        <i class="fas fa-cog me-1"></i>
+                        <i class="bi bi-gear-fill me-1"></i>
                         {{$t('general.sidebarSettingsGeneral')}}
                     </button>
                 </li>
@@ -19,14 +19,14 @@
                     <button class="nav-link"
                             @click="noteStore.setSettingsPageType('notebooks')"
                             :class="{'active':settingsPageType === 'notebooks'}">
-                        <i class="fas fa-book me-1"></i>
+                        <i class="bi bi-journal-text me-1"></i>
                         {{$t('general.sidebarSettingsNotebooks')}}
                     </button>
                 </li>
                 <li class="nav-item">
                     <button class="nav-link" @click="noteStore.setSettingsPageType('tags')"
                             :class="{'active':settingsPageType === 'tags'}">
-                        <i class="fas fa-tags me-1"></i>
+                        <i class="bi bi-tags-fill me-1"></i>
                         {{$t('general.sidebarSettingsTags')}}
                     </button>
                 </li>
@@ -122,10 +122,10 @@
                     </div>
                     <div class="card-body">
                         <a :href="noteStore.apiFolder + '/favorites.json'" download="favorites.json" class="btn btn-primary me-2">
-                            <i class="fas fa-file-export me-1"></i> {{$t('setting.global.btnFavoritesExport')}}
+                            <i class="bi bi-file-earmark-arrow-down me-1"></i> {{$t('setting.global.btnFavoritesExport')}}
                         </a>
                         <label for="favorites-upload" class="btn btn-success me-2 mb-0">
-                            <i class="fas fa-file-import me-1"></i> {{$t('setting.global.btnFavoritesImport')}}
+                            <i class="bi bi-file-earmark-arrow-up me-1"></i> {{$t('setting.global.btnFavoritesImport')}}
                         </label>
                         <input id="favorites-upload" type="file" v-on:change="favoritesImportSelected"/>
                     </div>
@@ -144,7 +144,7 @@
                     >
                         <div class="notebook-edit-link">
                             {{item.name}}
-                            <i class="fas fa-cog float-end"></i>
+                            <i class="bi bi-gear-fill float-end"></i>
                         </div>
                     </div>
                 </div>
@@ -162,7 +162,7 @@
                     >
                         <div class="notebook-edit-link">
                             {{item.name}}
-                            <i class="fas fa-cog float-end"></i>
+                            <i class="bi bi-gear-fill float-end"></i>
                         </div>
                     </div>
                 </div>

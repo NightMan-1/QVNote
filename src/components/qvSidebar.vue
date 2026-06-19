@@ -10,7 +10,7 @@
                                 :class="{ 'active': currentNotebookID === 'Inbox' }"
                                 @click="$router.push('/notes/Inbox/')">
                             <span class="badge bg-primary">{{notesCountInbox}}</span>
-                            <i class="fas fa-inbox me-1"></i> {{$t('general.sidebarInbox')}}
+                            <i class="bi bi-inbox-fill me-1"></i> {{$t('general.sidebarInbox')}}
                         </button>
                     </li>
                     <li class="nav-item">
@@ -18,7 +18,7 @@
                                 :class="{ 'active': currentNotebookID === 'Favorites' }"
                                 @click="$router.push('/notes/Favorites/')">
                             <span class="badge bg-primary">{{notesCountFavorites}}</span>
-                            <i class="fas fa-star me-1"></i> {{$t('general.sidebarFavorites')}}
+                            <i class="bi bi-star-fill me-1"></i> {{$t('general.sidebarFavorites')}}
                         </button>
                     </li>
                     <li class="nav-item">
@@ -26,7 +26,7 @@
                                 :class="{ 'active': currentNotebookID === 'Trash' }"
                                 @click="$router.push('/notes/Trash/')">
                             <span class="badge bg-primary">{{notesCountTrash}}</span>
-                            <i class="fas fa-trash-alt me-1"></i> {{$t('general.sidebarTrash')}}
+                            <i class="bi bi-trash-fill me-1"></i> {{$t('general.sidebarTrash')}}
                         </button>
                     </li>
                     <li class="nav-item">
@@ -34,7 +34,7 @@
                                 :class="{ 'active': currentNotebookID === 'Allnotes' }"
                                 @click="$router.push('/notes/Allnotes/')">
                             <span class="badge bg-primary" v-if="notesCountTotal > 0">{{notesCountTotal}}</span>
-                            <i class="fas fa-archive me-1"></i> {{$t('general.sidebarAllNotes')}}
+                            <i class="bi bi-archive-fill me-1"></i> {{$t('general.sidebarAllNotes')}}
                         </button>
                     </li>
 

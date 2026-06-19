@@ -6,7 +6,7 @@ import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 import 'vue3-calendar-heatmap/dist/style.css'
 
-import '@fortawesome/fontawesome-free/css/all.css'
+import 'bootstrap-icons/font/bootstrap-icons.css'
 import './style/nord.css'
 import './style/bootstrap/bootstrap.scss'
 import './style/grid.css'

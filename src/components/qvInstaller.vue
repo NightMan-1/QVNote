@@ -15,7 +15,7 @@
 
                                         <div class="input-group mb-3">
                                             <span class="input-group-text">
-                                                <i class="far fa-folder-open"></i>
+                                                <i class="bi bi-folder2-open"></i>
                                             </span>
                                             <input class="form-control" name="sourceFolder" v-model="formData.sourceFolder">
                                         </div>

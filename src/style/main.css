@@ -120,7 +120,7 @@ p + .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
     margin-top: 1.1em;
 }
 
-i.fas, i.far {font-size: .95em;}
+i.bi {font-size: .95em;}
 i.me-1 {width: 1.1em; text-align: center;}
 
 .text-nord0 {color: var(--nord0);}

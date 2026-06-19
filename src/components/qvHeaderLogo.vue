@@ -6,30 +6,30 @@
       </button>
 
       <div class="dropdown btn-group settings-button">
-        <button class="btn btn-outline-secondary btn-sm" title="Создать запись" @click="openEditor"><i class="fas fa-edit text-dark"></i></button>
+        <button class="btn btn-outline-secondary btn-sm" title="Создать запись" @click="openEditor"><i class="bi bi-pencil-fill text-dark"></i></button>
 
         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
                 aria-haspopup="true" aria-expanded="false"
                 @click.stop="showSettingsMenu = !showSettingsMenu">
-            <i class="fas fa-cog text-dark"></i>
+            <i class="bi bi-gear-fill text-dark"></i>
         </button>
         <div
             class="dropdown-menu"
             :class="{'show':showSettingsMenu}"
         >
             <button class="dropdown-item" @click="openEditor"><i
-                class="fas fa-pencil-alt- fa-edit me-2 text-nord3"></i> {{$t('general.addNewNote')}}
+                class="bi bi-pencil-fill me-2 text-nord3"></i> {{$t('general.addNewNote')}}
             </button>
-            <button class="dropdown-item" @click="addNotebook"><i class="fas fa-book me-2 text-nord3"></i>
+            <button class="dropdown-item" @click="addNotebook"><i class="bi bi-journal-text me-2 text-nord3"></i>
                 {{$t('general.addNewNotebook')}}
             </button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" @click="openSettings"><i class="fas fa-cog me-2 text-nord3"></i>
+            <button class="dropdown-item" @click="openSettings"><i class="bi bi-gear-fill me-2 text-nord3"></i>
                 {{$t('general.buttonSettings')}}
             </button>
             <!--
             <div class="dropdown-divider" v-if="config.startingMode === 'browser'"></div>
-            <button class="dropdown-item" @click="powerOFF" v-if="config.startingMode === 'browser'"><i class="fas fa-power-off me-2 text-nord3"></i>
+            <button class="dropdown-item" @click="powerOFF" v-if="config.startingMode === 'browser'"><i class="bi bi-power me-2 text-nord3"></i>
                 {{$t('general.buttonExit')}}
             </button>
             -->

@@ -6,17 +6,17 @@
             <div class="float-end">
                 <button class="btn btn-outline-primary ms-auto"
                         @click="$router.push('/notes/' + articleCurrentEditable.NoteBookUUID + '/' + articleCurrentEditable.uuid + '/')"
-                        v-if="(articleCurrentEditable.uuid !== '' && articleCurrentEditable.NoteBookUUID !== '')"><i class="fas fa-eye"></i></button>
+                        v-if="(articleCurrentEditable.uuid !== '' && articleCurrentEditable.NoteBookUUID !== '')"><i class="bi bi-eye-fill"></i></button>
                 <button class="btn btn-outline-success ms-2" @click="saveData"
-                        :class="{'ms-auto':articleCurrentEditable.uuid === '' && articleCurrentEditable.NoteBookUUID === ''}"><i class="fas fa-save"></i>
+                        :class="{'ms-auto':articleCurrentEditable.uuid === '' && articleCurrentEditable.NoteBookUUID === ''}"><i class="bi bi-floppy-fill"></i>
                 </button>
-                <!--<button class="btn btn-outline-secondary ms-2"><i class="fas fa-eraser text-muted"></i></button>-->
+                <!--<button class="btn btn-outline-secondary ms-2"><i class="bi bi-eraser text-muted"></i></button>-->
                 <div class="btn-group ms-4" role="group" aria-label="Button group">
                     <button class="btn btn-outline-secondary" :class="{'active':articleCurrentEditable.type === 'text'}"
-                            @click="articleCurrentEditable.type = 'text'"><i class="fas fa-edit"></i></button>
-                    <!--<button class="btn btn-outline-secondary" :class="{'active':editorType === 'markdown'}" @click="editorType = 'markdown'"><i class="fas fa-columns"></i></button>-->
+                            @click="articleCurrentEditable.type = 'text'"><i class="bi bi-pencil-fill"></i></button>
+                    <!--<button class="btn btn-outline-secondary" :class="{'active':editorType === 'markdown'}" @click="editorType = 'markdown'"><i class="bi bi-layout-split"></i></button>-->
                     <button class="btn btn-outline-secondary" :class="{'active':articleCurrentEditable.type === 'code'}"
-                            @click="articleCurrentEditable.type = 'code'"><i class="fas fa-code"></i></button>
+                            @click="articleCurrentEditable.type = 'code'"><i class="bi bi-code-slash"></i></button>
                 </div>
             </div>
         </div>
@@ -29,7 +29,7 @@
                         <div class="mb-3">
                             <label><b>{{$t('editor.titleURL')}}</b></label>
                             <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-external-link-alt"></i></span>
+                                <span class="input-group-text"><i class="bi bi-box-arrow-up-right"></i></span>
                                 <input type="text" class="form-control text-dark font-size-normal"
                                         :placeholder="$t('editor.inputURLPlaceholder')" v-model="articleCurrentEditable.url_src"/>
                             </div>
@@ -95,6 +95,7 @@ import 'hugerte/plugins/fullscreen'
 import 'hugerte/plugins/codesample'
 
 import Multiselect from 'vue-multiselect'
+import { registerBootstrapIcons } from '../hugerte-icons'
 // import { html as BeautifyHtml } from 'js-beautify'
 
 export default {
@@ -152,6 +153,7 @@ export default {
                 automatic_uploads: false,
                 content_style: 'body { font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; line-height: 1.7; margin: 0; padding: 0 1rem 0 1rem; } h1 { font-size: 2.2rem; font-weight: 500; } h2 { font-size: 1.8rem; font-weight: 500; } h3 { font-size: 1.5rem; font-weight: 500; } h4 { font-size: 1.25rem; } h5 { font-size: 1.1rem; } h6 { font-size: 1rem; color: #6c757d; } p { margin-bottom: 0.75rem; } img { max-width: 100%; height: auto; } pre:not([class*="language-"]) { background-color: #f0f3f5; color: #363636; padding: 0.5rem; } pre:not([class*="language-"]) code { background-color: transparent; color: inherit; padding: 0; }  .mce-content-body pre [data-mce-selected="inline-boundary"] { background-color: transparent; } :not(pre) > code[class*="language-"], pre[class*="language-"] {color: #383942;} pre[class*="language-"] {padding: 0.5rem; margin: 1rem 0;}',
                 setup: (editor) => {
+                    registerBootstrapIcons(editor)
                     // Syntax highlighting for code blocks using PrismJS
                     editor.on('init', function () {
                         var doc = editor.getDoc()
@@ -184,7 +186,6 @@ export default {
                             }
                         }
                     })
-                    editor.ui.registry.addIcon('eraser', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M8.086 2.207a2 2 0 0 1 2.828 0l3.879 3.879a2 2 0 0 1 0 2.828l-5.5 5.5A2 2 0 0 1 7.879 15H5.12a2 2 0 0 1-1.414-.586l-2.5-2.5a2 2 0 0 1 0-2.828zm2.121.707a1 1 0 0 0-1.414 0L4.16 7.547l5.293 5.293 4.633-4.633a1 1 0 0 0 0-1.414zM8.746 13.547 3.453 8.254 1.914 9.793a1 1 0 0 0 0 1.414l2.5 2.5a1 1 0 0 0 .707.293H7.88a1 1 0 0 0 .707-.293z"/></svg>')
                     editor.ui.registry.addButton('eraser', {
                         icon: 'eraser',
                         tooltip: 'Clean HTML',
@@ -203,7 +204,7 @@ export default {
                     })
                     // Inline code — wraps selection in <code>, or creates a code block for multi-block selections
                     editor.ui.registry.addButton('inlinecode', {
-                        text: '<>',
+                        icon: 'inlinecode',
                         tooltip: 'Inline code',
                         onAction: () => {
                             var rng = editor.selection.getRng()
@@ -226,7 +227,7 @@ export default {
                     })
                     // Code block — opens the HugeRTE Insert/Edit Code Sample dialog
                     editor.ui.registry.addButton('codeblock', {
-                        text: '{ }',
+                        icon: 'codeblock',
                         tooltip: 'Code block',
                         onAction: () => {
                             var node = editor.selection.getNode()
@@ -403,20 +404,7 @@ export default {
     .tox .tox-image-tools__resize-handle {
         max-width: 100%;
     }
-    /* Inline code button styling */
-    .tox .tox-tbtn[aria-label="Inline code"] { width: auto !important; }
-    .tox .tox-tbtn[aria-label="Inline code"] span {
-        font-size: 1rem;
-        font-weight: 700;
-        margin-top: -5px;
-    }
-    /* Code block button styling */
-    .tox .tox-tbtn[aria-label="Code block"] { width: auto !important; }
-    .tox .tox-tbtn[aria-label="Code block"] span {
-        font-size: 1rem;
-        font-weight: 700;
-        margin-top: -5px;
-    }
+
     /* Prism editor: fix invisible cursor and text selection */
     .prism-editor-wrapper .prism-editor__textarea {
         caret-color: #363636;

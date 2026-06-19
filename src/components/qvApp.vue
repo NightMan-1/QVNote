@@ -9,12 +9,12 @@
                 <div class="btn-group w-100">
                     <button class="btn text-white" @click="noteStore.setSidebarType('notebooksList')"
                             :class="{'btn-outline-primary': sidebarType !== 'notebooksList', 'btn-primary': sidebarType === 'notebooksList' }">
-                        <i class="fas fa-book me-1" :class="{'text-nord2': sidebarType === 'notebooksList', 'text-success': sidebarType !== 'notebooksList' }"></i>
+                        <i class="bi bi-journal-text me-1" :class="{'text-nord2': sidebarType === 'notebooksList', 'text-success': sidebarType !== 'notebooksList' }"></i>
                         {{$t('general.sidebarSwitchNotebooks')}}
                     </button>
                     <button class="btn text-white" @click="noteStore.setSidebarType('tagsList')"
                             :class="{'btn-outline-primary': sidebarType !== 'tagsList', 'btn-primary': sidebarType === 'tagsList' }">
-                        <i class="fas fa-tags me-1" :class="{'text-nord2': sidebarType === 'tagsList', 'text-success': sidebarType !== 'tagsList' }"></i>
+                        <i class="bi bi-tags me-1" :class="{'text-nord2': sidebarType === 'tagsList', 'text-success': sidebarType !== 'tagsList' }"></i>
                         {{$t('general.sidebarSwitchTags')}}
                     </button>
                 </div>
@@ -22,9 +22,9 @@
     	<div class="grid-head-2">
                 <div v-if="pageType === 'articleList'">
                 <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
                     <input type="text" class="form-control" :placeholder="$t('articleList.searchPlaceholder')" v-model="searchInput">
-                    <button class="input-group-text" v-if="searchInput" @click="searchInput = ''"><i class="fas fa-eraser text-info"></i></button>
+                    <button class="input-group-text" v-if="searchInput" @click="searchInput = ''"><i class="bi bi-eraser text-info"></i></button>
                 </div>
             </div>
         </div>
@@ -53,27 +53,27 @@
             </div>
         </div></div>
     	<div class="grid-head-3 text-end" v-if="pageType === 'articleList'">
-            <button class="btn btn-outline-secondary float-start" :title="$t('articleList.btnHideSidebar')" @click="gridShow = !gridShow"><i class="fas fa-chevron-left text-black-50" v-if="gridShow"></i><i class="fas fa-chevron-right text-black-50" v-if="!gridShow"></i></button>
+            <button class="btn btn-outline-secondary float-start" :title="$t('articleList.btnHideSidebar')" @click="gridShow = !gridShow"><i class="bi bi-chevron-left text-black-50" v-if="gridShow"></i><i class="bi bi-chevron-right text-black-50" v-if="!gridShow"></i></button>
 
             <a v-bind:href="articleCurrent.url_src" v-if="articleCurrent.url_src"
-                target="_blank" class="btn btn-outline-secondary me-2"><i class="fas fa-external-link-alt text-dark"></i></a>
+                target="_blank" class="btn btn-outline-secondary me-2"><i class="bi bi-box-arrow-up-right text-dark"></i></a>
 
             <div class="btn-group me-2" role="group">
-                <button class="btn btn-outline-secondary" :title="$t('articleList.btnInfo')" @click="doShowAdvancedInfo"><i class="fas fa-info-circle text-info"></i></button>
-                <button class="btn btn-outline-secondary" :title="$t('articleList.btnEdit')" @click="$router.push({name: 'qvEditor'})"><i class="fas fa-edit text-success"></i></button>
-                <button class="btn btn-outline-secondary" :title="$t('articleList.btnDelete')" @click="deleteArticle"><i class="fas fa-trash text-danger"></i></button>
-                <button class="btn btn-outline-secondary" :title="$t('articleList.btnMove')" @click="moveArticle"><i class="fas fa-people-carry- fa-exchange-alt text-black-50"></i></button>
+                <button class="btn btn-outline-secondary" :title="$t('articleList.btnInfo')" @click="doShowAdvancedInfo"><i class="bi bi-info-circle-fill text-info"></i></button>
+                <button class="btn btn-outline-secondary" :title="$t('articleList.btnEdit')" @click="$router.push({name: 'qvEditor'})"><i class="bi bi-pencil-square text-success"></i></button>
+                <button class="btn btn-outline-secondary" :title="$t('articleList.btnDelete')" @click="deleteArticle"><i class="bi bi-trash-fill text-danger"></i></button>
+                <button class="btn btn-outline-secondary" :title="$t('articleList.btnMove')" @click="moveArticle"><i class="bi bi-arrow-left-right text-black-50"></i></button>
             </div>
             <div class="btn-group me-2" role="group">
                 <button class="btn btn-outline-secondary" :class="{'btn-secondary':readerMode}" :title="$t('articleList.btnReaderMode')" @click="noteStore.toggleReaderMode()">
-                    <i class="fas text-black-50 fa-book-reader"></i>
+                    <i class="bi text-black-50 bi-book-half"></i>
                 </button>
                 <button class="btn btn-outline-secondary" :class="{'btn-secondary-':layoutBig, 'btn-disabled':readerMode}" :title="$t('articleList.btnReaderMode')" @click="noteStore.toggleLayoutMode()">
-                    <i class="fas text-black-50" :class="{'fa-expand-alt':layoutBig, 'fa-compress-alt':!layoutBig}"></i>
+                    <i class="bi text-black-50" :class="{'bi-arrows-angle-expand':layoutBig, 'bi-arrows-angle-contract':!layoutBig}"></i>
                 </button>
             </div>
             <button class="btn btn-outline-secondary" :title="$t('articleList.btnFavorites')" @click="addToFavorites">
-                <i class="far fa-star text-black-50" :class="{'fas':articleCurrent.favorites}"></i>
+                <i class="bi bi-star text-black-50" :class="{'bi-star-fill':articleCurrent.favorites}"></i>
             </button>
         </div>
     	<div class="grid-body-2 bg-white" v-if="pageType === 'articleList'"><div class="scrooll-wrap">
