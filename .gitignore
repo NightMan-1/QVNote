@@ -1,0 +1,35 @@
+/!old/
+/!test/
+.gitignore
+bindata.go
+data/
+static/
+templates/
+.DS_Store
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+QVNote*.exe
+package-lock.json
+resource.syso
+.opencode
+.omo
+.rtk
+AGENTS.md
+
+# Built binary
+qvnote-linux-x64
+
+# Local environment caches
+.playwright-cli/
+.playwright-mcp/
+
+# User notes - keep existing tracked baseline, ignore new local notes
+/notes/
+
+
+# Editor directories and files
+.vscode
+public/static/hugerte/

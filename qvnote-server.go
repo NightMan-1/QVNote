@@ -500,12 +500,19 @@ func SaveConfig() bool {
 
 //clear HTML
 func ClearHTML(content string) string {
-	r := regexp.MustCompile(`<pre (.*?)>`)
-	content = r.ReplaceAllString(content, "<pre>")
+	r := regexp.MustCompile(`<pre([^>]*)>`)
+	content = r.ReplaceAllStringFunc(content, func(s string) string {
+		re := regexp.MustCompile(`class=["'](language-[^"']+)["']`)
+		if m := re.FindStringSubmatch(s); m != nil {
+			return `<pre class="` + m[1] + `">`
+		}
+		return "<pre>"
+	})
 	r = regexp.MustCompile(`<code (.*?)>`)
 	content = r.ReplaceAllString(content, "<code>")
 
-	r = regexp.MustCompile(`(?m)<pre>(?s).*?</pre>`)
+	// Extract <pre> blocks first so nested <code> (and any other tags) survive cleanup.
+	r = regexp.MustCompile(`(?s)<pre[^>]*>.*?</pre>`)
 	matchData := r.FindAllStringSubmatch(content, -1)
 	savePRE := make(map[string]string)
 	for _, match := range matchData {
@@ -517,7 +524,8 @@ func ClearHTML(content string) string {
 	r = regexp.MustCompile(`\s{2,}`)
 	content = r.ReplaceAllString(content, " ")
 
-	r = regexp.MustCompile(`(?m)<code>(?s).*?</code>`)
+	// Extract any <code> blocks that are not already inside a saved <pre> block.
+	r = regexp.MustCompile(`(?s)<code>.*?</code>`)
 	matchData = r.FindAllStringSubmatch(content, -1)
 	saveCODE := make(map[string]string)
 	for _, match := range matchData {
@@ -596,6 +604,14 @@ func ClearHTML(content string) string {
 
 	r = regexp.MustCompile(`<font.*?>(.*?)</font>`)
 	content = r.ReplaceAllString(content, "$1")
+
+	// Convert <br> to \n inside <pre> blocks before restoring
+	for index, pre := range savePRE {
+		pre = strings.Replace(pre, "<br>", "\n", -1)
+		pre = strings.Replace(pre, "<br/>", "\n", -1)
+		pre = strings.Replace(pre, "<br />", "\n", -1)
+		savePRE[index] = pre
+	}
 
 	for index, code := range saveCODE {
 		content = strings.Replace(content, index, code, 1)

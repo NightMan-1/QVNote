@@ -7,12 +7,12 @@
     	<div class="grid-sidebar-1"><qv-sidebar/></div>
     	<div class="grid-footer-1">
                 <div class="btn-group w-100">
-                    <button class="btn text-white" @click="$store.commit('setSidebarType', 'notebooksList')"
+                    <button class="btn text-white" @click="noteStore.setSidebarType('notebooksList')"
                             :class="{'btn-outline-primary': sidebarType !== 'notebooksList', 'btn-primary': sidebarType === 'notebooksList' }">
                         <i class="fas fa-book mr-1" :class="{'text-nord2': sidebarType === 'notebooksList', 'text-success': sidebarType !== 'notebooksList' }"></i>
                         {{$t('general.sidebarSwitchNotebooks')}}
                     </button>
-                    <button class="btn text-white" @click="$store.commit('setSidebarType', 'tagsList')"
+                    <button class="btn text-white" @click="noteStore.setSidebarType('tagsList')"
                             :class="{'btn-outline-primary': sidebarType !== 'tagsList', 'btn-primary': sidebarType === 'tagsList' }">
                         <i class="fas fa-tags mr-1" :class="{'text-nord2': sidebarType === 'tagsList', 'text-success': sidebarType !== 'tagsList' }"></i>
                         {{$t('general.sidebarSwitchTags')}}
@@ -69,10 +69,10 @@
                 <button class="btn btn-outline-secondary" :title="$t('articleList.btnMove')" @click="moveArticle"><i class="fas fa-people-carry- fa-exchange-alt text-black-50"></i></button>
             </div>
             <div class="btn-group mr-2" role="group">
-                <button class="btn btn-outline-secondary" :class="{'btn-secondary':readerMode}" :title="$t('articleList.btnReaderMode')" @click="$store.commit('toggleReaderMode')">
+                <button class="btn btn-outline-secondary" :class="{'btn-secondary':readerMode}" :title="$t('articleList.btnReaderMode')" @click="noteStore.toggleReaderMode()">
                     <i class="fas text-black-50 fa-book-reader"></i>
                 </button>
-                <button class="btn btn-outline-secondary" :class="{'btn-secondary-':layoutBig, 'btn-disabled':readerMode}" :title="$t('articleList.btnReaderMode')" @click="$store.commit('toggleLayoutMode')">
+                <button class="btn btn-outline-secondary" :class="{'btn-secondary-':layoutBig, 'btn-disabled':readerMode}" :title="$t('articleList.btnReaderMode')" @click="noteStore.toggleLayoutMode()">
                     <i class="fas text-black-50" :class="{'fa-expand-alt':layoutBig, 'fa-compress-alt':!layoutBig}"></i>
                 </button>
             </div>
@@ -83,14 +83,14 @@
     	<div class="grid-body-2 bg-white" v-if="pageType === 'articleList'"><div class="scrooll-wrap">
                 <div class="justify-content-center article-info"
                      :class="{'d-block':showAdvancedInfo === true, 'd-none':showAdvancedInfo === false }">
-                    <b>{{$t('articleList.infoDateCreate')}}:</b> {{ articleCurrent.created_at | formatDate}}<br>
-                    <b>{{$t('articleList.infoDateModify')}}:</b> {{ articleCurrent.updated_at | formatDate}}<br>
+                    <b>{{$t('articleList.infoDateCreate')}}:</b> {{ $filters.formatDate(articleCurrent.created_at) }}<br>
+                    <b>{{$t('articleList.infoDateModify')}}:</b> {{ $filters.formatDate(articleCurrent.updated_at) }}<br>
                     <div
                         v-if="articleCurrent.tags !== null && articleCurrent.tags !== undefined && articleCurrent.tags.length > 0">
                         <b>{{$t('articleList.infoTags')}}: </b>
                         <button class="btn badge badge-primary mr-1 font-weight-normal"
                                 v-for="tag in articleCurrent.tags"
-                                :key="tag" @click="$router.push('/tags/'+tag+'/'+articleCurrent.uuid, () => {})">
+                                :key="tag" @click="$router.push('/tags/'+tag+'/'+articleCurrent.uuid)">
                             {{tag}}
                         </button>
                         <br>
@@ -115,16 +115,32 @@
 </template>
 
 <script>
-import mixin from './mixins'
+import { defineAsyncComponent } from 'vue'
+import { useNoteStore } from '../store'
 import qvHeaderLogo from './qvHeaderLogo.vue'
 import qvDashboard from './qvDashboard.vue'
 import qvSidebar from './qvSidebar.vue'
 import tingle from 'tingle.js'
-const qvEditor = () => import('./qvEditor.vue')
+import Prism from 'prismjs'
+import 'prismjs/components/prism-clike'
+import 'prismjs/components/prism-javascript'
+import 'prismjs/components/prism-css'
+import 'prismjs/components/prism-markup'
+import 'prismjs/components/prism-python'
+import 'prismjs/components/prism-bash'
+import 'prismjs/components/prism-json'
+import 'prismjs/components/prism-sql'
+import 'prismjs/components/prism-java'
+import 'prismjs/components/prism-c'
+import 'prismjs/components/prism-cpp'
+import 'prismjs/components/prism-csharp'
+import 'prismjs/components/prism-markup-templating'
+import 'prismjs/components/prism-php'
+import 'prismjs/components/prism-ruby'
+const qvEditor = defineAsyncComponent(() => import('./qvEditor.vue'))
 
 export default {
     name: 'qvApp',
-    mixins: [mixin],
     components: { qvHeaderLogo, qvDashboard, qvSidebar, qvEditor },
     data () {
         return {
@@ -135,18 +151,43 @@ export default {
             gridShow: true
         }
     },
+    setup () {
+        return { noteStore: useNoteStore() }
+    },
+    computed: {
+        gridClass () { return this.noteStore.gridClass },
+        pageType () { return this.noteStore.pageType },
+        sidebarType () { return this.noteStore.sidebarType },
+        currentNotebookID () { return this.noteStore.currentNotebookID },
+        currentTagURL () { return this.noteStore.currentTagURL },
+        notebooksList () { return this.noteStore.notebooksList },
+        notesList () { return this.noteStore.notesList },
+        articleCurrent () { return this.noteStore.currentArticle },
+        showAdvancedInfo () { return this.noteStore.showAdvancedNoteInfo },
+        readerMode () { return this.noteStore.readerMode },
+        layoutBig () { return this.noteStore.layoutBig }
+    },
     beforeMount: function () {
-        this.$store.dispatch('getConfig')
-        this.$store.dispatch('getAllData')
-        this.$store.dispatch('getFavoritesCount')
+        this.noteStore.getConfig()
+        this.noteStore.getAllData()
+        this.noteStore.getFavoritesCount()
     },
     mounted: function () {
-        this.$store.commit('setGridClass', 'grid-v1')
-        if (this.$route.name === 'qvNote') {
-            this.$store.commit('setSidebarType', 'notebooksList')
+        // Load Prism syntax-highlighting theme once
+        if (!document.querySelector('link[data-prism-theme="atom-one-light"]')) {
+            var prismLink = document.createElement('link')
+            prismLink.rel = 'stylesheet'
+            prismLink.href = '/static/prism/prism-atom-one-light.css'
+            prismLink.setAttribute('data-prism-theme', 'atom-one-light')
+            document.head.appendChild(prismLink)
+        }
+        this.highlightCodeBlocks()
+        this.noteStore.setGridClass('grid-v1')
+        if (this.$route.name === 'qvNote' || this.$route.name === 'qvNotebooks') {
+            this.noteStore.setSidebarType('notebooksList')
             this.notebookSelect(this.$route.params.nbUUID, this.$route.params.noteUUID)
-        } else if (this.$route.name === 'qvTag') {
-            this.$store.commit('setSidebarType', 'tagsList')
+        } else if (this.$route.name === 'qvTag' || this.$route.name === 'qvTagsList') {
+            this.noteStore.setSidebarType('tagsList')
             this.tagSelect(this.$route.params.nbUUID, this.$route.params.noteUUID)
         }
     },
@@ -171,12 +212,12 @@ export default {
             // console.log('from ', from.name, 'to ', to.name)
             // console.log('route.name ', this.$route.name)
             if (from.name === 'qvEditor' && to.name === 'qvNote') {
-                this.$store.dispatch('getAllData')
-                this.$store.commit('setCurrentNotebookID', '')
+                this.noteStore.getAllData()
+                this.noteStore.setCurrentNotebookID('')
                 if (this.articleCurrent.uuid !== '') {
                     this.notebookSelect(this.articleCurrent.NoteBookUUID, this.articleCurrent.uuid)
                     if (this.articleCurrent.uuid !== '') {
-                        this.$store.dispatch('getArticle', this.articleCurrent.uuid)
+                        this.noteStore.getArticle(this.articleCurrent.uuid)
                     }
                 }
             }
@@ -185,29 +226,29 @@ export default {
                     this.notebookSelect(this.$route.params.nbUUID, this.$route.params.noteUUID)
                 }
             } else if (this.$route.name === 'qvApp') {
-                this.$store.commit('setCurrentNotebookID', '')
+                this.noteStore.setCurrentNotebookID('')
             } else if (this.$route.name === 'qvTagsList' || this.$route.name === 'qvTag') {
-                this.$store.commit('setCurrentNotebookID', '')
+                this.noteStore.setCurrentNotebookID('')
                 if (this.$route.params.nbUUID !== '') {
                     this.tagSelect(this.$route.params.nbUUID, this.$route.params.noteUUID)
                 }
             } else if (this.$route.name === 'qvEditor') {
-                this.$store.commit('setPageType', 'editor')
+                this.noteStore.setPageType('editor')
             }
         },
         'pageType' () {
             // console.log('pageType ', this.pageType)
             if (this.pageType === 'articleList') {
-                this.$store.commit('setGridClass', 'grid-v2')
+                this.noteStore.setGridClass('grid-v2')
             } else {
-                this.$store.commit('setGridClass', 'grid-v1')
+                this.noteStore.setGridClass('grid-v1')
             }
         },
         'searchInput' () {
             if (this.searchInput.length >= 3) {
                 this.notesListBackup = this.notesList
 
-                fetch(this.$store.getters.apiFolder + '/search.json', { method: 'POST', body: JSON.stringify({ 'text': this.searchInput }) }).then(response => { return response.json() })
+                fetch(this.noteStore.apiFolder + '/search.json', { method: 'POST', body: JSON.stringify({ 'text': this.searchInput }) }).then(response => { return response.json() })
                     .then(jsonData => {
                         this.mutableNotesList = jsonData
                     })
@@ -219,7 +260,7 @@ export default {
                 if (this.notesListBackup !== null && this.notesListBackup.length >= 1) {
                     if (this.articleCurrent.uuid !== null && this.articleCurrent.NoteBookUUID !== null) {
                         // console.log('restore search v1')
-                        this.$store.commit('setCurrentNotebookID', '')
+                        this.noteStore.setCurrentNotebookID('')
                         this.notesListBackup = null
                         this.notebookSelect(this.articleCurrent.NoteBookUUID, this.articleCurrent.uuid)
                     } else {
@@ -236,31 +277,43 @@ export default {
             } else {
                 this.mutableNotesList = this.notesList
             }
+        },
+        'articleCurrent.content' () {
+            this.highlightCodeBlocks()
         }
     },
     methods: {
+        highlightCodeBlocks () {
+            var self = this
+            this.$nextTick(function () {
+                var el = self.$el.querySelector('.articleCell')
+                if (el) {
+                    Prism.highlightAllUnder(el)
+                }
+            })
+        },
         tagSelect (nbUUID, noteUUID) {
             this.articleListType = 'tags'
-            this.$store.commit('setPageType', 'articleList')
-            this.$store.commit('setSidebarType', 'tagsList')
+            this.noteStore.setPageType('articleList')
+            this.noteStore.setSidebarType('tagsList')
             if (nbUUID !== undefined && this.currentTagURL !== nbUUID) {
-                this.$store.commit('setCurrentTagURL', nbUUID)
-                this.$store.commit('setNotesList', {}) // нужно для скрола списка вверх, иначе будет на предыдущей позиции
+                this.noteStore.setCurrentTagURL(nbUUID)
+                this.noteStore.setNotesList({}) // нужно для скрола списка вверх, иначе будет на предыдущей позиции
 
-                fetch(this.$store.getters.apiFolder + '/notes_with_tag.json', { method: 'POST', body: JSON.stringify({ tag: this.currentTagURL }) }).then(response => { return response.json() })
+                fetch(this.noteStore.apiFolder + '/notes_with_tag.json', { method: 'POST', body: JSON.stringify({ tag: this.currentTagURL }) }).then(response => { return response.json() })
                     .then(jsonData => {
-                        this.$store.commit('setNotesList', jsonData)
+                        this.noteStore.setNotesList(jsonData)
                         if (this.notesList !== null && Object.keys(this.notesList).length > 0) {
                             let articleCurrentUUID = this.notesList[0].uuid
                             if (noteUUID !== undefined) {
                                 articleCurrentUUID = noteUUID
                             }
-                            this.$router.push('/tags/' + this.currentTagURL + '/' + articleCurrentUUID, () => {}) // сразу более правильные ссылки
+                            this.$router.push('/tags/' + this.currentTagURL + '/' + articleCurrentUUID + '/') // сразу более правильные ссылки
                         }
                     })
                     .catch(error => {
                         console.error('Error fetching notes_with_tag.json:', error)
-                        this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('general.messageErrorDownloadNotesWithTag') })
+                        this.noteStore.setStatus({ errorType: 2, errorText: this.$t('general.messageErrorDownloadNotesWithTag') })
                     })
             }
 
@@ -272,34 +325,34 @@ export default {
                 articleCurrentUUID = noteUUID
             }
             if (this.articleCurrent.uuid !== articleCurrentUUID) {
-                this.$store.dispatch('getArticle', articleCurrentUUID)
+                this.noteStore.getArticle(articleCurrentUUID)
             }
         },
         notebookSelect (nbUUID, noteUUID) {
-            this.$store.commit('setPageType', 'articleList')
+            this.noteStore.setPageType('articleList')
             this.articleListType = 'notes'
-            this.$store.commit('setSidebarType', 'notebooksList')
+            this.noteStore.setSidebarType('notebooksList')
             if (noteUUID === undefined) {
-                this.$store.commit('setCurrentNotebookID', '')
+                this.noteStore.setCurrentNotebookID('')
             }
             if (nbUUID !== undefined && this.currentNotebookID !== nbUUID) {
-                this.$store.commit('setCurrentNotebookID', nbUUID)
-                this.$store.commit('setNotesList', {}) // нужно для скрола списка вверх, иначе будет на предыдущей позиции
+                this.noteStore.setCurrentNotebookID(nbUUID)
+                this.noteStore.setNotesList({}) // нужно для скрола списка вверх, иначе будет на предыдущей позиции
 
-                fetch(this.$store.getters.apiFolder + '/notes_at_notebook.json', { method: 'POST', body: JSON.stringify({ NotebookID: this.currentNotebookID }) }).then(response => { return response.json() })
+                fetch(this.noteStore.apiFolder + '/notes_at_notebook.json', { method: 'POST', body: JSON.stringify({ NotebookID: this.currentNotebookID }) }).then(response => { return response.json() })
                     .then(jsonData => {
-                        this.$store.commit('setNotesList', jsonData)
+                        this.noteStore.setNotesList(jsonData)
                         if (this.notesList !== null && Object.keys(this.notesList).length > 0) {
                             let articleCurrentUUID = this.notesList[0].uuid
                             if (noteUUID !== undefined) {
                                 articleCurrentUUID = noteUUID
                             }
-                            this.$router.push('/notes/' + this.currentNotebookID + '/' + articleCurrentUUID).catch(() => {}) // сразу более правильные ссылки
+                            this.$router.push('/notes/' + this.currentNotebookID + '/' + articleCurrentUUID + '/').catch(() => {}) // сразу более правильные ссылки
                         }
                     })
                     .catch(error => {
                         console.error('Error fetching notes_at_notebook.json:', error)
-                        this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('general.messageErrorDownloadNotesList') })
+                        this.noteStore.setStatus({ errorType: 2, errorText: this.$t('general.messageErrorDownloadNotesList') })
                     })
             }
 
@@ -310,20 +363,20 @@ export default {
                 articleCurrentUUID = this.notesList[0].uuid
             }
             if (this.articleCurrent.uuid !== articleCurrentUUID) {
-                this.$store.dispatch('getArticle', articleCurrentUUID)
+                this.noteStore.getArticle(articleCurrentUUID)
             }
         },
         openArticle (UUID, nbUUID) {
             if (this.$route.params.nbUUID === 'Allnotes') {
-                this.$router.push('/notes/Allnotes' + '/' + UUID, () => {})
+                this.$router.push('/notes/Allnotes' + '/' + UUID + '/')
             } else if (this.articleListType === 'tags' && this.currentTagURL !== '') {
-                this.$router.push('/tags/' + this.currentTagURL + '/' + UUID, () => {})
+                this.$router.push('/tags/' + this.currentTagURL + '/' + UUID + '/')
             } else {
-                this.$router.push('/notes/' + nbUUID + '/' + UUID, () => {})
+                this.$router.push('/notes/' + nbUUID + '/' + UUID + '/')
             }
         },
         doShowAdvancedInfo () {
-            this.$store.commit('toggleShowAdvancedNoteInfo')
+            this.noteStore.toggleShowAdvancedNoteInfo()
         },
         moveArticle () {
             let thisGlobal = this
@@ -356,7 +409,7 @@ export default {
                 modal.destroy()
             })
             modal.addFooterBtn(this.$t('articleList.modalMoveBtnMove'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right mr-3', function () {
-                fetch(thisGlobal.$store.getters.apiFolder + '/note_move.json',
+                fetch(thisGlobal.noteStore.apiFolder + '/note_move.json',
                     { method: 'POST',
                         body: JSON.stringify({
                             'action': 'move',
@@ -364,27 +417,27 @@ export default {
                             'target': document.getElementById('notebookTarget').value
                         }) })
                     .then(() => {
-                        thisGlobal.$store.dispatch('getAllData')
-                        thisGlobal.$router.push('/notes/' + document.getElementById('notebookTarget').value + '/' + thisGlobal.articleCurrent.uuid, () => {})
+                        thisGlobal.noteStore.getAllData()
+                        thisGlobal.$router.push('/notes/' + document.getElementById('notebookTarget').value + '/' + thisGlobal.articleCurrent.uuid + '/')
                         modal.destroy()
                     })
                     .catch(error => {
                         modal.destroy()
                         console.error('Error moving note:', error)
-                        thisGlobal.$store.commit('setStatus', { errorType: 2, errorText: this.$t('articleList.notificationErrorMove') })
+                        thisGlobal.noteStore.setStatus({ errorType: 2, errorText: this.$t('articleList.notificationErrorMove') })
                     })
             })
             modal.open()
         },
         addToFavorites () {
             if (this.articleCurrent.favorites) {
-                fetch(this.$store.getters.apiFolder + '/favorites.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'UUID': this.articleCurrent.uuid }) })
-                this.$store.commit('setFavoritesStatus', false)
+                fetch(this.noteStore.apiFolder + '/favorites.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'UUID': this.articleCurrent.uuid }) })
+                this.noteStore.setFavoritesStatus(false)
             } else {
-                fetch(this.$store.getters.apiFolder + '/favorites.json', { method: 'POST', body: JSON.stringify({ 'action': 'add', 'UUID': this.articleCurrent.uuid }) })
-                this.$store.commit('setFavoritesStatus', true)
+                fetch(this.noteStore.apiFolder + '/favorites.json', { method: 'POST', body: JSON.stringify({ 'action': 'add', 'UUID': this.articleCurrent.uuid }) })
+                this.noteStore.setFavoritesStatus(true)
             }
-            this.$store.dispatch('getFavoritesCount')
+            this.noteStore.getFavoritesCount()
         },
         deleteArticle () {
             let thisGlobal = this
@@ -400,7 +453,7 @@ export default {
                 modal.destroy()
             })
             modal.addFooterBtn(this.$t('general.yesBig'), 'tingle-btn tingle-btn--danger tingle-btn--pull-right mr-3', function () {
-                fetch(thisGlobal.$store.getters.apiFolder + '/note_move.json',
+                fetch(thisGlobal.noteStore.apiFolder + '/note_move.json',
                     { method: 'POST',
                         body: JSON.stringify({
                             'action': 'delete',
@@ -408,13 +461,13 @@ export default {
                         }) })
                     .then(() => {
                         modal.destroy()
-                        thisGlobal.$store.dispatch('getAllData')
-                        thisGlobal.$router.push('/notes/' + thisGlobal.articleCurrent.NoteBookUUID, () => {})
+                        thisGlobal.noteStore.getAllData()
+                        thisGlobal.$router.push('/notes/' + thisGlobal.articleCurrent.NoteBookUUID + '/')
                     })
                     .catch(error => {
                         modal.destroy()
                         console.error('Error deleting note :', error)
-                        thisGlobal.$store.commit('setStatus', { errorType: 2, errorText: 'Error deleting note ...' })
+                        thisGlobal.noteStore.setStatus({ errorType: 2, errorText: 'Error deleting note ...' })
                     })
             })
             modal.open()

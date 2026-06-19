@@ -5,10 +5,7 @@
 </template>
 
 <script>
-import mixin from './mixins'
-
 export default {
-    name: 'qvTPL',
-    mixins: [mixin]
+    name: 'qvTPL'
 }
 </script>

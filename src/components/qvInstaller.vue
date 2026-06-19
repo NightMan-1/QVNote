@@ -54,8 +54,13 @@
 </template>
 
 <script>
+import { useNoteStore } from '../store'
+
 export default {
     name: 'qvInstaller',
+    setup () {
+        return { noteStore: useNoteStore() }
+    },
     created: function () {
     // прямой переход, еще нечего не инициализировано
         if (Object.keys(this.$route.params).length === 0) {
@@ -63,6 +68,7 @@ export default {
         } else {
             // console.log(this.$route.params);
         }
+        this.formData.sourceFolder = this.noteStore.config.sourceFolder
     },
     data () {
         return {
@@ -72,7 +78,7 @@ export default {
             },
             loader: false,
             formData: {
-                sourceFolder: this.$store.state.config.sourceFolder,
+                sourceFolder: '',
                 sourceFolderCreateIfNotExist: true,
                 startingMode: 'independent'
             }
@@ -83,7 +89,7 @@ export default {
         saveChanges (index) {
             this.loader = true
 
-            fetch(this.$store.getters.apiFolder + '/config.write', { method: 'POST', body: JSON.stringify(this.formData) }).then(response => { return response.json() })
+            fetch(this.noteStore.apiFolder + '/config.write', { method: 'POST', body: JSON.stringify(this.formData) }).then(response => { return response.json() })
                 .then(jsonData => {
                     this.errorData.error = jsonData.error
                     this.errorData.errorText = jsonData.errorText

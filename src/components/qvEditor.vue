@@ -5,7 +5,7 @@
             <h4 class="mt-1 mb-0 float-left" v-if="(articleCurrentEditable.uuid !== '')">{{$t('editor.titleExist')}}</h4>
             <div class="float-right">
                 <button class="btn btn-outline-primary ml-auto"
-                        @click="$router.push('/notes/' + articleCurrentEditable.NoteBookUUID + '/' + articleCurrentEditable.uuid)"
+                        @click="$router.push('/notes/' + articleCurrentEditable.NoteBookUUID + '/' + articleCurrentEditable.uuid + '/')"
                         v-if="(articleCurrentEditable.uuid !== '' && articleCurrentEditable.NoteBookUUID !== '')"><i class="fas fa-eye"></i></button>
                 <button class="btn btn-outline-success ml-2" @click="saveData"
                         :class="{'ml-auto':articleCurrentEditable.uuid === '' && articleCurrentEditable.NoteBookUUID === ''}"><i class="fas fa-save"></i>
@@ -55,8 +55,8 @@
 
                     </div>
                 </div>
-                <div class="editor mt-2" v-if="articleCurrentEditable.type === 'text'">
-                    <quill-editor v-model="articleCurrentEditable.content" :options="editorSettings"></quill-editor>
+                 <div class="editor mt-2" v-if="articleCurrentEditable.type === 'text' && editorReady">
+                    <Editor v-model="articleCurrentEditable.content" :init="editorConfig" />
                 </div>
                 <div class="editor prism mt-2" v-if="articleCurrentEditable.type === 'code'">
                     <prism-editor v-model="articleCurrentEditable.content" language="html" :line-numbers="true" :highlight="highlighter"></prism-editor>
@@ -67,30 +67,40 @@
 </template>
 
 <script>
-import mixin from './mixins'
-import 'prismjs'
-import 'prismjs/themes/prism.css'
+import { useNoteStore } from '../store'
+import Prism from 'prismjs'
+import 'prismjs/components/prism-markup'
 import { PrismEditor } from 'vue-prism-editor'
-import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
-// import highlighting library (you can use any library you want just return html string)
-import { highlight, languages } from 'prismjs/components/prism-core';
-import 'prismjs/components/prism-clike'
-import 'prismjs/components/prism-javascript'
-import 'prismjs/themes/prism-tomorrow.css' // import syntax highlighting styles
+import 'vue-prism-editor/dist/prismeditor.min.css'
 
-import { quillEditor } from 'vue-quill-editor'
+import Editor from '@hugerte/hugerte-vue'
+import 'ace-builds/src-min-noconflict/ace'
+import 'ace-builds/src-min-noconflict/theme-crimson_editor'
+import 'ace-builds/src-min-noconflict/mode-html'
+import 'ace-builds/src-min-noconflict/ext-language_tools'
+import { html as htmlBeautify } from 'js-beautify'
+
+if (window.ace && window.ace.config) {
+    window.ace.config.set('basePath', '/static/ace/')
+}
+window.html_beautify = htmlBeautify
+// Self-hosted: core JS bundled by Vite, static assets (skins/icons) served from public/static/hugerte/
+import 'hugerte'
+import 'hugerte/themes/silver'
+import 'hugerte/icons/default'
+import 'hugerte/models/dom'
+// Import plugins so HugeRTE finds them already loaded (no dynamic loading)
+import 'hugerte/plugins/lists'
+import 'hugerte/plugins/link'
+import 'hugerte/plugins/image'
+import 'hugerte/plugins/fullscreen'
+import 'hugerte/plugins/codesample'
+
 import Multiselect from 'vue-multiselect'
-import Quill from 'quill'
-import '../style/quill.snow.css'
-import { ImageDrop } from 'quill-image-drop-module'
-import ImageResize from 'quill-image-resize-vue'
-Quill.register('modules/imageDrop', ImageDrop)
-Quill.register('modules/imageResize', ImageResize)
-let BeautifyHtml = require('js-beautify').html
+// import { html as BeautifyHtml } from 'js-beautify'
 
 export default {
     name: 'qvEditor',
-    mixins: [mixin],
     props: ['noteUUID'],
     data () {
         return {
@@ -101,56 +111,222 @@ export default {
             },
             articleCurrentEditable: { title: '', uuid: '', NoteBookUUID: '', status: '', tags: [], CreatedDate: '', UpdatedDate: '', cells: {}, content: '', type: 'text', url_src: '' },
             tagsListFormatted: [],
-            editorSettings: {
-                modules: {
-                    toolbar: {
-                        container: [
-                            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                            ['bold', 'italic', 'underline'],
-                            ['blockquote', 'code-block'],
-                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                            [{ 'color': [] }, { 'background': [] }],
-                            [{ 'align': [] }],
-                            ['clean'],
-                            ['link', 'image'], [], ['eraser', 'fullscreen']
-                        ],
-                        handlers: {
-                            'eraser': () => {
-                                fetch(this.$store.getters.apiFolder + '/cleanup_html.json',
-                                    { method: 'POST',
-                                        body: JSON.stringify({ 'content': this.articleCurrentEditable.content }) }).then(response => { return response.json() })
-                                    .then(jsonData => {
-                                        this.articleCurrentEditable.content = jsonData.content
-                                    })
-                                    .catch(error => {
-                                        console.error('Error cleanup html:', error)
-                                    })
-                            },
-                            'fullscreen': () => {
-                                if (!document.fullscreenElement) {
-                                    // console.log('requesting fullscreen')
-                                    document.querySelector('.quill-editor').requestFullscreen()
-                                } else {
-                                    if (document.exitFullscreen) {
-                                        // console.log('disable fullscreen')
-                                        document.exitFullscreen()
+            editorReady: false,
+            editorConfig: {
+                skin_url: '/static/hugerte/skins/ui/oxide',
+                content_css: ['/static/hugerte/skins/content/default/content.css', '/static/prism/prism-atom-one-light.css'],
+                theme_url: '/static/hugerte/themes/silver/theme.min.js',
+                toolbar: 'undo redo | blocks | bold italic underline | blockquote inlinecode codeblock removeformat | bullist numlist | forecolor backcolor | alignleft aligncenter alignright | link image | eraser | supercode | fullscreen',
+                plugins: 'lists link image codesample fullscreen',
+                external_plugins: {
+                    codesample: '/static/hugerte/plugins/codesample/plugin.min.js',
+                    supercode: '/static/supercode/plugin.min.js'
+                },
+                supercode: {
+                    theme: 'crimson_editor',
+                    language: 'html',
+                    fontSize: 14,
+                    wrap: true,
+                    fallbackModal: false,
+                    shortcut: true
+                },
+                codesample_languages: [
+                    { text: 'Plain text', value: 'plaintext' },
+                    { text: 'HTML/XML', value: 'markup' },
+                    { text: 'JavaScript', value: 'javascript' },
+                    { text: 'CSS', value: 'css' },
+                    { text: 'PHP', value: 'php' },
+                    { text: 'Ruby', value: 'ruby' },
+                    { text: 'Python', value: 'python' },
+                    { text: 'Java', value: 'java' },
+                    { text: 'C', value: 'c' },
+                    { text: 'C#', value: 'csharp' },
+                    { text: 'C++', value: 'cpp' },
+                    { text: 'Bash', value: 'bash' },
+                    { text: 'SQL', value: 'sql' },
+                    { text: 'JSON', value: 'json' }
+                ],
+                menubar: true,
+                branding: false,
+                // Word paste cleanup — handled by paste_from_word plugin
+                paste_data_images: true,
+                // Disable automatic upload — images are embedded as base64 via paste_data_images
+                automatic_uploads: false,
+                content_style: 'body { font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; line-height: 1.7; margin: 0; padding: 0 1rem 0 1rem; } h1 { font-size: 2.2rem; font-weight: 500; } h2 { font-size: 1.8rem; font-weight: 500; } h3 { font-size: 1.5rem; font-weight: 500; } h4 { font-size: 1.25rem; } h5 { font-size: 1.1rem; } h6 { font-size: 1rem; color: #6c757d; } p { margin-bottom: 0.75rem; } img { max-width: 100%; height: auto; } pre:not([class*="language-"]) { background-color: #f0f3f5; color: #363636; padding: 0.5rem; } pre:not([class*="language-"]) code { background-color: transparent; color: inherit; padding: 0; }  .mce-content-body pre [data-mce-selected="inline-boundary"] { background-color: transparent; } :not(pre) > code[class*="language-"], pre[class*="language-"] {color: #383942;} pre[class*="language-"] {padding: 0.5rem; margin: 1rem 0;}',
+                setup: (editor) => {
+                    // Syntax highlighting for code blocks using PrismJS
+                    editor.on('init', function () {
+                        var doc = editor.getDoc()
+                        if (!doc) return
+                        var highlightCodeBlocks = function () {
+                            // PrismJS is loaded by codesample plugin
+                            if (window.Prism && window.Prism.highlightElement) {
+                                var pres = doc.querySelectorAll('pre[class*="language-"]')
+                                for (var i = 0; i < pres.length; i++) {
+                                    // Check if already highlighted
+                                    if (!pres[i].querySelector('.token')) {
+                                        try { window.Prism.highlightElement(pres[i]) } catch(e) {}
                                     }
                                 }
                             }
                         }
-                    },
-                    imageDrop: true,
-                    imageResize: { modules: [ 'Resize', 'DisplaySize' ] } // + 'Toolbar'
+                        editor.on('SetContent', highlightCodeBlocks)
+                        editor.on('NodeChange', highlightCodeBlocks)
+                        // Also highlight after a short delay to catch async plugin loading
+                        setTimeout(highlightCodeBlocks, 500)
+                    })
+                    editor.ui.registry.addButton('fullscreen', {
+                        icon: 'fullscreen',
+                        tooltip: 'Fullscreen',
+                        onAction: () => {
+                            if (!document.fullscreenElement) {
+                                document.querySelector('.editor').requestFullscreen()
+                            } else {
+                                document.exitFullscreen()
+                            }
+                        }
+                    })
+                    editor.ui.registry.addIcon('eraser', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M8.086 2.207a2 2 0 0 1 2.828 0l3.879 3.879a2 2 0 0 1 0 2.828l-5.5 5.5A2 2 0 0 1 7.879 15H5.12a2 2 0 0 1-1.414-.586l-2.5-2.5a2 2 0 0 1 0-2.828zm2.121.707a1 1 0 0 0-1.414 0L4.16 7.547l5.293 5.293 4.633-4.633a1 1 0 0 0 0-1.414zM8.746 13.547 3.453 8.254 1.914 9.793a1 1 0 0 0 0 1.414l2.5 2.5a1 1 0 0 0 .707.293H7.88a1 1 0 0 0 .707-.293z"/></svg>')
+                    editor.ui.registry.addButton('eraser', {
+                        icon: 'eraser',
+                        tooltip: 'Clean HTML',
+                        onAction: () => {
+                            fetch(this.noteStore.apiFolder + '/cleanup_html.json', {
+                                method: 'POST',
+                                body: JSON.stringify({ content: editor.getContent() })
+                            }).then(response => response.json())
+                                .then(jsonData => {
+                                    editor.setContent(jsonData.content)
+                                })
+                                .catch(error => {
+                                    console.error('Error cleanup html:', error)
+                                })
+                        }
+                    })
+                    // Inline code — wraps selection in <code>, or creates a code block for multi-block selections
+                    editor.ui.registry.addButton('inlinecode', {
+                        text: '<>',
+                        tooltip: 'Inline code',
+                        onAction: () => {
+                            var rng = editor.selection.getRng()
+                            if (!rng.collapsed) {
+                                var startBlock = editor.dom.getParent(rng.startContainer, editor.dom.isBlock)
+                                var endBlock = editor.dom.getParent(rng.endContainer, editor.dom.isBlock)
+                                if (startBlock && endBlock && startBlock !== endBlock) {
+                                    var text = editor.selection.getContent({ format: 'text' })
+                                    if (!text || !text.trim()) {
+                                        text = ' '
+                                    }
+                                    var escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                                    var html = '<pre class="language-plaintext"><code>' + escaped + '</code></pre><p><br></p>'
+                                    editor.execCommand('mceInsertContent', false, html)
+                                    return
+                                }
+                            }
+                            editor.execCommand('mceToggleFormat', false, 'code')
+                        }
+                    })
+                    // Code block — opens the HugeRTE Insert/Edit Code Sample dialog
+                    editor.ui.registry.addButton('codeblock', {
+                        text: '{ }',
+                        tooltip: 'Code block',
+                        onAction: () => {
+                            var node = editor.selection.getNode()
+                            var pre = editor.dom.getParent(node, 'pre')
+                            if (pre && /language-/.test(pre.className)) {
+                                // Editing an existing code sample — open the dialog
+                                editor.execCommand('codesample')
+                                return
+                            }
+                            var rng = editor.selection.getRng()
+                            if (!rng.collapsed) {
+                                var text = editor.selection.getContent({ format: 'text' })
+                                if (text && text.trim()) {
+                                    var escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                                    editor.execCommand('mceInsertContent', false, '<pre class="language-plaintext"><code>' + escaped + '</code></pre><p><br></p>')
+                                    return
+                                }
+                            }
+                            // No selection — open the dialog to insert a new code sample
+                            editor.execCommand('codesample')
+                        }
+                    })
+                    // Paste cleanup: tag unclassified <pre><code> as plaintext code samples
+                    editor.on('PastePreProcess', function (e) {
+                        if (!e.content || typeof e.content !== 'string') return
+                        var parser = new DOMParser()
+                        var doc = parser.parseFromString(e.content, 'text/html')
+                        var pres = doc.querySelectorAll('pre')
+                        var changed = false
+                        for (var i = 0; i < pres.length; i++) {
+                            var pre = pres[i]
+                            if (pre.getAttribute('class')) continue
+                            var hasDirectCode = false
+                            for (var c = pre.firstChild; c; c = c.nextSibling) {
+                                if (c.nodeType === 1 && c.tagName === 'CODE') {
+                                    hasDirectCode = true
+                                    break
+                                }
+                            }
+                            if (hasDirectCode) {
+                                pre.setAttribute('class', 'language-plaintext')
+                                changed = true
+                            }
+                        }
+                        if (changed) {
+                            e.content = doc.body.innerHTML
+                        }
+                    })
+
+                    // Paste from Word cleanup
+                    var pasteFromWordLib = window['tinymce-paste-from-word-lib']
+                    if (pasteFromWordLib && typeof pasteFromWordLib.default === 'function') {
+                        editor.on('PastePreProcess', function (e) {
+                            pasteFromWordLib.default(editor, e)
+                        })
+                    }
                 }
             }
         }
     },
     components: {
-        quillEditor,
+        Editor,
         Multiselect,
         PrismEditor
     },
+    setup () {
+        return { noteStore: useNoteStore() }
+    },
+    computed: {
+        articleCurrent () { return this.noteStore.currentArticle },
+        tagsList () { return this.noteStore.tagsList }
+    },
     mounted () {
+        // Load paste_from_word library before rendering the editor.
+        // The library is a TinyMCE UMD module that expects window.tinymce.
+        if (typeof window.tinymce === 'undefined' && typeof window.hugerte !== 'undefined') {
+            window.tinymce = window.hugerte
+        }
+        // Load Prism syntax-highlighting theme once, only when the editor is used.
+        if (!document.querySelector('link[data-prism-theme="atom-one-light"]')) {
+            var prismLink = document.createElement('link')
+            prismLink.rel = 'stylesheet'
+            prismLink.href = '/static/prism/prism-atom-one-light.css'
+            prismLink.setAttribute('data-prism-theme', 'atom-one-light')
+            document.head.appendChild(prismLink)
+        }
+        var self = this
+        var script = document.createElement('script')
+        script.src = '/static/hugerte/plugins/paste_from_word/plugin.min.js'
+        script.onload = function () {
+            self.editorReady = true
+        }
+        script.onerror = function () {
+            // Still render the editor even if the library failed to load
+            self.editorReady = true
+        }
+        document.head.appendChild(script)
+
         this.$refs.editorTitle.focus()
         // this.articleCurrentEditable = Object.assign({}, this.articleCurrent)
         this.articleCurrentEditable = JSON.parse(JSON.stringify(this.articleCurrent))
@@ -166,16 +342,17 @@ export default {
     },
     methods: {
         highlighter (code) {
-            return highlight(code, languages.js) // languages.<insert language> to return html with markup
+            if (!code) return ''
+            return Prism.highlight(code, Prism.languages.markup, 'markup')
         },
         saveData () {
-            fetch(this.$store.getters.apiFolder + '/note_edit.json',
+            fetch(this.noteStore.apiFolder + '/note_edit.json',
                 { method: 'POST',
                     body: JSON.stringify({
                         'title': this.articleCurrentEditable.title,
                         'url': this.articleCurrentEditable.url_src,
                         'uuid': this.articleCurrentEditable.uuid,
-                        'type': this.articleCurrentEditable.editorType,
+                        'type': this.articleCurrentEditable.type,
                         'tags': this.articleCurrentEditable.tags,
                         'content': this.articleCurrentEditable.content
                     }) }).then(response => { return response.json() })
@@ -183,11 +360,11 @@ export default {
                     this.articleCurrentEditable.uuid = jsonData.uuid
                     this.articleCurrentEditable.NoteBookUUID = jsonData.NoteBookUUID
                     // this.articleCurrentEditable.content = jsonData.html // slow
-                    this.$store.dispatch('getAllData')
+                    this.noteStore.getAllData()
                 })
                 .catch(error => {
                     console.error('Error save note data:', error)
-                    this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('editor.errorSave') })
+                    this.noteStore.setStatus({ errorType: 2, errorText: this.$t('editor.errorSave') })
                 })
         },
         addTag (newTag) {
@@ -198,7 +375,7 @@ export default {
     watch: {
         'articleCurrentEditable.type' () {
             if (this.articleCurrentEditable.type === 'code') {
-                this.articleCurrentEditable.content = BeautifyHtml(this.articleCurrentEditable.content)
+                // this.articleCurrentEditable.content = BeautifyHtml(this.articleCurrentEditable.content)
             }
         }
     }
@@ -206,9 +383,61 @@ export default {
 }
 </script>
 
-<style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
+<style src="vue-multiselect/dist/vue-multiselect.css"></style>
 
-<style scope>
+<style>
+    /* HugeRTE editor area margin */
+    .tox .tox-edit-area { margin: 0; }
+    .tox .tox-edit-area::before { display: none; }
+    /* Dynamic editor height */
+    .tox.tox-hugerte {
+        height: calc(100vh - 270px) !important;
+        min-height: 40rem;
+    }
+    .tox.tox-hugerte .tox-edit-area {
+        height: 100%;
+    }
+    /* Constrain image resize handles */
+    .tox .tox-image-tools__image-bg,
+    .tox .tox-image-tools__image {
+        max-width: 100% !important;
+    }
+    .tox .tox-image-tools__resize-handle {
+        max-width: 100%;
+    }
+    /* Inline code button styling */
+    .tox .tox-tbtn[aria-label="Inline code"] { width: auto !important; }
+    .tox .tox-tbtn[aria-label="Inline code"] span {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-top: -5px;
+    }
+    /* Code block button styling */
+    .tox .tox-tbtn[aria-label="Code block"] { width: auto !important; }
+    .tox .tox-tbtn[aria-label="Code block"] span {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-top: -5px;
+    }
+    /* Prism editor: fix invisible cursor and text selection */
+    .prism-editor-wrapper .prism-editor__textarea {
+        caret-color: #363636;
+    }
+    .prism-editor-wrapper .prism-editor__textarea::selection {
+        background-color: rgba(32, 168, 216, 0.3);
+    }
+    .prism-editor-wrapper .prism-editor__textarea::-moz-selection {
+        background-color: rgba(32, 168, 216, 0.3);
+    }
+    .prism-editor-wrapper :is(.prism-editor__editor, .prism-editor__textarea) {
+        font-variant-numeric: tabular-nums;
+    }
+    .tox-shadowhost.tox-fullscreen, .tox.tox-hugerte.tox-fullscreen {
+        height: 100% !important;
+    }
+</style>
+
+<style scoped>
     /* purgecss start ignore */
     #qv-editor{
         padding: .5rem 1.5rem 2rem;
@@ -232,7 +461,9 @@ export default {
     }
 
     .editor {
-      min-height: 40rem !important;
+      min-height: 100% !important;
+      display: flex;
+      flex-direction: column;
     }
 
     .editor.prism {
@@ -244,60 +475,12 @@ export default {
 
     .prism-editor__editor {
         background: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
     .prism-editor-wrapper .prism-editor__container {
         background: white;
         padding-left: 5px;
-    }
-
-    .vmd-body {
-        min-height: 40rem !important;
-    }
-
-    .quill-editor:-moz-full-screen {padding: 1rem;background: white;}
-    .quill-editor:-webkit-full-screen {padding: 1rem;background: white; }
-    .quill-editor:-ms-fullscreen {padding: 1rem;background: white; }
-
-    .quill-editor:-moz-full-screen .ql-container {max-height: calc(100vh - 5rem);}
-    .quill-editor:-webkit-full-screen .ql-container {max-height: calc(100vh - 5rem);}
-    .quill-editor:-ms-full-screen .ql-container {max-height: calc(100vh - 5rem);}
-
-    .quill-editor:-moz-full-screen .ql-editor {max-height: 100%;}
-    .quill-editor:-webkit-full-screen .ql-editor {max-height: 100%;}
-    .quill-editor:-ms-full-screen .ql-editor {max-height: 100%;}
-
-    .ql-editor {
-        /*white-space: normal !important;*/
-        max-height: calc(100vh - 18.5rem);
-    }
-    .ql-container{
-        font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;;
-        font-kerning: normal;
-        font-variant-ligatures: common-ligatures contextual;
-        font-feature-settings: "kern", "liga", "clig", "calt";
-        font-size: 100%; /* 16px */
-        font-weight: 400;
-        font-variation-settings: 'wght' 400;
-        font-variant-numeric: tabular-nums;
-        font-display: swap; /* or block */
-        line-height: 1.5;
-        border-radius: 0 0 .25rem .25rem !important;
-    }
-    .ql-toolbar.ql-snow{border-radius: .25rem .25rem 0 0 !important;}
-
-    .ql-snow .ql-editor pre.ql-syntax {
-        color: black !important;
-    }
-
-    .ql-fullscreen, .ql-eraser { padding: 0 !important; }
-    .ql-fullscreen:after, .ql-eraser:after {
-        font-family: 'Font Awesome 5 Free';
-        content: "\f31e";
-        font-weight: 900;
-        font-size: .9rem;
-    }
-    .ql-eraser:after{
-        content: "\f12d";
     }
 
     .multiselect {
@@ -354,10 +537,6 @@ export default {
         margin-top: 0 !important;
         text-align: right;
         margin-right: 0.5rem;
-    }
-
-    .ql-editor blockquote, .ql-editor h1, .ql-editor h2, .ql-editor h3, .ql-editor h4, .ql-editor h5, .ql-editor h6, .ql-editor ol, .ql-editor p, .ql-editor pre, .ql-editor ul {
-        margin-bottom: 1em !important;
     }
 
     /* purgecss end ignore */

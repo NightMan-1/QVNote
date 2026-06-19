@@ -39,16 +39,18 @@
 </template>
 
 <script>
-import mixin from './mixins'
+import { useNoteStore } from '../store'
 import tingle from 'tingle.js'
 
 export default {
     name: 'qvHeaderLogo',
-    mixins: [mixin],
     data () {
         return {
             showSettingsMenu: false
         }
+    },
+    setup () {
+        return { noteStore: useNoteStore() }
     },
     watch: {
         'showSettingsMenu' () {
@@ -61,24 +63,24 @@ export default {
     },
     methods: {
         powerOFF () {
-            fetch(this.$store.getters.apiFolder + '/exit')
-            this.$router.push('/shutdown')
+            fetch(this.noteStore.apiFolder + '/exit')
+            this.$router.push('/shutdown/')
         },
         goHome (index) {
-            this.$store.commit('setCurrentNotebookID', '')
-            this.$store.commit('setPageType', 'dashboard')
-            this.$store.commit('setSidebarType', 'notebooksList')
-            this.$router.push('/', () => {})
+            this.noteStore.setCurrentNotebookID('')
+            this.noteStore.setPageType('dashboard')
+            this.noteStore.setSidebarType('notebooksList')
+            this.$router.push('/')
         },
         openEditor (index) {
-            this.$store.commit('doEmptyCurrentArticle')
-            this.$store.commit('setCurrentNotebookID', '')
-            this.$store.commit('setPageType', 'editor')
+            this.noteStore.doEmptyCurrentArticle()
+            this.noteStore.setCurrentNotebookID('')
+            this.noteStore.setPageType('editor')
             this.$router.push({ name: 'qvNotes' })
         },
         openSettings () {
-            this.$store.commit('setPageType', 'settings')
-            this.$router.push('/settings')
+            this.noteStore.setPageType('settings')
+            this.$router.push('/settings/')
         },
         addNotebook () {
             let thisGlobal = this
@@ -93,7 +95,7 @@ export default {
                     '')
             modal.addFooterBtn(this.$t('general.modalNewNotebookBtnCancel'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () { modal.destroy() })
             modal.addFooterBtn(this.$t('general.modalNewNotebookBtnAdd'), 'tingle-btn tingle-btn--default tingle-btn--pull-right mr-3', function () {
-                fetch(thisGlobal.$store.getters.apiFolder + '/notebook_edit.json',
+                fetch(thisGlobal.noteStore.apiFolder + '/notebook_edit.json',
                     { method: 'POST',
                         body: JSON.stringify({
                             'action': 'new',
@@ -104,12 +106,12 @@ export default {
                     .then(response => { return response.json() })
                     .then(jsonData => {
                         modal.destroy()
-                        thisGlobal.$store.dispatch('getAllData')
+                        thisGlobal.noteStore.getAllData()
                     })
                     .catch(error => {
                         console.error('Error add new notebook:', error)
                         modal.destroy()
-                        thisGlobal.$store.commit('setStatus', { errorType: 2, errorText: this.$t('general.messageCanNotAddNewNotebook') })
+                        thisGlobal.noteStore.setStatus({ errorType: 2, errorText: this.$t('general.messageCanNotAddNewNotebook') })
                     })
             })
             modal.open()
@@ -117,6 +119,9 @@ export default {
         toggleSettingsMenu () {
             this.showSettingsMenu = !this.showSettingsMenu
         }
+    },
+    beforeUnmount () {
+        document.removeEventListener('click', this.toggleSettingsMenu)
     }
 }
 </script>

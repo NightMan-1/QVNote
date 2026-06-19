@@ -1,6 +1,6 @@
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/NightMan-1/QVNote/QVNote%20Actions?style=flat-square) ![GitHub issues](https://img.shields.io/github/issues/NightMan-1/QVNote?style=flat-square) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/NightMan-1/QVNote?style=flat-square) ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/NightMan-1/QVNote?style=flat-square) ![GitHub All Releases](https://img.shields.io/github/downloads/NightMan-1/QVNote/total?style=flat-square)
 
-# QVNote v2.0.0
+# QVNote v2.1.0
 
 The program for storing notes, pages of sites, personal knowledge base and any other text data
 
@@ -25,7 +25,9 @@ You can always download latest stable binary from here - https://github.com/Nigh
 #### Project requirements
 
 GoLang >=1.17  
-NodeJS >=16.x
+NodeJS >=18.x
+
+Frontend stack: **Vue 3**, **Vite**, **Pinia**, **vue-i18n**, **HugeRTE**.
 
 #### Project setup
 

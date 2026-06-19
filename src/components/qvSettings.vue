@@ -10,21 +10,21 @@
                 <li class="nav-title text-primary mb-2">{{$t('general.sidebarSettings')}}</li>
                 <li class="nav-item mb-1">
                     <button class="nav-link"
-                            @click="$store.commit('setSettingsPageType', 'global')" :class="{'active':settingsPageType === 'global'}">
+                            @click="noteStore.setSettingsPageType('global')" :class="{'active':settingsPageType === 'global'}">
                         <i class="fas fa-cog mr-1"></i>
                         {{$t('general.sidebarSettingsGeneral')}}
                     </button>
                 </li>
                 <li class="nav-item mb-1">
                     <button class="nav-link"
-                            @click="$store.commit('setSettingsPageType', 'notebooks')"
+                            @click="noteStore.setSettingsPageType('notebooks')"
                             :class="{'active':settingsPageType === 'notebooks'}">
                         <i class="fas fa-book mr-1"></i>
                         {{$t('general.sidebarSettingsNotebooks')}}
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" @click="$store.commit('setSettingsPageType', 'tags')"
+                    <button class="nav-link" @click="noteStore.setSettingsPageType('tags')"
                             :class="{'active':settingsPageType === 'tags'}">
                         <i class="fas fa-tags mr-1"></i>
                         {{$t('general.sidebarSettingsTags')}}
@@ -121,7 +121,7 @@
                         <h5 class="m-0 ">{{$t('setting.global.favorites')}}</h5>
                     </div>
                     <div class="card-body">
-                        <a :href="$store.getters.apiFolder + '/favorites.json'" download="favorites.json" class="btn btn-primary mr-2">
+                        <a :href="noteStore.apiFolder + '/favorites.json'" download="favorites.json" class="btn btn-primary mr-2">
                             <i class="fas fa-file-export mr-1"></i> {{$t('setting.global.btnFavoritesExport')}}
                         </a>
                         <label for="favorites-upload" class="btn btn-success mr-2 mb-0">
@@ -172,21 +172,23 @@
 </template>
 
 <script>
+import { useNoteStore } from '../store'
 import tingle from 'tingle.js'
-import mixin from './mixins'
 import qvHeaderLogo from './qvHeaderLogo.vue'
 
 export default {
     name: 'qvSettings',
-    mixins: [mixin],
     components: { qvHeaderLogo },
+    setup () {
+        return { noteStore: useNoteStore() }
+    },
     data () {
         return {
-            checkboxOpenBrowser: this.$store.state.config.atStartOpenBrowser,
-            checkboxCheckNew: this.$store.state.config.atStartCheckNewNotes,
-            checkboxShowConsole: this.$store.state.config.atStartShowConsole,
-            consolePresent: this.$store.state.config.consolePresent,
-            startingMode: this.$store.state.config.startingMode,
+            checkboxOpenBrowser: false,
+            checkboxCheckNew: false,
+            checkboxShowConsole: false,
+            consolePresent: false,
+            startingMode: 'browser',
             searchStatus: {
                 'notesCurrent': 0,
                 'notesTotal': 0,
@@ -199,9 +201,17 @@ export default {
                 'status': 'idle',
                 'persent': 0
             },
-            langSelected: this.$ls.get('locale', false),
-            editorSelected: this.$store.state.config.postEditor
+            langSelected: localStorage.getItem('locale') || false,
+            editorSelected: 'hugerte'
         }
+    },
+    created () {
+        this.checkboxOpenBrowser = this.noteStore.config.atStartOpenBrowser
+        this.checkboxCheckNew = this.noteStore.config.atStartCheckNewNotes
+        this.checkboxShowConsole = this.noteStore.config.atStartShowConsole
+        this.consolePresent = this.noteStore.config.consolePresent
+        this.startingMode = this.noteStore.config.startingMode
+        this.editorSelected = this.noteStore.config.postEditor
     },
     watch: {
         'checkboxOpenBrowser' () {
@@ -217,7 +227,7 @@ export default {
             this.saveSettings()
         },
         'langSelected' () {
-            this.$ls.set('locale', this.langSelected)
+            localStorage.setItem('locale', this.langSelected)
             this.$i18n.locale = this.langSelected
         },
         'editorSelected' () {
@@ -234,26 +244,26 @@ export default {
                     try {
                         let dataFavorites = JSON.parse(dataFavoritesRaw)
                         dataFavorites.forEach((element) => {
-                            fetch(this.$store.getters.apiFolder + '/favorites.json', { method: 'POST', body: JSON.stringify({ 'action': 'add', 'UUID': element }) })
+                            fetch(this.noteStore.apiFolder + '/favorites.json', { method: 'POST', body: JSON.stringify({ 'action': 'add', 'UUID': element }) })
                         })
                         console.log(this.$t('setting.global.favoritesImportDone'))
-                        this.$store.commit('setStatus', { errorType: 5, errorText: this.$t('setting.global.favoritesImportDone') })
+                        this.noteStore.setStatus({ errorType: 5, errorText: this.$t('setting.global.favoritesImportDone') })
                     } catch (e) {
-                        this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.global.favoritesImportWrongData') })
+                        this.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.global.favoritesImportWrongData') })
                     }
                 }
                 reader.readAsText(event.target.files[0])
             } else {
-                this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.global.favoritesImportWrongType') })
+                this.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.global.favoritesImportWrongType') })
             }
         },
         saveSettings: function () {
             var newConfig = { 'startingMode': this.startingMode.toString(), 'postEditor': this.editorSelected.toString(), 'atStartOpenBrowser': this.checkboxOpenBrowser.toString(), 'atStartShowConsole': this.checkboxShowConsole.toString(), 'atStartCheckNewNotes': this.checkboxCheckNew.toString() }
-            fetch(this.$store.getters.apiFolder + '/config.json', { method: 'POST', body: JSON.stringify(newConfig) }).then(response => { return response.text() })
+            fetch(this.noteStore.apiFolder + '/config.json', { method: 'POST', body: JSON.stringify(newConfig) }).then(response => { return response.text() })
                 .then(() => {
-                    fetch(this.$store.getters.apiFolder + '/config.json').then(response => { return response.json() })
+                    fetch(this.noteStore.apiFolder + '/config.json').then(response => { return response.json() })
                         .then(jsonData => {
-                            this.$store.commit('setConfig', jsonData)
+                            this.noteStore.setConfig(jsonData)
                         })
                         .catch(error => {
                             console.error('Error fetching config.json:', error)
@@ -261,7 +271,7 @@ export default {
                 })
                 .catch(error => {
                     console.error('Error fetching config.json:', error)
-                    this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.global.notificationErrorGetSearchStatus') })
+                    this.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.global.notificationErrorGetSearchStatus') })
                 })
         },
         notebookEdit: function (uuid, title) {
@@ -279,30 +289,30 @@ export default {
           '<div class="form-group row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.notebooks.modalNewTitle') + ':</b></label><div class="col-9"><input id="notebook-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
           '')
             modal.addFooterBtn(this.$t('setting.notebooks.modalBtnDelete'), 'tingle-btn tingle-btn--danger tingle-btn--pull-left', function () {
-                fetch(thisGlobal.$store.getters.apiFolder + '/notebook_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'uuid': uuid }) }).then(response => { return response.text() })
+                fetch(thisGlobal.noteStore.apiFolder + '/notebook_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'uuid': uuid }) }).then(response => { return response.text() })
                     .then(() => {
                         modal.destroy()
-                        thisGlobal.$store.dispatch('getAllData')
+                        thisGlobal.noteStore.getAllData()
                     })
                     .catch(error => {
                         modal.destroy()
                         console.error('Error fetching notebook_edit.json:', error)
-                        thisGlobal.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.notebooks.statusErrorDelete') })
+                        thisGlobal.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.notebooks.statusErrorDelete') })
                     })
             })
             modal.addFooterBtn(this.$t('setting.notebooks.modalBtnCancel'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () {
                 modal.destroy()
             })
             modal.addFooterBtn(this.$t('setting.notebooks.modalBtnSave'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right mr-3', function () {
-                fetch(thisGlobal.$store.getters.apiFolder + '/notebook_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'rename', 'uuid': uuid, 'title': document.getElementById('notebook-new-name').value }) }).then(response => { return response.text() })
+                fetch(thisGlobal.noteStore.apiFolder + '/notebook_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'rename', 'uuid': uuid, 'title': document.getElementById('notebook-new-name').value }) }).then(response => { return response.text() })
                     .then(() => {
                         modal.destroy()
-                        thisGlobal.$store.dispatch('getAllData')
+                        thisGlobal.noteStore.getAllData()
                     })
                     .catch(error => {
                         modal.destroy()
                         console.error('Error fetching notebook_edit.json:', error)
-                        thisGlobal.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.notebooks.statusErrorUpdate') })
+                        thisGlobal.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.notebooks.statusErrorUpdate') })
                     })
             })
             modal.open()
@@ -322,36 +332,36 @@ export default {
           '<div class="form-group row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.tags.modalNewTitle') + ':</b></label><div class="col-9"><input id="tag-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
           '')
             modal.addFooterBtn(this.$t('setting.tags.modalBtnDelete'), 'tingle-btn tingle-btn--danger tingle-btn--pull-left', function () {
-                fetch(thisGlobal.$store.getters.apiFolder + '/tag_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'url': url }) }).then(response => { return response.text() })
+                fetch(thisGlobal.noteStore.apiFolder + '/tag_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'url': url }) }).then(response => { return response.text() })
                     .then(() => {
                         modal.destroy()
-                        thisGlobal.$store.dispatch('getAllData')
+                        thisGlobal.noteStore.getAllData()
                     })
                     .catch(error => {
                         modal.destroy()
                         console.error('Error fetching tag_edit.json:', error)
-                        thisGlobal.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.tags.statusErrorDelete') })
+                        thisGlobal.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.tags.statusErrorDelete') })
                     })
             })
             modal.addFooterBtn(this.$t('setting.tags.modalBtnCancel'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () {
                 modal.destroy()
             })
             modal.addFooterBtn(this.$t('setting.tags.modalBtnSave'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right mr-3', function () {
-                fetch(thisGlobal.$store.getters.apiFolder + '/tag_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'rename', 'url': url, 'title': document.getElementById('tag-new-name').value }) }).then(response => { return response.text() })
+                fetch(thisGlobal.noteStore.apiFolder + '/tag_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'rename', 'url': url, 'title': document.getElementById('tag-new-name').value }) }).then(response => { return response.text() })
                     .then(() => {
                         modal.destroy()
-                        thisGlobal.$store.dispatch('getAllData')
+                        thisGlobal.noteStore.getAllData()
                     })
                     .catch(error => {
                         modal.destroy()
                         console.error('Error fetching tag_edit.json:', error)
-                        thisGlobal.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.tags.statusErrorUpdate') })
+                        thisGlobal.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.tags.statusErrorUpdate') })
                     })
             })
             modal.open()
         },
         loadData: function () {
-            fetch(this.$store.getters.apiFolder + '/search_index.json').then(response => { return response.json() })
+            fetch(this.noteStore.apiFolder + '/search_index.json').then(response => { return response.json() })
                 .then(jsonData => {
                     this.searchStatus.status = jsonData.status
                     this.searchStatus.notesTotal = jsonData.notesTotal
@@ -360,21 +370,21 @@ export default {
                         this.searchStatus.persent = parseInt((jsonData.notesCurrent * 100) / jsonData.notesTotal)
                     }
 
-                    this.$store.dispatch('getConfig')
+                    this.noteStore.getConfig()
                 })
                 .catch(error => {
                     console.error('Error fetching search_index.json:', error)
-                    this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.global.notificationErrorGetSearchStatus') })
+                    this.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.global.notificationErrorGetSearchStatus') })
                 })
         },
         indexingStart () {
-            fetch(this.$store.getters.apiFolder + '/search_index.json', { method: 'POST', body: JSON.stringify({ 'action': 'start' }) })
+            fetch(this.noteStore.apiFolder + '/search_index.json', { method: 'POST', body: JSON.stringify({ 'action': 'start' }) })
         },
         optimizationStart () {
-            fetch(this.$store.getters.apiFolder + '/optimization.json', { method: 'POST', body: JSON.stringify({ 'action': 'start' }) })
+            fetch(this.noteStore.apiFolder + '/optimization.json', { method: 'POST', body: JSON.stringify({ 'action': 'start' }) })
         },
         optimizationGet () {
-            fetch(this.$store.getters.apiFolder + '/optimization.json').then(response => { return response.json() })
+            fetch(this.noteStore.apiFolder + '/optimization.json').then(response => { return response.json() })
                 .then(jsonData => {
                     this.optimizationStatus.status = jsonData.status
                     this.optimizationStatus.notesTotal = jsonData.notesTotal
@@ -388,13 +398,13 @@ export default {
                 })
         },
         refreshData (action) {
-            fetch(this.$store.getters.apiFolder + '/refresh_data.json', { method: 'POST', body: JSON.stringify({ 'action': action }) }).then(response => { return response.json() })
+            fetch(this.noteStore.apiFolder + '/refresh_data.json', { method: 'POST', body: JSON.stringify({ 'action': action }) }).then(response => { return response.json() })
                 .then(() => {
-                    fetch(this.$store.getters.apiFolder + '/config.json').then(response => { return response.json() })
+                    fetch(this.noteStore.apiFolder + '/config.json').then(response => { return response.json() })
                         .then(jsonData => {
-                            this.$store.commit('setConfig', jsonData)
+                            this.noteStore.setConfig(jsonData)
                             if (action === 'reload') {
-                                this.$store.commit('setStatus', { errorType: 5, errorText: this.$t('setting.global.notificationAddDataRefreshed') })
+                                this.noteStore.setStatus({ errorType: 5, errorText: this.$t('setting.global.notificationAddDataRefreshed') })
                             }
                         })
                         .catch(error => {
@@ -403,7 +413,7 @@ export default {
                 })
                 .catch(error => {
                     console.error('Error fetching refresh_data.json:', error)
-                    this.$store.commit('setStatus', { errorType: 2, errorText: this.$t('setting.global.notificationErrorGetSearchStatus') })
+                    this.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.global.notificationErrorGetSearchStatus') })
                 })
         }
     },
@@ -411,10 +421,10 @@ export default {
         if (this.notebooksList.length === undefined) {
             this.$router.push('/')
         }
-        this.$store.commit('setGridClass', 'grid-v1')
+        this.noteStore.setGridClass('grid-v1')
     },
     mounted: function () {
-        this.$store.commit('setSettingsPageType', 'global')
+        this.noteStore.setSettingsPageType('global')
         this.loadData()
         this.optimizationGet()
         this.intervalConfig = setInterval(() => {
@@ -424,20 +434,18 @@ export default {
             this.optimizationGet()
         }, 3000)
     },
-    beforeDestroy: function () {
+    beforeUnmount: function () {
         clearInterval(this.intervalConfig)
         clearInterval(this.intervalOptimizationStatus)
     },
     computed: {
-        settingsPageType () {
-            return this.$store.state.settingsPageType
-        },
-        localesList () {
-            return this.$store.state.localesList
-        },
-        editorsList () {
-            return this.$store.state.editorsList
-        }
+        gridClass () { return this.noteStore.gridClass },
+        settingsPageType () { return this.noteStore.settingsPageType },
+        localesList () { return this.noteStore.localesList },
+        editorsList () { return this.noteStore.editorsList },
+        notebooksList () { return this.noteStore.notebooksList },
+        tagsList () { return this.noteStore.tagsList },
+        config () { return this.noteStore.config }
     }
 }
 </script>
