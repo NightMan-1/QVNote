@@ -19,6 +19,16 @@ resource.syso
 .rtk
 AGENTS.md
 
+# Built binary
+qvnote-linux-x64
+
+# Local environment caches
+.playwright-cli/
+.playwright-mcp/
+
+# User notes - keep existing tracked baseline, ignore new local notes
+/notes/
+
 
 # Editor directories and files
 .vscode
