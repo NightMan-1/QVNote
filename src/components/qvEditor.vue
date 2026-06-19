@@ -1,17 +1,17 @@
 <template>
     <div id="qv-editor">
         <div id="qv-editor-header">
-            <h4 class="mt-1 mb-0 float-left" v-if="(articleCurrentEditable.uuid === '')">{{$t('editor.titleNew')}}</h4>
-            <h4 class="mt-1 mb-0 float-left" v-if="(articleCurrentEditable.uuid !== '')">{{$t('editor.titleExist')}}</h4>
-            <div class="float-right">
-                <button class="btn btn-outline-primary ml-auto"
+            <h4 class="mt-1 mb-0 float-start" v-if="(articleCurrentEditable.uuid === '')">{{$t('editor.titleNew')}}</h4>
+            <h4 class="mt-1 mb-0 float-start" v-if="(articleCurrentEditable.uuid !== '')">{{$t('editor.titleExist')}}</h4>
+            <div class="float-end">
+                <button class="btn btn-outline-primary ms-auto"
                         @click="$router.push('/notes/' + articleCurrentEditable.NoteBookUUID + '/' + articleCurrentEditable.uuid + '/')"
                         v-if="(articleCurrentEditable.uuid !== '' && articleCurrentEditable.NoteBookUUID !== '')"><i class="fas fa-eye"></i></button>
-                <button class="btn btn-outline-success ml-2" @click="saveData"
-                        :class="{'ml-auto':articleCurrentEditable.uuid === '' && articleCurrentEditable.NoteBookUUID === ''}"><i class="fas fa-save"></i>
+                <button class="btn btn-outline-success ms-2" @click="saveData"
+                        :class="{'ms-auto':articleCurrentEditable.uuid === '' && articleCurrentEditable.NoteBookUUID === ''}"><i class="fas fa-save"></i>
                 </button>
-                <!--<button class="btn btn-outline-secondary ml-2"><i class="fas fa-eraser text-muted"></i></button>-->
-                <div class="btn-group ml-4" role="group" aria-label="Button group">
+                <!--<button class="btn btn-outline-secondary ms-2"><i class="fas fa-eraser text-muted"></i></button>-->
+                <div class="btn-group ms-4" role="group" aria-label="Button group">
                     <button class="btn btn-outline-secondary" :class="{'active':articleCurrentEditable.type === 'text'}"
                             @click="articleCurrentEditable.type = 'text'"><i class="fas fa-edit"></i></button>
                     <!--<button class="btn btn-outline-secondary" :class="{'active':editorType === 'markdown'}" @click="editorType = 'markdown'"><i class="fas fa-columns"></i></button>-->
@@ -26,19 +26,17 @@
                         :placeholder="$t('editor.inputTitlePlaceholder')" v-model="articleCurrentEditable.title" ref='editorTitle'/>
                 <div class="row">
                     <div class="col-6">
-                        <div class="form-group">
+                        <div class="mb-3">
                             <label><b>{{$t('editor.titleURL')}}</b></label>
                             <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-external-link-alt"></i></span>
-                                </div>
+                                <span class="input-group-text"><i class="fas fa-external-link-alt"></i></span>
                                 <input type="text" class="form-control text-dark font-size-normal"
                                         :placeholder="$t('editor.inputURLPlaceholder')" v-model="articleCurrentEditable.url_src"/>
                             </div>
                         </div>
                     </div>
                     <div class="col-6">
-                        <div class="form-group">
+                        <div class="mb-3">
                             <label><b>{{$t('editor.titleTags')}}</b></label>
                             <multiselect
                                 ref='editorTags'

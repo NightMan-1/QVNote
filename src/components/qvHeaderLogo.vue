@@ -9,7 +9,7 @@
         <button class="btn btn-outline-secondary btn-sm" title="Создать запись" @click="openEditor"><i class="fas fa-edit text-dark"></i></button>
 
         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
-                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                aria-haspopup="true" aria-expanded="false"
                 @click.stop="showSettingsMenu = !showSettingsMenu">
             <i class="fas fa-cog text-dark"></i>
         </button>
@@ -18,18 +18,18 @@
             :class="{'show':showSettingsMenu}"
         >
             <button class="dropdown-item" @click="openEditor"><i
-                class="fas fa-pencil-alt- fa-edit mr-2 text-nord3"></i> {{$t('general.addNewNote')}}
+                class="fas fa-pencil-alt- fa-edit me-2 text-nord3"></i> {{$t('general.addNewNote')}}
             </button>
-            <button class="dropdown-item" @click="addNotebook"><i class="fas fa-book mr-2 text-nord3"></i>
+            <button class="dropdown-item" @click="addNotebook"><i class="fas fa-book me-2 text-nord3"></i>
                 {{$t('general.addNewNotebook')}}
             </button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" @click="openSettings"><i class="fas fa-cog mr-2 text-nord3"></i>
+            <button class="dropdown-item" @click="openSettings"><i class="fas fa-cog me-2 text-nord3"></i>
                 {{$t('general.buttonSettings')}}
             </button>
             <!--
             <div class="dropdown-divider" v-if="config.startingMode === 'browser'"></div>
-            <button class="dropdown-item" @click="powerOFF" v-if="config.startingMode === 'browser'"><i class="fas fa-power-off mr-2 text-nord3"></i>
+            <button class="dropdown-item" @click="powerOFF" v-if="config.startingMode === 'browser'"><i class="fas fa-power-off me-2 text-nord3"></i>
                 {{$t('general.buttonExit')}}
             </button>
             -->
@@ -91,10 +91,10 @@ export default {
                 closeLabel: this.$t('general.modalClose')
             })
             modal.setContent('<h4 class="ml--1">' + this.$t('general.modalNewNotebookTitle') + ':</h4>' +
-                    '<div class="form-group row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-sm-4 col-form-label"><b>' + this.$t('general.modalNewNotebookText') + '</b></label><div class="col-sm-8"><input id="notebook-new" type="text" class="form-control"></div></div>' +
+                    '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-sm-4 col-form-label"><b>' + this.$t('general.modalNewNotebookText') + '</b></label><div class="col-sm-8"><input id="notebook-new" type="text" class="form-control"></div></div>' +
                     '')
             modal.addFooterBtn(this.$t('general.modalNewNotebookBtnCancel'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () { modal.destroy() })
-            modal.addFooterBtn(this.$t('general.modalNewNotebookBtnAdd'), 'tingle-btn tingle-btn--default tingle-btn--pull-right mr-3', function () {
+            modal.addFooterBtn(this.$t('general.modalNewNotebookBtnAdd'), 'tingle-btn tingle-btn--default tingle-btn--pull-right me-3', function () {
                 fetch(thisGlobal.noteStore.apiFolder + '/notebook_edit.json',
                     { method: 'POST',
                         body: JSON.stringify({

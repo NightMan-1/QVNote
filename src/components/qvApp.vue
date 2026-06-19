@@ -9,26 +9,22 @@
                 <div class="btn-group w-100">
                     <button class="btn text-white" @click="noteStore.setSidebarType('notebooksList')"
                             :class="{'btn-outline-primary': sidebarType !== 'notebooksList', 'btn-primary': sidebarType === 'notebooksList' }">
-                        <i class="fas fa-book mr-1" :class="{'text-nord2': sidebarType === 'notebooksList', 'text-success': sidebarType !== 'notebooksList' }"></i>
+                        <i class="fas fa-book me-1" :class="{'text-nord2': sidebarType === 'notebooksList', 'text-success': sidebarType !== 'notebooksList' }"></i>
                         {{$t('general.sidebarSwitchNotebooks')}}
                     </button>
                     <button class="btn text-white" @click="noteStore.setSidebarType('tagsList')"
                             :class="{'btn-outline-primary': sidebarType !== 'tagsList', 'btn-primary': sidebarType === 'tagsList' }">
-                        <i class="fas fa-tags mr-1" :class="{'text-nord2': sidebarType === 'tagsList', 'text-success': sidebarType !== 'tagsList' }"></i>
+                        <i class="fas fa-tags me-1" :class="{'text-nord2': sidebarType === 'tagsList', 'text-success': sidebarType !== 'tagsList' }"></i>
                         {{$t('general.sidebarSwitchTags')}}
                     </button>
                 </div>
         </div>
     	<div class="grid-head-2">
-            <div v-if="pageType === 'articleList'">
+                <div v-if="pageType === 'articleList'">
                 <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    </div>
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
                     <input type="text" class="form-control" :placeholder="$t('articleList.searchPlaceholder')" v-model="searchInput">
-                    <div class="input-group-append" v-if="searchInput">
-                        <button class="input-group-text" @click="searchInput = ''"><i class="fas fa-eraser text-info"></i></button>
-                    </div>
+                    <button class="input-group-text" v-if="searchInput" @click="searchInput = ''"><i class="fas fa-eraser text-info"></i></button>
                 </div>
             </div>
         </div>
@@ -38,7 +34,7 @@
             <qv-editor v-if="pageType === 'editor'"></qv-editor>
 
             <div v-if="pageType === 'articleList'">
-                <div class="alert alert-danger mr-5 ml-4 mt-3" v-if="mutableNotesList === null">
+                <div class="alert alert-danger me-5 ms-4 mt-3" v-if="mutableNotesList === null">
                     {{$t('articleList.searchNothing')}}
                 </div>
                 <div v-if="mutableNotesList !== null">
@@ -56,19 +52,19 @@
                 </div>
             </div>
         </div></div>
-    	<div class="grid-head-3 text-right" v-if="pageType === 'articleList'">
-            <button class="btn btn-outline-secondary float-left" :title="$t('articleList.btnHideSidebar')" @click="gridShow = !gridShow"><i class="fas fa-chevron-left text-black-50" v-if="gridShow"></i><i class="fas fa-chevron-right text-black-50" v-if="!gridShow"></i></button>
+    	<div class="grid-head-3 text-end" v-if="pageType === 'articleList'">
+            <button class="btn btn-outline-secondary float-start" :title="$t('articleList.btnHideSidebar')" @click="gridShow = !gridShow"><i class="fas fa-chevron-left text-black-50" v-if="gridShow"></i><i class="fas fa-chevron-right text-black-50" v-if="!gridShow"></i></button>
 
             <a v-bind:href="articleCurrent.url_src" v-if="articleCurrent.url_src"
-                target="_blank" class="btn btn-outline-secondary mr-2"><i class="fas fa-external-link-alt text-dark"></i></a>
+                target="_blank" class="btn btn-outline-secondary me-2"><i class="fas fa-external-link-alt text-dark"></i></a>
 
-            <div class="btn-group mr-2" role="group">
+            <div class="btn-group me-2" role="group">
                 <button class="btn btn-outline-secondary" :title="$t('articleList.btnInfo')" @click="doShowAdvancedInfo"><i class="fas fa-info-circle text-info"></i></button>
                 <button class="btn btn-outline-secondary" :title="$t('articleList.btnEdit')" @click="$router.push({name: 'qvEditor'})"><i class="fas fa-edit text-success"></i></button>
                 <button class="btn btn-outline-secondary" :title="$t('articleList.btnDelete')" @click="deleteArticle"><i class="fas fa-trash text-danger"></i></button>
                 <button class="btn btn-outline-secondary" :title="$t('articleList.btnMove')" @click="moveArticle"><i class="fas fa-people-carry- fa-exchange-alt text-black-50"></i></button>
             </div>
-            <div class="btn-group mr-2" role="group">
+            <div class="btn-group me-2" role="group">
                 <button class="btn btn-outline-secondary" :class="{'btn-secondary':readerMode}" :title="$t('articleList.btnReaderMode')" @click="noteStore.toggleReaderMode()">
                     <i class="fas text-black-50 fa-book-reader"></i>
                 </button>
@@ -88,7 +84,7 @@
                     <div
                         v-if="articleCurrent.tags !== null && articleCurrent.tags !== undefined && articleCurrent.tags.length > 0">
                         <b>{{$t('articleList.infoTags')}}: </b>
-                        <button class="btn badge badge-primary mr-1 font-weight-normal"
+                        <button class="btn badge text-bg-primary me-1 fw-normal"
                                 v-for="tag in articleCurrent.tags"
                                 :key="tag" @click="$router.push('/tags/'+tag+'/'+articleCurrent.uuid)">
                             {{tag}}
@@ -400,7 +396,7 @@ export default {
             })
 
             modal.setContent('<h4 class="ml--1">' + this.$t('articleList.modalMoveTitle') + '</h4>' +
-                        '<div class="form-group row mt-4 mb-0 bg-light pt-2 pb-1">' +
+                        '<div class="row mt-4 mb-0 bg-light pt-2 pb-1">' +
                         '<label class="col-3 col-form-label"><b>' + this.$t('articleList.modalMoveNotebook') + ':</b></label>' +
                         '<div class="col-9">' + selectRAW + '</div>' +
                         '</div>' +
@@ -408,7 +404,7 @@ export default {
             modal.addFooterBtn(this.$t('articleList.modalMoveBtnCancel'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () {
                 modal.destroy()
             })
-            modal.addFooterBtn(this.$t('articleList.modalMoveBtnMove'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right mr-3', function () {
+            modal.addFooterBtn(this.$t('articleList.modalMoveBtnMove'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right me-3', function () {
                 fetch(thisGlobal.noteStore.apiFolder + '/note_move.json',
                     { method: 'POST',
                         body: JSON.stringify({
@@ -452,7 +448,7 @@ export default {
             modal.addFooterBtn(this.$t('general.noBig'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () {
                 modal.destroy()
             })
-            modal.addFooterBtn(this.$t('general.yesBig'), 'tingle-btn tingle-btn--danger tingle-btn--pull-right mr-3', function () {
+            modal.addFooterBtn(this.$t('general.yesBig'), 'tingle-btn tingle-btn--danger tingle-btn--pull-right me-3', function () {
                 fetch(thisGlobal.noteStore.apiFolder + '/note_move.json',
                     { method: 'POST',
                         body: JSON.stringify({

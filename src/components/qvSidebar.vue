@@ -9,32 +9,32 @@
                         <button class="nav-link"
                                 :class="{ 'active': currentNotebookID === 'Inbox' }"
                                 @click="$router.push('/notes/Inbox/')">
-                            <span class="badge badge-primary">{{notesCountInbox}}</span>
-                            <i class="fas fa-inbox mr-1"></i> {{$t('general.sidebarInbox')}}
+                            <span class="badge bg-primary">{{notesCountInbox}}</span>
+                            <i class="fas fa-inbox me-1"></i> {{$t('general.sidebarInbox')}}
                         </button>
                     </li>
                     <li class="nav-item">
                         <button class="nav-link"
                                 :class="{ 'active': currentNotebookID === 'Favorites' }"
                                 @click="$router.push('/notes/Favorites/')">
-                            <span class="badge badge-primary">{{notesCountFavorites}}</span>
-                            <i class="fas fa-star mr-1"></i> {{$t('general.sidebarFavorites')}}
+                            <span class="badge bg-primary">{{notesCountFavorites}}</span>
+                            <i class="fas fa-star me-1"></i> {{$t('general.sidebarFavorites')}}
                         </button>
                     </li>
                     <li class="nav-item">
                         <button class="nav-link"
                                 :class="{ 'active': currentNotebookID === 'Trash' }"
                                 @click="$router.push('/notes/Trash/')">
-                            <span class="badge badge-primary">{{notesCountTrash}}</span>
-                            <i class="fas fa-trash-alt mr-1"></i> {{$t('general.sidebarTrash')}}
+                            <span class="badge bg-primary">{{notesCountTrash}}</span>
+                            <i class="fas fa-trash-alt me-1"></i> {{$t('general.sidebarTrash')}}
                         </button>
                     </li>
                     <li class="nav-item">
                         <button class="nav-link"
                                 :class="{ 'active': currentNotebookID === 'Allnotes' }"
                                 @click="$router.push('/notes/Allnotes/')">
-                            <span class="badge badge-primary" v-if="notesCountTotal > 0">{{notesCountTotal}}</span>
-                            <i class="fas fa-archive mr-1"></i> {{$t('general.sidebarAllNotes')}}
+                            <span class="badge bg-primary" v-if="notesCountTotal > 0">{{notesCountTotal}}</span>
+                            <i class="fas fa-archive me-1"></i> {{$t('general.sidebarAllNotes')}}
                         </button>
                     </li>
 
@@ -48,7 +48,7 @@
                         <button class="nav-link nav-link-notebook"
                                 @click="$router.push('/notes/' + item.uuid + '/')"
                                 :class="{ 'active': item.uuid === currentNotebookID }">
-                            <span class="badge badge-primary">{{item.notesCount}}</span>
+                            <span class="badge bg-primary">{{item.notesCount}}</span>
                                 {{item.name}}
                         </button>
                     </li>
@@ -62,10 +62,10 @@
                         v-for="item in tagsList"
                         :key="item.url"
                     >
-                        <button class="nav-link nav-link-notebook bg-primary- border-0 w-100 text-left"
+                        <button class="nav-link nav-link-notebook bg-primary- border-0 w-100 text-start"
                                 @click="$router.push('/tags/'+item.url + '/')"
                                 :class="{ 'active': item.name === currentTagURL }">
-                            <span class="badge badge-primary">{{item.count}}</span>
+                            <span class="badge bg-primary">{{item.count}}</span>
                             {{item.name}}
                         </button>
                     </li>

@@ -121,7 +121,7 @@ p + .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
 }
 
 i.fas, i.far {font-size: .95em;}
-i.mr-1 {width: 1.1em; text-align: center;}
+i.me-1 {width: 1.1em; text-align: center;}
 
 .text-nord0 {color: var(--nord0);}
 .text-nord1 {color: var(--nord1);}
@@ -255,6 +255,20 @@ i.mr-1 {width: 1.1em; text-align: center;}
 .sidebar-nav .nav-link .badge {
     margin: .2rem 0 0 .5rem;
     float: right;
+    background-color: var(--primary);
+    color: #000;
+}
+
+/* Bootstrap 5 dropdown-menu relies on Popper.js for positioning; the app uses
+   a simple Vue toggle, so restore the static positioning from Bootstrap 4. */
+.dropdown-menu.show {
+    top: 100%;
+    left: 0;
+    margin-top: var(--dropdown-spacer, .125rem);
+}
+
+.form-select {
+    display: inline-block;
 }
 
 .scrooll-wrap{
@@ -326,7 +340,6 @@ i.mr-1 {width: 1.1em; text-align: center;}
     display: none;
 }
 
-.custom-switch .custom-control-label::before {box-sizing: border-box;}
 /*
 .articleCell ol {
     counter-reset: counter;

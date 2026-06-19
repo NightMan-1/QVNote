@@ -14,22 +14,20 @@
                                         <p class="text-muted">{{$t('installer.selectDataFolder')}}:</p>
 
                                         <div class="input-group mb-3">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text">
-                                                    <i class="far fa-folder-open"></i>
-                                                </span>
-                                            </div>
+                                            <span class="input-group-text">
+                                                <i class="far fa-folder-open"></i>
+                                            </span>
                                             <input class="form-control" name="sourceFolder" v-model="formData.sourceFolder">
                                         </div>
 
-                                        <div class="form-group form-check">
+                                        <div class="mb-3 form-check">
                                             <input type="checkbox" class="form-check-input" id="sourceFolderCreateIfNotExist" name="sourceFolderCreateIfNotExist" v-model="formData.sourceFolderCreateIfNotExist">
                                             <label class="form-check-label" for="sourceFolderCreateIfNotExist">{{$t('installer.sourceFolderCreateIfNotExist')}}</label>
                                         </div>
 
                                         <div class="mb-2">
                                         <label for="StartingMode">{{$t('setting.global.runningMode')}}</label>
-                                        <select class="custom-select w-25 select-css ml-3" v-model="formData.startingMode" id="StartingMode">
+                                        <select class="form-select w-25 select-css ms-3" v-model="formData.startingMode" id="StartingMode">
                                             <option value="independent">{{$t('setting.global.runningModeIndependent')}}</option>
                                             <option value="browser">{{$t('setting.global.runningModeBrowser')}}</option>
                                         </select>

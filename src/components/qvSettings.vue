@@ -11,7 +11,7 @@
                 <li class="nav-item mb-1">
                     <button class="nav-link"
                             @click="noteStore.setSettingsPageType('global')" :class="{'active':settingsPageType === 'global'}">
-                        <i class="fas fa-cog mr-1"></i>
+                        <i class="fas fa-cog me-1"></i>
                         {{$t('general.sidebarSettingsGeneral')}}
                     </button>
                 </li>
@@ -19,14 +19,14 @@
                     <button class="nav-link"
                             @click="noteStore.setSettingsPageType('notebooks')"
                             :class="{'active':settingsPageType === 'notebooks'}">
-                        <i class="fas fa-book mr-1"></i>
+                        <i class="fas fa-book me-1"></i>
                         {{$t('general.sidebarSettingsNotebooks')}}
                     </button>
                 </li>
                 <li class="nav-item">
                     <button class="nav-link" @click="noteStore.setSettingsPageType('tags')"
                             :class="{'active':settingsPageType === 'tags'}">
-                        <i class="fas fa-tags mr-1"></i>
+                        <i class="fas fa-tags me-1"></i>
                         {{$t('general.sidebarSettingsTags')}}
                     </button>
                 </li>
@@ -48,26 +48,26 @@
 
                     <div class="mb-2">
                     <label for="StartingMode">{{$t('setting.global.runningMode')}}</label>
-                    <select class="custom-select w-25 select-css ml-3" v-model="startingMode" id="StartingMode">
+                    <select class="form-select w-25 select-css ms-3" v-model="startingMode" id="StartingMode">
                         <option value="independent">{{$t('setting.global.runningModeIndependent')}}</option>
                         <option value="browser">{{$t('setting.global.runningModeBrowser')}}</option>
                     </select>
                     </div>
 
-                    <div class="custom-control custom-switch mb-3" v-if="startingMode === 'browser'">
-                    <input type="checkbox" class="custom-control-input" id="OpenBrowserSwitch" v-model="checkboxOpenBrowser">
-                    <label class="custom-control-label" for="OpenBrowserSwitch">{{$t('setting.global.switchOpenBrowser')}}</label>
+                    <div class="form-check form-switch mb-3" v-if="startingMode === 'browser'">
+                    <input type="checkbox" class="form-check-input" id="OpenBrowserSwitch" v-model="checkboxOpenBrowser">
+                    <label class="form-check-label" for="OpenBrowserSwitch">{{$t('setting.global.switchOpenBrowser')}}</label>
                     </div>
-                    <div class="custom-control custom-switch mb-3">
-                    <input type="checkbox" class="custom-control-input" id="CheckNewSwitch" v-model="checkboxCheckNew">
-                    <label class="custom-control-label" for="CheckNewSwitch">{{$t('setting.global.switchCheckNew')}}</label>
+                    <div class="form-check form-switch mb-3">
+                    <input type="checkbox" class="form-check-input" id="CheckNewSwitch" v-model="checkboxCheckNew">
+                    <label class="form-check-label" for="CheckNewSwitch">{{$t('setting.global.switchCheckNew')}}</label>
                     </div>
-                    <div class="custom-control custom-switch mb-2" v-if="consolePresent">
-                    <input type="checkbox" class="custom-control-input" id="ShowConsoleSwitch" v-model="checkboxShowConsole">
-                    <label class="custom-control-label" for="ShowConsoleSwitch">{{$t('setting.global.switchShowConsole')}}</label>
+                    <div class="form-check form-switch mb-2" v-if="consolePresent">
+                    <input type="checkbox" class="form-check-input" id="ShowConsoleSwitch" v-model="checkboxShowConsole">
+                    <label class="form-check-label" for="ShowConsoleSwitch">{{$t('setting.global.switchShowConsole')}}</label>
                     </div>
                     <div class="clearfix"></div>
-                    <select class="custom-select mt-4 w-25 select-css" v-model="langSelected" id="localeSelect">
+                    <select class="form-select mt-4 w-25 select-css" v-model="langSelected" id="localeSelect">
                     <option v-for="(lang, i) in localesList" :key="`Lang${i}`" :value="i">{{ lang }}</option>
                     </select>
                 </div>
@@ -81,8 +81,8 @@
                         <p>
                             <span>{{$t('setting.global.requestIndexing')}}:</span>&nbsp; <span class="text-success" v-if="!config.requestIndexing">{{$t('general.no')}}</span><span class="text-danger" v-if="config.requestIndexing">{{$t('general.yes')}}</span>
                         </p>
-                        <button class="btn btn-primary mr-2" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="refreshData('reload')">{{$t('setting.global.btnRefreshData')}}</button>
-                        <button class="btn btn-success mr-2" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="indexingStart">{{$t('setting.global.btnIndexChanges')}}</button>
+                        <button class="btn btn-primary me-2" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="refreshData('reload')">{{$t('setting.global.btnRefreshData')}}</button>
+                        <button class="btn btn-success me-2" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="indexingStart">{{$t('setting.global.btnIndexChanges')}}</button>
                         <button class="btn btn-warning" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="refreshData('reloadAll')">{{$t('setting.global.btnFullReload')}}</button>
 
                         <br>
@@ -121,11 +121,11 @@
                         <h5 class="m-0 ">{{$t('setting.global.favorites')}}</h5>
                     </div>
                     <div class="card-body">
-                        <a :href="noteStore.apiFolder + '/favorites.json'" download="favorites.json" class="btn btn-primary mr-2">
-                            <i class="fas fa-file-export mr-1"></i> {{$t('setting.global.btnFavoritesExport')}}
+                        <a :href="noteStore.apiFolder + '/favorites.json'" download="favorites.json" class="btn btn-primary me-2">
+                            <i class="fas fa-file-export me-1"></i> {{$t('setting.global.btnFavoritesExport')}}
                         </a>
-                        <label for="favorites-upload" class="btn btn-success mr-2 mb-0">
-                            <i class="fas fa-file-import mr-1"></i> {{$t('setting.global.btnFavoritesImport')}}
+                        <label for="favorites-upload" class="btn btn-success me-2 mb-0">
+                            <i class="fas fa-file-import me-1"></i> {{$t('setting.global.btnFavoritesImport')}}
                         </label>
                         <input id="favorites-upload" type="file" v-on:change="favoritesImportSelected"/>
                     </div>
@@ -144,7 +144,7 @@
                     >
                         <div class="notebook-edit-link">
                             {{item.name}}
-                            <i class="fas fa-cog float-right"></i>
+                            <i class="fas fa-cog float-end"></i>
                         </div>
                     </div>
                 </div>
@@ -162,7 +162,7 @@
                     >
                         <div class="notebook-edit-link">
                             {{item.name}}
-                            <i class="fas fa-cog float-right"></i>
+                            <i class="fas fa-cog float-end"></i>
                         </div>
                     </div>
                 </div>
@@ -286,7 +286,7 @@ export default {
                 }
             })
             modal.setContent('<h4 class="ml--1">' + this.$t('setting.notebooks.modalTitle') + ' <span class="text-primary">"' + title + '"</span></h4>' +
-          '<div class="form-group row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.notebooks.modalNewTitle') + ':</b></label><div class="col-9"><input id="notebook-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
+          '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.notebooks.modalNewTitle') + ':</b></label><div class="col-9"><input id="notebook-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
           '')
             modal.addFooterBtn(this.$t('setting.notebooks.modalBtnDelete'), 'tingle-btn tingle-btn--danger tingle-btn--pull-left', function () {
                 fetch(thisGlobal.noteStore.apiFolder + '/notebook_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'uuid': uuid }) }).then(response => { return response.text() })
@@ -303,7 +303,7 @@ export default {
             modal.addFooterBtn(this.$t('setting.notebooks.modalBtnCancel'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () {
                 modal.destroy()
             })
-            modal.addFooterBtn(this.$t('setting.notebooks.modalBtnSave'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right mr-3', function () {
+            modal.addFooterBtn(this.$t('setting.notebooks.modalBtnSave'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right me-3', function () {
                 fetch(thisGlobal.noteStore.apiFolder + '/notebook_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'rename', 'uuid': uuid, 'title': document.getElementById('notebook-new-name').value }) }).then(response => { return response.text() })
                     .then(() => {
                         modal.destroy()
@@ -329,7 +329,7 @@ export default {
                 }
             })
             modal.setContent('<h4 class="ml--1">' + this.$t('setting.tags.modalTitle') + ' <span class="text-primary">"' + title + '"</span></h4>' +
-          '<div class="form-group row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.tags.modalNewTitle') + ':</b></label><div class="col-9"><input id="tag-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
+          '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.tags.modalNewTitle') + ':</b></label><div class="col-9"><input id="tag-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
           '')
             modal.addFooterBtn(this.$t('setting.tags.modalBtnDelete'), 'tingle-btn tingle-btn--danger tingle-btn--pull-left', function () {
                 fetch(thisGlobal.noteStore.apiFolder + '/tag_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'url': url }) }).then(response => { return response.text() })
@@ -346,7 +346,7 @@ export default {
             modal.addFooterBtn(this.$t('setting.tags.modalBtnCancel'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () {
                 modal.destroy()
             })
-            modal.addFooterBtn(this.$t('setting.tags.modalBtnSave'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right mr-3', function () {
+            modal.addFooterBtn(this.$t('setting.tags.modalBtnSave'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right me-3', function () {
                 fetch(thisGlobal.noteStore.apiFolder + '/tag_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'rename', 'url': url, 'title': document.getElementById('tag-new-name').value }) }).then(response => { return response.text() })
                     .then(() => {
                         modal.destroy()

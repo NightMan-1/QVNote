@@ -1,24 +1,68 @@
 :root {
-  // Custom variable values only support SassScript inside `#{}`.
+  // Note: Custom variable values only support SassScript inside `#{}`.
+
+  // Colors
   @each $color, $value in $colors {
-    --#{$color}: #{$value};
+    --#{$prefix}#{$color}: #{$value};
   }
 
   @each $color, $value in $grays {
-    --grey-#{$color}: #{$value};
+    --#{$prefix}gray-#{$color}: #{$value};
+    --#{$prefix}grey-#{$color}: #{$value};
   }
-
 
   @each $color, $value in $theme-colors {
-    --#{$color}: #{$value};
+    --#{$prefix}#{$color}: #{$value};
   }
 
+  // Bootstrap 5's utilities reference --#{$color}-rgb variables, so generate
+  // them explicitly from the final $theme-colors map.
+  @each $color, $value in $theme-colors {
+    --#{$prefix}#{$color}-rgb: #{to-rgb($value)};
+  }
+
+  --#{$prefix}white-rgb: #{to-rgb($white)};
+  --#{$prefix}black-rgb: #{to-rgb($black)};
+
   @each $bp, $value in $grid-breakpoints {
-    --breakpoint-#{$bp}: #{$value};
+    --#{$prefix}breakpoint-#{$bp}: #{$value};
   }
 
   // Use `inspect` for lists so that quoted items keep the quotes.
-  // See https://github.com/sass/sass/issues/2383#issuecomment-336349172
-  --font-family-sans-serif: #{inspect($font-family-sans-serif)};
-  --font-family-monospace: #{inspect($font-family-monospace)};
+  --#{$prefix}font-family-sans-serif: #{inspect($font-family-sans-serif)};
+  --#{$prefix}font-family-monospace: #{inspect($font-family-monospace)};
+
+  // Root and body
+  --#{$prefix}body-font-family: #{inspect($font-family-base)};
+  --#{$prefix}body-font-size: #{$font-size-base};
+  --#{$prefix}body-font-weight: #{$font-weight-base};
+  --#{$prefix}body-line-height: #{$line-height-base};
+
+  --#{$prefix}body-color: #{$body-color};
+  --#{$prefix}body-bg: #{$body-bg};
+
+  --#{$prefix}heading-color: #{$headings-color};
+
+  --#{$prefix}link-color: #{$link-color};
+  --#{$prefix}link-decoration: #{$link-decoration};
+  --#{$prefix}link-hover-color: #{$link-hover-color};
+
+  --#{$prefix}code-color: #{$code-color};
+  --#{$prefix}highlight-bg: #{$mark-bg};
+
+  // Border
+  --#{$prefix}border-width: #{$border-width};
+  --#{$prefix}border-style: #{$border-style};
+  --#{$prefix}border-color: #{$border-color};
+
+  --#{$prefix}border-radius: #{$border-radius};
+  --#{$prefix}border-radius-sm: #{$border-radius-sm};
+  --#{$prefix}border-radius-lg: #{$border-radius-lg};
+  --#{$prefix}border-radius-xl: #{$border-radius-xl};
+  --#{$prefix}border-radius-xxl: #{$border-radius-xxl};
+  --#{$prefix}border-radius-pill: #{$border-radius-pill};
+
+  --#{$prefix}box-shadow: #{$box-shadow};
+  --#{$prefix}box-shadow-sm: #{$box-shadow-sm};
+  --#{$prefix}box-shadow-lg: #{$box-shadow-lg};
 }
