@@ -25,14 +25,6 @@
                                             <label class="form-check-label" for="sourceFolderCreateIfNotExist">{{$t('installer.sourceFolderCreateIfNotExist')}}</label>
                                         </div>
 
-                                        <div class="mb-2">
-                                        <label for="StartingMode">{{$t('setting.global.runningMode')}}</label>
-                                        <select class="form-select w-25 select-css ms-3" v-model="formData.startingMode" id="StartingMode">
-                                            <option value="independent">{{$t('setting.global.runningModeIndependent')}}</option>
-                                            <option value="browser">{{$t('setting.global.runningModeBrowser')}}</option>
-                                        </select>
-                                        </div>
-
                                         <div class="row">
                                             <div class="col-6">
                                                 <button type="button" class="btn btn-primary px-4" @click="saveChanges">
@@ -77,8 +69,7 @@ export default {
             loader: false,
             formData: {
                 sourceFolder: '',
-                sourceFolderCreateIfNotExist: true,
-                startingMode: 'independent'
+                sourceFolderCreateIfNotExist: true
             }
 
         }

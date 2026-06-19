@@ -65,9 +65,7 @@ export default {
         global: {
             settingsTitle: 'General settings',
             folder: 'Data directory',
-            switchOpenBrowser: 'open browser at startup',
             switchCheckNew: 'search for new notes at startup (slow)',
-            switchShowConsole: 'show console on startup',
             actionsTitle: 'Actions',
             requestIndexing: 'Reindex required',
             btnRefreshData: 'update note list',
@@ -89,10 +87,7 @@ export default {
             btnFavoritesImport: 'import',
             favoritesImportWrongType: 'Wrong file type',
             favoritesImportWrongData: 'Wrong file data',
-            favoritesImportDone: 'Import successful',
-            runningMode: 'Launch mode',
-            runningModeIndependent: 'independent',
-            runningModeBrowser: 'in browser'
+            favoritesImportDone: 'Import successful'
 
         },
         notebooks: {

@@ -27,12 +27,6 @@
             <button class="dropdown-item" @click="openSettings"><i class="bi bi-gear-fill me-2 text-nord3"></i>
                 {{$t('general.buttonSettings')}}
             </button>
-            <!--
-            <div class="dropdown-divider" v-if="config.startingMode === 'browser'"></div>
-            <button class="dropdown-item" @click="powerOFF" v-if="config.startingMode === 'browser'"><i class="bi bi-power me-2 text-nord3"></i>
-                {{$t('general.buttonExit')}}
-            </button>
-            -->
         </div>
     </div>
   </div>

@@ -20,14 +20,7 @@ type configGlobalStruct struct {
 	appInstalled         bool
 	requestIndexing      bool //необходимость запустить переиндексацию поиска
 	atStartCheckNewNotes bool
-	atStartShowConsole   bool
-	postEditor           string
-	appStartingMode      string
 	cmdPort              string
-	cmdPortable      bool
-	cmdServerMode    bool
-	atStartOpenBrowser   bool
-	accessLog            bool
 }
 
 var configGlobal (configGlobalStruct)

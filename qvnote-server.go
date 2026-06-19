@@ -119,8 +119,6 @@ func initSystem() {
 	configGlobal.dataDir += "/.config/QVNote"
 
 	portTMP := 8000
-	configGlobal.cmdPortable = false
-	configGlobal.cmdServerMode = false
 
 	//read configuration file
 	cfgFile := configGlobal.execDir + "/config.ini"
@@ -136,14 +134,6 @@ func initSystem() {
 				portTMP = p
 			}
 		}
-		if runtime.GOOS == "windows" {
-			if v, ok := cfg["portable"]; ok {
-				configGlobal.cmdPortable = (v == "true")
-			}
-		}
-		if v, ok := cfg["servermode"]; ok {
-			configGlobal.cmdServerMode = (v == "true")
-		}
 		if v, ok := cfg["datadir"]; ok && v != "" {
 			configGlobal.dataDir = v
 		}
@@ -151,17 +141,10 @@ func initSystem() {
 
 	//get command line flags
 	flag.IntVar(&portTMP, "port", portTMP, "port number")
-	if runtime.GOOS == "windows" {
-		flag.BoolVar(&configGlobal.cmdPortable, "portable", configGlobal.cmdPortable, "portable flag")
-	}
-	flag.BoolVar(&configGlobal.cmdServerMode, "server", false, "server mode")
 	flag.StringVar(&configGlobal.dataDir, "datadir", configGlobal.dataDir, "data folder")
 	flag.Parse()
 	configGlobal.cmdPort = strconv.Itoa(portTMP)
 
-	if configGlobal.cmdPortable {
-		configGlobal.dataDir, _ = filepath.Abs(configGlobal.execDir + "/data")
-	}
 	configGlobal.dataDir, _ = filepath.Abs(configGlobal.dataDir)
 
 	//open database
@@ -238,36 +221,12 @@ func initSystem() {
 		configGlobal.appInstalled = false
 	}
 
-	data, _ = ConfigDB.Get([]byte("atStartOpenBrowser"))
-	if string(data) == "false" {
-		configGlobal.atStartOpenBrowser = false
-	} else {
-		configGlobal.atStartOpenBrowser = true
-	}
-
 	data, _ = ConfigDB.Get([]byte("atStartCheckNewNotes"))
 	if string(data) != "" && string(data) == "true" {
 		configGlobal.atStartCheckNewNotes = true
 	} else {
 		configGlobal.atStartCheckNewNotes = false
 	}
-
-	data, _ = ConfigDB.Get([]byte("postEditor"))
-	if string(data) != "" {
-		configGlobal.postEditor = string(data)
-	} else {
-		configGlobal.postEditor = "quill"
-	}
-
-	data, _ = ConfigDB.Get([]byte("atStartShowConsole"))
-	if string(data) != "" && string(data) == "true" {
-		configGlobal.atStartShowConsole = true
-	} else {
-		configGlobal.atStartShowConsole = false
-	}
-
-	data, _ = ConfigDB.Get([]byte("startingMode"))
-	configGlobal.appStartingMode = string(data)
 }
 
 func addToIndex(path string, uuid string) error {
@@ -469,10 +428,6 @@ func SaveConfig() bool {
 	if err != nil {
 		return false
 	}
-	err = ConfigDB.Set([]byte("postEditor"), []byte(configGlobal.postEditor))
-	if err != nil {
-		return false
-	}
 	tmp := "false"
 	if configGlobal.appInstalled {
 		tmp = "true"
@@ -492,15 +447,6 @@ func SaveConfig() bool {
 	}
 
 	tmp = "false"
-	if configGlobal.atStartOpenBrowser {
-		tmp = "true"
-	}
-	err = ConfigDB.Set([]byte("atStartOpenBrowser"), []byte(tmp))
-	if err != nil {
-		return false
-	}
-
-	tmp = "false"
 	if configGlobal.atStartCheckNewNotes {
 		tmp = "true"
 	}
@@ -509,24 +455,6 @@ func SaveConfig() bool {
 		return false
 	}
 
-	tmp = "false"
-	if configGlobal.atStartShowConsole {
-		tmp = "true"
-	}
-	err = ConfigDB.Set([]byte("atStartShowConsole"), []byte(tmp))
-	if err != nil {
-		return false
-	}
-
-	err = ConfigDB.Set([]byte("postEditor"), []byte(configGlobal.postEditor))
-	if err != nil {
-		return false
-	}
-
-	err = ConfigDB.Set([]byte("startingMode"), []byte(configGlobal.appStartingMode))
-	if err != nil {
-		return false
-	}
 	return true
 }
 
@@ -888,9 +816,6 @@ func main() {
 
 	//start web server
 	fmt.Println("Starting web server...")
-	if configGlobal.atStartOpenBrowser && !configGlobal.cmdServerMode {
-		go openBrowser("http://localhost:" + configGlobal.cmdPort + "/")
-	}
 	webserverChan := make(chan bool)
 	go WebServer(webserverChan)
 

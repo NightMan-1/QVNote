@@ -46,25 +46,9 @@
                         <span>{{$t('setting.global.folder')}}:</span> {{config.sourceFolder}}
                     </p>
 
-                    <div class="mb-2">
-                    <label for="StartingMode">{{$t('setting.global.runningMode')}}</label>
-                    <select class="form-select w-25 select-css ms-3" v-model="startingMode" id="StartingMode">
-                        <option value="independent">{{$t('setting.global.runningModeIndependent')}}</option>
-                        <option value="browser">{{$t('setting.global.runningModeBrowser')}}</option>
-                    </select>
-                    </div>
-
-                    <div class="form-check form-switch mb-3" v-if="startingMode === 'browser'">
-                    <input type="checkbox" class="form-check-input" id="OpenBrowserSwitch" v-model="checkboxOpenBrowser">
-                    <label class="form-check-label" for="OpenBrowserSwitch">{{$t('setting.global.switchOpenBrowser')}}</label>
-                    </div>
                     <div class="form-check form-switch mb-3">
                     <input type="checkbox" class="form-check-input" id="CheckNewSwitch" v-model="checkboxCheckNew">
                     <label class="form-check-label" for="CheckNewSwitch">{{$t('setting.global.switchCheckNew')}}</label>
-                    </div>
-                    <div class="form-check form-switch mb-2" v-if="consolePresent">
-                    <input type="checkbox" class="form-check-input" id="ShowConsoleSwitch" v-model="checkboxShowConsole">
-                    <label class="form-check-label" for="ShowConsoleSwitch">{{$t('setting.global.switchShowConsole')}}</label>
                     </div>
                     <div class="clearfix"></div>
                     <select class="form-select mt-4 w-25 select-css" v-model="langSelected" id="localeSelect">
@@ -184,11 +168,7 @@ export default {
     },
     data () {
         return {
-            checkboxOpenBrowser: false,
             checkboxCheckNew: false,
-            checkboxShowConsole: false,
-            consolePresent: false,
-            startingMode: 'browser',
             searchStatus: {
                 'notesCurrent': 0,
                 'notesTotal': 0,
@@ -201,37 +181,19 @@ export default {
                 'status': 'idle',
                 'persent': 0
             },
-            langSelected: localStorage.getItem('locale') || 'ru',
-            editorSelected: 'hugerte'
+            langSelected: localStorage.getItem('locale') || 'ru'
         }
     },
     created () {
-        this.checkboxOpenBrowser = this.noteStore.config.atStartOpenBrowser
         this.checkboxCheckNew = this.noteStore.config.atStartCheckNewNotes
-        this.checkboxShowConsole = this.noteStore.config.atStartShowConsole
-        this.consolePresent = this.noteStore.config.consolePresent
-        this.startingMode = this.noteStore.config.startingMode
-        this.editorSelected = this.noteStore.config.postEditor
     },
     watch: {
-        'checkboxOpenBrowser' () {
-            this.saveSettings()
-        },
         'checkboxCheckNew' () {
-            this.saveSettings()
-        },
-        'checkboxShowConsole' () {
-            this.saveSettings()
-        },
-        'startingMode' () {
             this.saveSettings()
         },
         'langSelected' () {
             localStorage.setItem('locale', this.langSelected)
             this.$i18n.locale = this.langSelected
-        },
-        'editorSelected' () {
-            this.saveSettings()
         }
 
     },
@@ -258,7 +220,7 @@ export default {
             }
         },
         saveSettings: function () {
-            var newConfig = { 'startingMode': this.startingMode.toString(), 'postEditor': this.editorSelected.toString(), 'atStartOpenBrowser': this.checkboxOpenBrowser.toString(), 'atStartShowConsole': this.checkboxShowConsole.toString(), 'atStartCheckNewNotes': this.checkboxCheckNew.toString() }
+            var newConfig = { 'atStartCheckNewNotes': this.checkboxCheckNew.toString() }
             fetch(this.noteStore.apiFolder + '/config.json', { method: 'POST', body: JSON.stringify(newConfig) }).then(response => { return response.text() })
                 .then(() => {
                     fetch(this.noteStore.apiFolder + '/config.json').then(response => { return response.json() })
@@ -442,7 +404,6 @@ export default {
         gridClass () { return this.noteStore.gridClass },
         settingsPageType () { return this.noteStore.settingsPageType },
         localesList () { return this.noteStore.localesList },
-        editorsList () { return this.noteStore.editorsList },
         notebooksList () { return this.noteStore.notebooksList },
         tagsList () { return this.noteStore.tagsList },
         config () { return this.noteStore.config }

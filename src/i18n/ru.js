@@ -65,9 +65,7 @@ export default {
         global: {
             settingsTitle: 'Основные настройки',
             folder: 'Директория с данными',
-            switchOpenBrowser: 'открывать браузера при старте',
             switchCheckNew: 'поиск новых заметок при запуске (медленно)',
-            switchShowConsole: 'показывать консоль при запуске',
             actionsTitle: 'Действия',
             requestIndexing: 'Необходима переиндексация',
             btnRefreshData: 'обновить список заметок',
@@ -89,10 +87,7 @@ export default {
             btnFavoritesImport: 'импортировать',
             favoritesImportWrongType: 'Ошибка типа файла',
             favoritesImportWrongData: 'Неверный формат файла',
-            favoritesImportDone: 'Импорт завершен',
-            runningMode: 'Режим запуска',
-            runningModeIndependent: 'самостоятельно',
-            runningModeBrowser: 'в браузере'
+            favoritesImportDone: 'Импорт завершен'
 
         },
         notebooks: {

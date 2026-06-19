@@ -164,15 +164,12 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		var config struct {
 			Sourcefolder                 string `json:"sourceFolder"`
 			SourceFolderCreateIfNotExist bool   `json:"sourceFolderCreateIfNotExist"`
-			StartingMode                 string `json:"startingMode"`
 		}
 		readJSON(r, &config)
 		if _, err := os.Stat(config.Sourcefolder); err == nil {
 			if CheckNotebooksFolderStructure(config.Sourcefolder) {
 				configGlobal.sourceFolder = config.Sourcefolder
 				configGlobal.appInstalled = true
-				configGlobal.appStartingMode = config.StartingMode
-				fmt.Println(configGlobal.appStartingMode)
 				if SaveConfig() {
 					FindAllNotes()
 					jsonResponse(w, map[string]interface{}{
@@ -237,20 +234,9 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 	r.HandleFunc("/api/config.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
-			OpenBrowser   string `json:"atStartOpenBrowser"`
 			CheckNewNotes string `json:"atStartCheckNewNotes"`
-			ShowConsole   string `json:"atStartShowConsole"`
-			PostEditor    string `json:"postEditor"`
-			StartingMode  string `json:"startingMode"`
 		}
 		readJSON(r, &request)
-
-		switch request.OpenBrowser {
-		case "true":
-			configGlobal.atStartOpenBrowser = true
-		case "false":
-			configGlobal.atStartOpenBrowser = false
-		}
 
 		switch request.CheckNewNotes {
 		case "true":
@@ -259,32 +245,13 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			configGlobal.atStartCheckNewNotes = false
 		}
 
-		switch request.ShowConsole {
-		case "true":
-			configGlobal.atStartShowConsole = true
-		case "false":
-			configGlobal.atStartShowConsole = false
-		}
-
-		if request.PostEditor != "" {
-			configGlobal.postEditor = request.PostEditor
-		}
-
-		if request.StartingMode != "" {
-			configGlobal.appStartingMode = request.StartingMode
-		}
-
 		SaveConfig()
 
 		jsonResponse(w, map[string]interface{}{
 			"installed":            configGlobal.appInstalled,
 			"sourceFolder":         configGlobal.sourceFolder,
 			"requestIndexing":      configGlobal.requestIndexing,
-			"atStartOpenBrowser":   configGlobal.atStartOpenBrowser,
 			"atStartCheckNewNotes": configGlobal.atStartCheckNewNotes,
-			"atStartShowConsole":   configGlobal.atStartShowConsole,
-			"postEditor":           configGlobal.postEditor,
-			"startingMode":         configGlobal.appStartingMode,
 		})
 	})
 

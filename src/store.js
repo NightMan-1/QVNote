@@ -41,9 +41,6 @@ export const useNoteStore = defineStore('note', {
             'en': 'English',
             'ru': 'Русский'
         },
-        editorsList: {
-            'hugerte': 'HugeRTE'
-        }
     }),
 
     getters: {
