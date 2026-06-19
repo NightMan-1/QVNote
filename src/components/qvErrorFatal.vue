@@ -12,6 +12,8 @@
 </template>
 
 <script>
+import { useNoteStore } from '../store'
+
 export default {
     name: 'qvErrorFatal',
     data () {
@@ -19,15 +21,18 @@ export default {
             errorText: ''
         }
     },
-    mounted: function () {
-        this.errorText = this.$store.getters.getStatus.errorText
+    setup () {
+        return { noteStore: useNoteStore() }
     },
-    destroyed: function () {
+    mounted: function () {
+        this.errorText = this.noteStore.status.errorText
+    },
+    unmounted: function () {
         document.body.className = ''
     },
     watch: {
         '$route' (to, from) {
-            this.errorText = this.$store.getters.getStatus.errorText
+            this.errorText = this.noteStore.status.errorText
         }
     }
 }

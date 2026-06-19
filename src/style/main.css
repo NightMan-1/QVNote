@@ -37,6 +37,10 @@ html, body {
     */
 }
 
+#app {
+    height: 100%;
+}
+
 b, strong {
     font-weight: normal;
     font-variation-settings: 'wght' 650;
@@ -83,16 +87,29 @@ img {
 }
 
 code {
-    background-color: #f0f3f5 !important;
-    padding: 0.1rem 0.5rem;
+    background-color: #f0f3f5;
+    color: #e83e8c;
+    padding: .1rem .3rem;
+    display: inline-block;
 }
 
 pre {
-    background-color: #f0f3f5 !important;
+    background-color: #f0f3f5;
+    color: #363636;
     padding: 0.5rem;
     display: block;
     white-space: pre;
-    color: #363636; /* e83e8c */
+    border-radius: .4em;
+}
+pre[class*="language-"] {
+    padding: 0.5rem !important;
+    margin: 1rem 0;
+}
+
+pre code {
+    padding: 0;
+    background-color: transparent;
+    color: inherit;
 }
 .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
     margin-bottom: .5em;
@@ -380,5 +397,15 @@ i.mr-1 {width: 1.1em; text-align: center;}
 .tingle-modal-box__content .ml--1 {margin-top: 1rem !important;}
 .tingle-modal-box__content .ml--1 .text-primary{color: var(--nord14) !important;}
 .tingle-modal-box__content { padding: 2rem 3rem !important; }
+
+.tox .tox-dialog-wrap,
+#supercode-modal-container {
+    z-index: 1500;
+}
+
+.vch__container .vch__legend div {
+    font-size: 11px;
+    color: #767676;
+}
 
 /* purgecss end ignore */

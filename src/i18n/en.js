@@ -37,6 +37,10 @@ export default {
         shutdownMessage: 'Server power off.',
         buttonBackToHome: 'Back to home page'
     },
+    error404: {
+        title: "Oops! You're lost.",
+        message: 'The page you are looking for was not found.'
+    },
     installer: {
         title: 'QVNote - installation',
         selectDataFolder: 'Specify the data folder',

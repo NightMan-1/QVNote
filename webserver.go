@@ -46,14 +46,49 @@ func readJSON(r *http.Request, v interface{}) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
-func spaFallback(w http.ResponseWriter, r *http.Request) {
+func serveIndexHTML(w http.ResponseWriter, r *http.Request, status int) {
 	data, err := templateFS.ReadFile("templates/index.html")
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
 	w.Write(data)
+}
+
+func hasFileExtension(path string) bool {
+	segments := strings.Split(path, "/")
+	for i := len(segments) - 1; i >= 0; i-- {
+		if segments[i] != "" {
+			return strings.Contains(segments[i], ".")
+		}
+	}
+	return false
+}
+
+func isFrontendRoute(path string) bool {
+	var segments []string
+	for _, s := range strings.Split(path, "/") {
+		if s != "" {
+			segments = append(segments, s)
+		}
+	}
+
+	switch len(segments) {
+	case 0:
+		return true
+	case 1:
+		switch segments[0] {
+		case "notes", "tags", "settings", "editor", "install", "error", "shutdown", "error404":
+			return true
+		}
+	case 2, 3:
+		if segments[0] == "notes" || segments[0] == "tags" {
+			return true
+		}
+	}
+	return false
 }
 
 func WebServer(webserverChan chan bool) { //nolint:gocyclo
@@ -73,14 +108,38 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		MaxAge:           300,
 	}))
 
-	// SPA fallback handler for Vue Router history mode
-	r.HandleFunc("/notes/*", spaFallback)
-	r.HandleFunc("/tags/*", spaFallback)
-	r.HandleFunc("/", spaFallback)
+	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("User-agent: *\nDisallow: /\n"))
+	})
 
-	// 404 handler — redirect to root (matching original Iris behavior)
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+		path := r.URL.Path
+
+		if strings.HasPrefix(path, "/api/") {
+			jsonError(w, "not found", http.StatusNotFound)
+			return
+		}
+
+		if hasFileExtension(path) {
+			http.NotFound(w, r)
+			return
+		}
+
+		if !strings.HasSuffix(path, "/") {
+			target := path + "/"
+			if r.URL.RawQuery != "" {
+				target += "?" + r.URL.RawQuery
+			}
+			http.Redirect(w, r, target, http.StatusMovedPermanently)
+			return
+		}
+
+		if isFrontendRoute(path) {
+			serveIndexHTML(w, r, http.StatusOK)
+		} else {
+			serveIndexHTML(w, r, http.StatusNotFound)
+		}
 	})
 
 	// Resources route — display images

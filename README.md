@@ -25,7 +25,9 @@ You can always download latest stable binary from here - https://github.com/Nigh
 #### Project requirements
 
 GoLang >=1.17  
-NodeJS >=16.x
+NodeJS >=18.x
+
+Frontend stack: **Vue 3**, **Vite**, **Pinia**, **vue-i18n**, **HugeRTE**.
 
 #### Project setup
 

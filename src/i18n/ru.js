@@ -37,6 +37,10 @@ export default {
         shutdownMessage: 'Сервер выключен.',
         buttonBackToHome: 'На главную страницу'
     },
+    error404: {
+        title: 'Упс! Вы потерялись.',
+        message: 'Запрашиваемая страница не найдена.'
+    },
     installer: {
         title: 'QVNote - установка',
         selectDataFolder: 'Укажите папку с данными',
