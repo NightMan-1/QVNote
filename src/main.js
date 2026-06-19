@@ -31,7 +31,7 @@ if (savedLocale === 'ru-RU') {
     localStorage.setItem('locale', 'en')
 }
 const i18n = createI18n({
-    legacy: true,
+    legacy: false,
     locale: savedLocale,
     fallbackLocale: 'en',
     messages: { en, ru }

@@ -89,11 +89,10 @@ export default {
         notesCountTotal () { return this.noteStore.notesCountTotal },
         tagsCount () { return this.noteStore.getTagsCount },
         calendarLocale () {
-            const locale = this.$i18n.locale || 'ru'
-            const messages = this.$i18n.messages[locale] || this.$i18n.messages[this.$i18n.fallbackLocale] || this.$i18n.messages.ru
+            const activityMessages = this.$tm('dashboard.activityGraph')
             return {
-                months: messages.dashboard.activityGraph.months,
-                days: messages.dashboard.activityGraph.days,
+                months: activityMessages.months,
+                days: activityMessages.days,
                 on: this.$t('dashboard.activityGraph.on'),
                 less: this.$t('dashboard.activityGraph.less'),
                 more: this.$t('dashboard.activityGraph.more')
