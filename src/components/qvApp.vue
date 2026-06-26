@@ -73,7 +73,7 @@
                 </button>
             </div>
             <button class="btn btn-outline-secondary" :title="$t('articleList.btnFavorites')" @click="addToFavorites">
-                <i class="bi bi-star text-black-50" :class="{'bi-star-fill':articleCurrent.favorites}"></i>
+                <i class="bi text-black-50" :class="articleCurrent.favorites ? 'bi-star-fill' : 'bi-star'"></i>
             </button>
         </div>
     	<div class="grid-body-2 bg-white" v-if="pageType === 'articleList'"><div class="scrooll-wrap">
