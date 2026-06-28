@@ -7,7 +7,6 @@ export default {
         addNewNote: 'Создать запись',
         addNewNotebook: 'Добавить блокнот',
         buttonSettings: 'Настройки',
-        buttonExit: 'Выключить сервер',
         sidebarLibrary: 'LIBRARY',
         sidebarInbox: 'Inbox',
         sidebarFavorites: 'Favorite',
@@ -34,7 +33,9 @@ export default {
         yesBig: 'Да',
         noBig: 'Нет',
         modalClose: 'Закрыть',
-        shutdownMessage: 'Сервер выключен.',
+        serverOfflineTitle: 'Сервер недоступен',
+        serverDownMessage: 'Связь с сервером потеряна.',
+        serverBackMessage: 'Связь восстановлена.',
         buttonBackToHome: 'На главную страницу'
     },
     error404: {

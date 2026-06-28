@@ -157,14 +157,14 @@
 
 <script>
 import { useNoteStore } from '../store'
-import tingle from 'tingle.js'
+import { useModal } from '../composables/useModal'
 import qvHeaderLogo from './qvHeaderLogo.vue'
 
 export default {
     name: 'qvSettings',
     components: { qvHeaderLogo },
     setup () {
-        return { noteStore: useNoteStore() }
+        return { noteStore: useNoteStore(), modal: useModal() }
     },
     data () {
         return {
@@ -238,15 +238,7 @@ export default {
         },
         notebookEdit: function (uuid, title) {
             let thisGlobal = this
-            let modal = new tingle.modal({
-                footer: true,
-                stickyFooter: false,
-                closeMethods: ['overlay', 'button', 'escape'],
-                closeLabel: this.$t('general.modalClose'),
-                onClose: function () {
-                    modal.destroy()
-                }
-            })
+            let modal = this.modal.createModal(this.$t('general.modalClose'))
             modal.setContent('<h4 class="ml--1">' + this.$t('setting.notebooks.modalTitle') + ' <span class="text-primary">"' + title + '"</span></h4>' +
           '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.notebooks.modalNewTitle') + ':</b></label><div class="col-9"><input id="notebook-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
           '')
@@ -281,15 +273,7 @@ export default {
         },
         tagEdit: function (url, title) {
             let thisGlobal = this
-            let modal = new tingle.modal({
-                footer: true,
-                stickyFooter: false,
-                closeMethods: ['overlay', 'button', 'escape'],
-                closeLabel: this.$t('general.modalClose'),
-                onClose: function () {
-                    modal.destroy()
-                }
-            })
+            let modal = this.modal.createModal(this.$t('general.modalClose'))
             modal.setContent('<h4 class="ml--1">' + this.$t('setting.tags.modalTitle') + ' <span class="text-primary">"' + title + '"</span></h4>' +
           '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.tags.modalNewTitle') + ':</b></label><div class="col-9"><input id="tag-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
           '')

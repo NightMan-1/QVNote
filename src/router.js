@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const qvApp = () => import('@/components/qvApp.vue')
 const qvNotFound = () => import('@/components/qv404.vue')
-const qvShutdown = () => import('@/components/qvShutdown.vue')
+import qvOffline from '@/components/qvOffline.vue'
 const qvInstaller = () => import('@/components/qvInstaller.vue')
 const qvErrorFatal = () => import('@/components/qvErrorFatal.vue')
 const qvSettings = () => import('@/components/qvSettings.vue')
@@ -14,7 +14,7 @@ const guardDirectAccess = (_to, from) => {
 }
 
 const router = createRouter({
-    history: createWebHistory(), // https://router.vuejs.org/ru/guide/essentials/history-mode.html
+    history: createWebHistory(),
     routes: [
         {
             path: '/',
@@ -85,10 +85,9 @@ const router = createRouter({
             beforeEnter: guardDirectAccess
         },
         {
-            path: '/shutdown/',
-            name: 'qvShutdown',
-            component: qvShutdown,
-            beforeEnter: guardDirectAccess
+            path: '/offline/',
+            name: 'qvOffline',
+            component: qvOffline
         },
         {
             path: '/error404/',

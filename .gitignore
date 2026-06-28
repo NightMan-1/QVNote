@@ -21,6 +21,7 @@ AGENTS.md
 
 # Built binary
 qvnote-linux-x64
+QVNote
 
 # Local environment caches
 .playwright-cli/

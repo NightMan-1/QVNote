@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
 export default defineConfig({
+    root: 'src',
+    publicDir: '../public',
     plugins: [vue()],
     resolve: {
         alias: {
@@ -20,7 +22,7 @@ export default defineConfig({
         }
     },
     build: {
-        outDir: 'templates',
+        outDir: '../templates',
         assetsDir: 'static',
         sourcemap: false
     }

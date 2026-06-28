@@ -7,7 +7,6 @@ export default {
         addNewNote: 'New note',
         addNewNotebook: 'Add a notebook',
         buttonSettings: 'Settings',
-        buttonExit: 'Shutdown server',
         sidebarLibrary: 'LIBRARY',
         sidebarInbox: 'Inbox',
         sidebarFavorites: 'Favorite',
@@ -34,7 +33,9 @@ export default {
         yesBig: 'Yes',
         noBig: 'No',
         modalClose: 'Close',
-        shutdownMessage: 'Server power off.',
+        serverOfflineTitle: 'Server offline',
+        serverDownMessage: 'Server connection lost.',
+        serverBackMessage: 'Connection restored.',
         buttonBackToHome: 'Back to home page'
     },
     error404: {

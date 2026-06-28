@@ -80,7 +80,7 @@ func isFrontendRoute(path string) bool {
 		return true
 	case 1:
 		switch segments[0] {
-		case "notes", "tags", "settings", "editor", "install", "error", "shutdown", "error404":
+		case "notes", "tags", "settings", "editor", "install", "error", "offline", "error404":
 			return true
 		}
 	case 2, 3:

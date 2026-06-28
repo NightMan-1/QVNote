@@ -34,7 +34,7 @@
 
 <script>
 import { useNoteStore } from '../store'
-import tingle from 'tingle.js'
+import { useModal } from '../composables/useModal'
 
 export default {
     name: 'qvHeaderLogo',
@@ -44,7 +44,7 @@ export default {
         }
     },
     setup () {
-        return { noteStore: useNoteStore() }
+        return { noteStore: useNoteStore(), modal: useModal() }
     },
     watch: {
         'showSettingsMenu' () {
@@ -56,10 +56,6 @@ export default {
         }
     },
     methods: {
-        powerOFF () {
-            fetch(this.noteStore.apiFolder + '/exit')
-            this.$router.push('/shutdown/')
-        },
         goHome (index) {
             this.noteStore.setCurrentNotebookID('')
             this.noteStore.setPageType('dashboard')
@@ -78,12 +74,7 @@ export default {
         },
         addNotebook () {
             let thisGlobal = this
-            let modal = new tingle.modal({
-                footer: true,
-                stickyFooter: false,
-                closeMethods: ['overlay', 'button', 'escape'],
-                closeLabel: this.$t('general.modalClose')
-            })
+            let modal = this.modal.createModal(this.$t('general.modalClose'))
             modal.setContent('<h4 class="ml--1">' + this.$t('general.modalNewNotebookTitle') + ':</h4>' +
                     '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-sm-4 col-form-label"><b>' + this.$t('general.modalNewNotebookText') + '</b></label><div class="col-sm-8"><input id="notebook-new" type="text" class="form-control"></div></div>' +
                     '')

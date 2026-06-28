@@ -100,7 +100,6 @@ import { registerBootstrapIcons } from '../hugerte-icons'
 
 export default {
     name: 'qvEditor',
-    props: ['noteUUID'],
     data () {
         return {
             multiselectLang: {
@@ -305,14 +304,6 @@ export default {
         // The library is a TinyMCE UMD module that expects window.tinymce.
         if (typeof window.tinymce === 'undefined' && typeof window.hugerte !== 'undefined') {
             window.tinymce = window.hugerte
-        }
-        // Load Prism syntax-highlighting theme once, only when the editor is used.
-        if (!document.querySelector('link[data-prism-theme="atom-one-light"]')) {
-            var prismLink = document.createElement('link')
-            prismLink.rel = 'stylesheet'
-            prismLink.href = '/static/prism/prism-atom-one-light.css'
-            prismLink.setAttribute('data-prism-theme', 'atom-one-light')
-            document.head.appendChild(prismLink)
         }
         var self = this
         var script = document.createElement('script')

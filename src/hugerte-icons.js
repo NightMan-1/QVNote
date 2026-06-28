@@ -160,5 +160,3 @@ export function registerBootstrapIcons (editor) {
         }
     }
 }
-
-export default icons

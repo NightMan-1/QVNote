@@ -312,15 +312,6 @@ i.me-1 {width: 1.1em; text-align: center;}
     top: 0.6rem !important;
 }
 
-.btn-to-top {
-    width: 60px;
-    height: 60px;
-    padding: 10px 16px;
-    border-radius: 50%;
-    font-size: 22px;
-    line-height: 22px;
-}
-
 .notebook-edit-link{
     text-decoration: none;
     border-bottom: 1px dotted #ccc;

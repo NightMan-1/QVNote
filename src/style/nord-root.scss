@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2016-present Arctic Ice Studio <development@arcticicestudio.com>
+ * Copyright (c) 2016-present Sven Greb <development@svengreb.de>
+ *
+ * Project:    Nord
+ * Version:    0.2.0
+ * Repository: https://github.com/arcticicestudio/nord
+ * License:    MIT
+ *
+ * This file re-exports the Nord palette as CSS custom properties.
+ * The palette itself is defined once in nord.scss; this file is generated
+ * from those SCSS variables so the application can use them at runtime.
+ */
+
+@import "./nord.scss";
+
+:root {
+    --nord0: #{$nord0};
+    --nord1: #{$nord1};
+    --nord2: #{$nord2};
+    --nord3: #{$nord3};
+    --nord4: #{$nord4};
+    --nord5: #{$nord5};
+    --nord6: #{$nord6};
+    --nord7: #{$nord7};
+    --nord8: #{$nord8};
+    --nord9: #{$nord9};
+    --nord10: #{$nord10};
+    --nord11: #{$nord11};
+    --nord12: #{$nord12};
+    --nord13: #{$nord13};
+    --nord14: #{$nord14};
+    --nord15: #{$nord15};
+}

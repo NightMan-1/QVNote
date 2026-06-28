@@ -19,8 +19,6 @@ export const useNoteStore = defineStore('note', {
         config: {},
         currentArticle: { title: '', uuid: '', NoteBookUUID: '', status: '', tags: [], CreatedDate: '', UpdatedDate: '', cells: {}, content: '', type: '', url_src: '', favorites: false },
         emptyArticle: { title: '', uuid: '', NoteBookUUID: '', status: '', tags: [], CreatedDate: '', UpdatedDate: '', cells: {}, content: '', type: 'text', url_src: '', favorites: false },
-        settingsReload: false,
-        dataReload: false,
         notebooksList: {},
         notesList: {},
         tagsList: {},
@@ -56,9 +54,6 @@ export const useNoteStore = defineStore('note', {
             } else {
                 return Object.keys(this.tagsList).length
             }
-        },
-        getStatus () {
-            return () => this.status.errorType
         }
     },
 
@@ -131,31 +126,19 @@ export const useNoteStore = defineStore('note', {
             this.layoutBig = data
         },
         toggleShowAdvancedNoteInfo () {
-            if (this.showAdvancedNoteInfo === true) {
-                lsSet('showAdvancedNoteInfo', false)
-                this.showAdvancedNoteInfo = false
-            } else {
-                lsSet('showAdvancedNoteInfo', true)
-                this.showAdvancedNoteInfo = true
-            }
+            const value = !this.showAdvancedNoteInfo
+            lsSet('showAdvancedNoteInfo', value)
+            this.showAdvancedNoteInfo = value
         },
         toggleReaderMode () {
-            if (this.readerMode === true) {
-                lsSet('readerMode', false)
-                this.readerMode = false
-            } else {
-                lsSet('readerMode', true)
-                this.readerMode = true
-            }
+            const value = !this.readerMode
+            lsSet('readerMode', value)
+            this.readerMode = value
         },
         toggleLayoutMode () {
-            if (this.layoutBig === true) {
-                lsSet('layoutBig', false)
-                this.layoutBig = false
-            } else {
-                lsSet('layoutBig', true)
-                this.layoutBig = true
-            }
+            const value = !this.layoutBig
+            lsSet('layoutBig', value)
+            this.layoutBig = value
         },
         getAllData () {
             fetch(this.apiFolder + '/notebooks.json').then((response) => { return response.json() })

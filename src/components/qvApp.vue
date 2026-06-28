@@ -116,7 +116,7 @@ import { useNoteStore } from '../store'
 import qvHeaderLogo from './qvHeaderLogo.vue'
 import qvDashboard from './qvDashboard.vue'
 import qvSidebar from './qvSidebar.vue'
-import tingle from 'tingle.js'
+import { useModal } from '../composables/useModal'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-javascript'
@@ -148,7 +148,7 @@ export default {
         }
     },
     setup () {
-        return { noteStore: useNoteStore() }
+        return { noteStore: useNoteStore(), modal: useModal() }
     },
     computed: {
         gridClass () { return this.noteStore.gridClass },
@@ -385,15 +385,7 @@ export default {
                 }
             }
             selectRAW += '</select>'
-            let modal = new tingle.modal({
-                footer: true,
-                stickyFooter: false,
-                closeMethods: ['overlay', 'button', 'escape'],
-                closeLabel: this.$t('general.modalClose'),
-                onClose: function () {
-                    modal.destroy()
-                }
-            })
+            let modal = this.modal.createModal(this.$t('general.modalClose'))
 
             modal.setContent('<h4 class="ml--1">' + this.$t('articleList.modalMoveTitle') + '</h4>' +
                         '<div class="row mt-4 mb-0 bg-light pt-2 pb-1">' +
@@ -437,12 +429,7 @@ export default {
         },
         deleteArticle () {
             let thisGlobal = this
-            let modal = new tingle.modal({
-                footer: true,
-                stickyFooter: false,
-                closeMethods: ['overlay', 'button', 'escape'],
-                closeLabel: this.$t('general.modalClose')
-            })
+            let modal = this.modal.createModal(this.$t('general.modalClose'))
 
             modal.setContent('<h4 class="ml--1">' + this.$t('articleList.modalDeleteTitle') + '</h4>')
             modal.addFooterBtn(this.$t('general.noBig'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () {
