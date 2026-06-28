@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/ledisdb/ledisdb/ledis"
 )
 
 type configGlobalStruct struct {
@@ -24,7 +23,8 @@ type configGlobalStruct struct {
 }
 
 var configGlobal (configGlobalStruct)
-var ConfigDB, NoteBookDB, NoteDB, TagsDB, FavoritesDB *ledis.DB //nolint:golint
+var store *Store
+var ConfigDB, NoteBookDB, NoteDB, TagsDB, FavoritesDB *KVStore //nolint:golint
 
 type SearchService struct {
 	index bleve.Index
@@ -156,7 +156,7 @@ func formatBytes(b uint64) string {
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "kMGTPE"[exp])
 }
 
-//https://www.codesd.com/item/golang-how-to-get-the-total-size-of-the-directory.html
+// https://www.codesd.com/item/golang-how-to-get-the-total-size-of-the-directory.html
 func DirSize2(path string) (int64, error) {
 	var size int64
 	adjSize := func(_ string, info os.FileInfo, err error) error {

@@ -1,4 +1,4 @@
-﻿name: QVNote Actions
+name: QVNote Actions
 on: [push]
 jobs:
   Build-Binary:
@@ -14,7 +14,7 @@ jobs:
       - name: Setup GoLang
         uses: actions/setup-go@v5
         with:
-          go-version: '^1.17.8'
+          go-version: '^1.26'
 
       - name: Setup ENV
         run: |

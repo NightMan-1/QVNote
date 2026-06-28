@@ -24,8 +24,6 @@ import (
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/blevesearch/snowballstem"
 	"github.com/blevesearch/snowballstem/russian"
-	lediscfg "github.com/ledisdb/ledisdb/config"
-	"github.com/ledisdb/ledisdb/ledis"
 )
 
 func check(e error, message string) {
@@ -148,21 +146,17 @@ func initSystem() {
 	configGlobal.dataDir, _ = filepath.Abs(configGlobal.dataDir)
 
 	//open database
-	cfg := lediscfg.NewConfigDefault()
 	os.MkdirAll(configGlobal.dataDir, 0760)
-	cfg.DataDir = configGlobal.dataDir
-	LedisDB, err := ledis.Open(cfg)
+	store, err := OpenStore(configGlobal.dataDir)
 	check(err, "Error open data file")
-	ConfigDB, err = LedisDB.Select(0)
-	check(err, "Error open data file")
-	NoteBookDB, err = LedisDB.Select(1)
-	check(err, "Error open data file")
-	NoteDB, err = LedisDB.Select(2)
-	check(err, "Error open data file")
-	TagsDB, err = LedisDB.Select(3)
-	check(err, "Error open data file")
-	FavoritesDB, err = LedisDB.Select(4)
-	check(err, "Error open data file")
+	if err := migrateFromLedisIfNeeded(configGlobal.dataDir, store); err != nil {
+		check(err, "Error migrating legacy data")
+	}
+	ConfigDB = store.Config()
+	NoteBookDB = store.NoteBook()
+	NoteDB = store.Note()
+	TagsDB = store.Tags()
+	FavoritesDB = store.Favorites()
 
 	//search db
 	indexName, _ := filepath.Abs(configGlobal.dataDir + "/search.bleve")
@@ -278,25 +272,19 @@ func FindAllNotes() {
 	fmt.Println("Preparing the list of notes...")
 
 	//list of notes
-	cursor := []byte(nil)
 	NoteOld := make(map[string]NoteType)
-	for {
-		allDBData, err := NoteDB.Scan(ledis.KV, cursor, 0, false, "")
-		if err != nil || len(allDBData) == 0 {
-			break
+	if err := NoteDB.Scan(func(NoteID, data []byte) error {
+		var note NoteType
+		if err := json.Unmarshal(data, &note); err != nil {
+			return err
 		}
-		for _, NoteID := range allDBData {
-			cursor = NoteID
-			data, _ := NoteDB.Get(NoteID)
-			var note NoteType
-			err = json.Unmarshal(data, &note)
-			//checkQuiet(err)
-			check(err, "Ошибка:")
-			NoteOld[string(NoteID)] = note
-		}
+		NoteOld[string(NoteID)] = note
+		return nil
+	}); err != nil {
+		check(err, "Ошибка:")
 	}
 
-	NoteDB.FlushAll()
+	check(NoteDB.Flush(), "Error flush notes")
 	metaNoteRE := regexp.MustCompile(`.*[\\|/](.*)\.qvnotebook[\\|/](.*)\.qvnote[\\|/]meta.json$`)
 
 	if _, err := os.Stat(configGlobal.sourceFolder); err == nil {
@@ -358,24 +346,24 @@ func FindAllNotes() {
 
 	fmt.Println("Updating the database...")
 
-	NoteBookDB.FlushAll()
+	check(NoteBookDB.Flush(), "Error flush notebooks")
 	for k, v := range NoteBook {
 		enc, err := json.Marshal(v)
 		checkQuiet(err)
-		NoteBookDB.Set([]byte(k), enc)
+		checkQuiet(NoteBookDB.Set([]byte(k), enc))
 	}
-	TagsDB.FlushAll()
+	check(TagsDB.Flush(), "Error flush tags")
 	for k, v := range TagsCloud {
 		enc, err := json.Marshal(v)
 		checkQuiet(err)
-		TagsDB.Set([]byte(k), enc)
+		checkQuiet(TagsDB.Set([]byte(k), enc))
 	}
 
 	SaveConfig()
 	fmt.Println("Done!")
 }
 
-//creating a structure for new notes
+// creating a structure for new notes
 func CreateNewNotebooksFolder(folder string) bool {
 	err := os.MkdirAll(folder+"/Inbox.qvnotebook", 0777)
 	if err != nil {
@@ -424,16 +412,14 @@ func CheckNotebooksFolderStructure(folder string) bool {
 }
 
 func SaveConfig() bool {
-	err := ConfigDB.Set([]byte("sourceFolder"), []byte(configGlobal.sourceFolder))
-	if err != nil {
+	if err := ConfigDB.Set([]byte("sourceFolder"), []byte(configGlobal.sourceFolder)); err != nil {
 		return false
 	}
 	tmp := "false"
 	if configGlobal.appInstalled {
 		tmp = "true"
 	}
-	err = ConfigDB.Set([]byte("appInstalled"), []byte(tmp))
-	if err != nil {
+	if err := ConfigDB.Set([]byte("appInstalled"), []byte(tmp)); err != nil {
 		return false
 	}
 
@@ -441,8 +427,7 @@ func SaveConfig() bool {
 	if configGlobal.requestIndexing {
 		tmp = "true"
 	}
-	err = ConfigDB.Set([]byte("requestIndexing"), []byte(tmp))
-	if err != nil {
+	if err := ConfigDB.Set([]byte("requestIndexing"), []byte(tmp)); err != nil {
 		return false
 	}
 
@@ -450,15 +435,14 @@ func SaveConfig() bool {
 	if configGlobal.atStartCheckNewNotes {
 		tmp = "true"
 	}
-	err = ConfigDB.Set([]byte("atStartCheckNewNotes"), []byte(tmp))
-	if err != nil {
+	if err := ConfigDB.Set([]byte("atStartCheckNewNotes"), []byte(tmp)); err != nil {
 		return false
 	}
 
 	return true
 }
 
-//clear HTML
+// clear HTML
 func ClearHTML(content string) string {
 	r := regexp.MustCompile(`<pre([^>]*)>`)
 	content = r.ReplaceAllStringFunc(content, func(s string) string {
@@ -724,25 +708,17 @@ func OptimizeResources(uuid string) {
 func indexingAllNotes() {
 	searchStatus.Status = "indexing"
 	FilesForIndex = []FilesForIndexType{}
-	cursor := []byte(nil)
-	for {
-		allDBData, err := NoteDB.Scan(ledis.KV, cursor, 0, false, "")
-		if err != nil || len(allDBData) == 0 {
-			break
+	checkQuiet(NoteDB.Scan(func(NoteID, data []byte) error {
+		var note NoteType
+		if err := json.Unmarshal(data, &note); err != nil {
+			return err
 		}
-		for _, NoteID := range allDBData {
-			cursor = NoteID
-			//fmt.Println(string(NoteID))
-			data, _ := NoteDB.Get(NoteID)
-			var note NoteType
-			err := json.Unmarshal(data, &note)
-			checkQuiet(err)
-			if !note.SearchIndex {
-				noteFilePath, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote/meta.json")
-				FilesForIndex = append(FilesForIndex, FilesForIndexType{noteFilePath, note.UUID})
-			}
+		if !note.SearchIndex {
+			noteFilePath, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote/meta.json")
+			FilesForIndex = append(FilesForIndex, FilesForIndexType{noteFilePath, note.UUID})
 		}
-	}
+		return nil
+	}))
 
 	if len(FilesForIndex) > 0 {
 		searchStatus.NotesTotal = len(FilesForIndex)
@@ -772,17 +748,10 @@ func optimizeAllNotes() {
 	optimizationStatus.Status = "processing"
 
 	var NotesForOptimization []string
-	cursor := []byte(nil)
-	for {
-		allDBData, err := NoteDB.Scan(ledis.KV, cursor, 0, false, "")
-		if err != nil || len(allDBData) == 0 {
-			break
-		}
-		for _, NoteID := range allDBData {
-			cursor = NoteID
-			NotesForOptimization = append(NotesForOptimization, string(NoteID))
-		}
-	}
+	checkQuiet(NoteDB.Keys(func(NoteID []byte) error {
+		NotesForOptimization = append(NotesForOptimization, string(NoteID))
+		return nil
+	}))
 
 	if len(NotesForOptimization) > 0 {
 		optimizationStatus.NotesTotal = len(NotesForOptimization)

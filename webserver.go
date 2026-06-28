@@ -20,7 +20,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/ledisdb/ledisdb/ledis"
 )
 
 func generateUUID() string {
@@ -135,11 +134,25 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			return
 		}
 
-		if isFrontendRoute(path) {
-			serveIndexHTML(w, r, http.StatusOK)
-		} else {
+		if !isFrontendRoute(path) {
 			serveIndexHTML(w, r, http.StatusNotFound)
+			return
 		}
+
+		// These frontend-only routes should not be opened directly while the
+		// server is healthy; redirect them to the root application.
+		switch path {
+		case "/offline/", "/error/":
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return
+		case "/install/":
+			if configGlobal.appInstalled {
+				http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+				return
+			}
+		}
+
+		serveIndexHTML(w, r, http.StatusOK)
 	})
 
 	// Resources route — display images
@@ -269,39 +282,25 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		case "remove":
 			FavoritesDB.Del([]byte(request.UUID))
 		}
-		cursor := []byte(nil)
 		var favoritesList []string
-		for {
-			allDBData, err := FavoritesDB.Scan(ledis.KV, cursor, 0, false, "")
-			if err != nil || len(allDBData) == 0 {
-				break
-			}
-			for _, FavoriteID := range allDBData {
-				cursor = FavoriteID
-				favoritesList = append(favoritesList, string(FavoriteID))
-			}
-		}
+		checkQuiet(FavoritesDB.Keys(func(FavoriteID []byte) error {
+			favoritesList = append(favoritesList, string(FavoriteID))
+			return nil
+		}))
 
 		jsonResponse(w, favoritesList)
 	})
 
 	r.Get("/api/notebooks.json", func(w http.ResponseWriter, r *http.Request) {
-		cursor := []byte(nil)
 		var noteBooksList []NoteBookTypeAPI
-		for {
-			allDBData, err := NoteBookDB.Scan(ledis.KV, cursor, 0, false, "")
-			if err != nil || len(allDBData) == 0 {
-				break
+		checkQuiet(NoteBookDB.Scan(func(NoteBookID, data []byte) error {
+			var notebookData NoteBookType
+			if err := json.Unmarshal(data, &notebookData); err != nil {
+				return err
 			}
-			for _, NoteBookID := range allDBData {
-				cursor = NoteBookID
-				data, _ := NoteBookDB.Get(NoteBookID)
-				var notebookData NoteBookType
-				err := json.Unmarshal(data, &notebookData)
-				checkQuiet(err)
-				noteBooksList = append(noteBooksList, NoteBookTypeAPI{notebookData.UUID, notebookData.Name, len(notebookData.Notes)})
-			}
-		}
+			noteBooksList = append(noteBooksList, NoteBookTypeAPI{notebookData.UUID, notebookData.Name, len(notebookData.Notes)})
+			return nil
+		}))
 
 		sort.Slice(noteBooksList, func(i, j int) bool {
 			return strings.ToLower(noteBooksList[i].Name) < strings.ToLower(noteBooksList[j].Name)
@@ -310,22 +309,15 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	})
 
 	r.Get("/api/tags.json", func(w http.ResponseWriter, r *http.Request) {
-		cursor := []byte(nil)
 		var TagsCloud []TagsListStruct
-		for {
-			allDBData, err := TagsDB.Scan(ledis.KV, cursor, 0, false, "")
-			if err != nil || len(allDBData) == 0 {
-				break
+		checkQuiet(TagsDB.Scan(func(TagID, data []byte) error {
+			var tagsData []string
+			if err := json.Unmarshal(data, &tagsData); err != nil {
+				return err
 			}
-			for _, TagID := range allDBData {
-				cursor = TagID
-				data, _ := TagsDB.Get(TagID)
-				var tagsData []string
-				err := json.Unmarshal(data, &tagsData)
-				checkQuiet(err)
-				TagsCloud = append(TagsCloud, TagsListStruct{len(tagsData), strings.Trim(string(TagID), " "), url.PathEscape(string(TagID))})
-			}
-		}
+			TagsCloud = append(TagsCloud, TagsListStruct{len(tagsData), strings.Trim(string(TagID), " "), url.PathEscape(string(TagID))})
+			return nil
+		}))
 		sort.Slice(TagsCloud, func(i, j int) bool {
 			return strings.ToLower(TagsCloud[i].Name) < strings.ToLower(TagsCloud[j].Name)
 		})
@@ -341,43 +333,30 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		switch {
 		case request.NotebookID == "Favorites":
 			var NotesList []NoteTypeAPI
-			cursor := []byte(nil)
-			for {
-				favoritesDBData, err := FavoritesDB.Scan(ledis.KV, cursor, 0, false, "")
-				if err != nil || len(favoritesDBData) == 0 {
-					break
+			checkQuiet(FavoritesDB.Keys(func(NoteID []byte) error {
+				data, _ := NoteDB.Get(NoteID)
+				var note NoteTypeAPI
+				if err := json.Unmarshal(data, &note); err != nil {
+					return err
 				}
-				for _, NoteID := range favoritesDBData {
-					cursor = NoteID
-					data, _ := NoteDB.Get(NoteID)
-					var note NoteTypeAPI
-					err := json.Unmarshal(data, &note)
-					checkQuiet(err)
-					note.NoteBookUUID = "Favorites"
-					NotesList = append(NotesList, note)
-				}
-			}
+				note.NoteBookUUID = "Favorites"
+				NotesList = append(NotesList, note)
+				return nil
+			}))
 			sort.Slice(NotesList, func(i, j int) bool {
 				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
 			jsonResponse(w, NotesList)
 		case request.NotebookID == "Allnotes":
 			var NotesList []NoteTypeAPI
-			cursor := []byte(nil)
-			for {
-				allDBData, err := NoteDB.Scan(ledis.KV, cursor, 0, false, "")
-				if err != nil || len(allDBData) == 0 {
-					break
+			checkQuiet(NoteDB.Scan(func(NoteID, data []byte) error {
+				var note NoteTypeAPI
+				if err := json.Unmarshal(data, &note); err != nil {
+					return err
 				}
-				for _, NoteID := range allDBData {
-					cursor = NoteID
-					data, _ := NoteDB.Get(NoteID)
-					var note NoteTypeAPI
-					err := json.Unmarshal(data, &note)
-					checkQuiet(err)
-					NotesList = append(NotesList, note)
-				}
-			}
+				NotesList = append(NotesList, note)
+				return nil
+			}))
 			sort.Slice(NotesList, func(i, j int) bool {
 				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
 			})
@@ -410,40 +389,33 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		var dateSkip = int32(time.Now().Unix()) - (60 * 60 * 24 * 365 * 2)
 		var tagsCount = make(map[int]int)
 		var chartsUpdatedDate = make(map[string]int)
-		cursor := []byte(nil)
-		for {
-			allDBData, err := NoteDB.Scan(ledis.KV, cursor, 0, false, "")
-			if err != nil || len(allDBData) == 0 {
-				break
+		checkQuiet(NoteDB.Scan(func(NoteID, data []byte) error {
+			var note NoteType
+			if err := json.Unmarshal(data, &note); err != nil {
+				return err
 			}
-			for _, NoteID := range allDBData {
-				cursor = NoteID
-				data, _ := NoteDB.Get(NoteID)
-				var note NoteType
-				err := json.Unmarshal(data, &note)
-				checkQuiet(err)
-				if note.CreatedAt < dateFirst {
-					dateFirst = note.CreatedAt
-				}
-				if note.UpdatedAt > dateLast {
-					dateLast = note.UpdatedAt
-				}
+			if note.CreatedAt < dateFirst {
+				dateFirst = note.CreatedAt
+			}
+			if note.UpdatedAt > dateLast {
+				dateLast = note.UpdatedAt
+			}
 
-				tagsCount[len(note.Tags)]++
-				if note.UpdatedAt >= dateSkip {
-					chartsUpdatedDate[time.Unix(int64(note.UpdatedAt), 0).Format("2006-01-02")]++
-				}
+			tagsCount[len(note.Tags)]++
+			if note.UpdatedAt >= dateSkip {
+				chartsUpdatedDate[time.Unix(int64(note.UpdatedAt), 0).Format("2006-01-02")]++
 			}
-		}
+			return nil
+		}))
 
 		dataSize, _ := DirSize2(configGlobal.dataDir)
 
 		jsonResponse(w, map[string]interface{}{
-			"dateFirst": dateFirst,
-			"dateLast":  dateLast,
-			"tagsCount": tagsCount,
+			"dateFirst":         dateFirst,
+			"dateLast":          dateLast,
+			"tagsCount":         tagsCount,
 			"chartsUpdatedDate": chartsUpdatedDate,
-			"dataSize":  dataSize,
+			"dataSize":          dataSize,
 		})
 	})
 
@@ -480,24 +452,18 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			ss.batch = index.NewBatch()
 
 			// The search index was deleted, so every note must be re-indexed.
-			cursor := []byte(nil)
-			for {
-				allDBData, err := NoteDB.Scan(ledis.KV, cursor, 0, false, "")
-				if err != nil || len(allDBData) == 0 {
-					break
+			checkQuiet(NoteDB.Scan(func(NoteID, data []byte) error {
+				var note NoteType
+				if err := json.Unmarshal(data, &note); err != nil {
+					return nil
 				}
-				for _, NoteID := range allDBData {
-					cursor = NoteID
-					data, _ := NoteDB.Get(NoteID)
-					var note NoteType
-					if err := json.Unmarshal(data, &note); err == nil {
-						note.SearchIndex = false
-						if enc, err := json.Marshal(note); err == nil {
-							NoteDB.Set(NoteID, enc)
-						}
-					}
+				note.SearchIndex = false
+				enc, err := json.Marshal(note)
+				if err != nil {
+					return nil
 				}
-			}
+				return NoteDB.Set(NoteID, enc)
+			}))
 
 			FindAllNotes()
 
@@ -733,7 +699,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				noteData.Content = FixNoteImagesLinks(noteData, noteData.Content, r)
 
 				dataExists, _ := FavoritesDB.Exists([]byte(request.NoteID))
-				if dataExists == 1 {
+				if dataExists {
 					noteData.Favorites = true
 				}
 
@@ -835,9 +801,9 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				}
 			}
 			if len(notesListNew) == 0 {
-				idT, err := TagsDB.Del([]byte(tagID))
-				checkQuiet(err)
-				fmt.Println(idT)
+				if err := TagsDB.Del([]byte(tagID)); err != nil {
+					checkQuiet(err)
+				}
 			} else {
 				enc, err := json.Marshal(notesListNew)
 				checkQuiet(err)

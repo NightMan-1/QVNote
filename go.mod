@@ -1,13 +1,14 @@
 module github.com/NightMan-1/QVNote
 
-go 1.17
+go 1.26
 
 require (
 	github.com/blevesearch/bleve v1.0.14
 	github.com/blevesearch/snowballstem v0.9.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.1
-	github.com/ledisdb/ledisdb v0.0.0-20200510135210-d35789ec47e6
+	github.com/ledisdb/ledisdb v0.0.0-20200510135210-d35789ec47e6 // temporary: used only by migrate.go for one-time legacy data import
+	go.etcd.io/bbolt v1.3.11
 )
 
 require (
@@ -32,14 +33,11 @@ require (
 	github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726 // indirect
 	github.com/siddontang/rdb v0.0.0-20150307021120-fc89ed2e418d // indirect
 	github.com/steveyen/gtreap v0.1.0 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
-	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect
+	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

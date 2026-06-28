@@ -24,6 +24,7 @@ export default defineConfig({
     build: {
         outDir: '../templates',
         assetsDir: 'static',
-        sourcemap: false
+        sourcemap: false,
+        emptyOutDir: true
     }
 })
