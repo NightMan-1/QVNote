@@ -40,10 +40,12 @@ jobs:
           export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go build -o qvnote-linux-x64 && chmod a+x qvnote-linux-x64
 
       - name: Building MacOS binary
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           export CGO_ENABLED=0; export GOOS=darwin; export GOARCH=amd64; go build -o qvnote-mac-x64 && chmod a+x qvnote-mac-x64
 
       - name: Building Windows binary
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -o qvnote-windows-x64.exe
 
