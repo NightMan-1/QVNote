@@ -23,7 +23,7 @@
     "js-beautify": "^1.15.4",
     "markdown-it": "^15.0.0",
     "pinia": "^4.0.3",
-    "postcss-import": "^15.1.0",
+    "postcss-import": "^17.0.0",
     "postcss-url": "^10.1.4",
     "prismjs": "^1.30.0",
     "sass": "^1.102.0",
@@ -34,7 +34,7 @@
     "vue-i18n": "^11.4.8",
     "vue-multiselect": "^3.5.0",
     "vue-prism-editor": "^2.0.0-alpha.2",
-    "vue-router": "^4.6.4",
+    "vue-router": "^5.2.0",
     "vue-toastification": "^2.0.0-rc.5",
     "vue3-calendar-heatmap": "^2.0.5"
   },
