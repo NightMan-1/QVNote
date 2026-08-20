@@ -25,6 +25,7 @@ export default defineConfig({
         outDir: '../templates',
         assetsDir: 'static',
         sourcemap: false,
-        emptyOutDir: true
+        emptyOutDir: true,
+        cssMinify: 'esbuild'
     }
 })

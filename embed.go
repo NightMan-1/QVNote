@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-//go:embed templates
+//go:embed all:templates
 var templateFS embed.FS
 
 func templateFileSystem() http.FileSystem {

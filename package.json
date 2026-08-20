@@ -39,13 +39,14 @@
     "vue3-calendar-heatmap": "^2.0.5"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.2.4",
+    "@vitejs/plugin-vue": "^6.0.8",
     "autoprefixer": "^10.5.4",
     "cssnano": "^8.0.2",
+    "esbuild": "^0.28.2",
     "eslint": "^10.8.1",
     "eslint-plugin-vue": "^10.10.0",
     "postcss": "^8.5.23",
-    "vite": "^6.4.3",
+    "vite": "^8.2.2",
     "vue-eslint-parser": "^10.4.1"
   },
   "postcss": {
