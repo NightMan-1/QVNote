@@ -20,7 +20,7 @@
     "defuddle": "^0.19.2",
     "echarts": "^6.1.0",
     "hugerte": "^1.0.12",
-    "js-beautify": "^1.15.4",
+    "js-beautify": "^2.0.3",
     "markdown-it": "^15.0.0",
     "pinia": "^4.0.3",
     "postcss-import": "^17.0.0",
