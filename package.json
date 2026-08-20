@@ -10,7 +10,7 @@
     "postinstall": "mkdir -p public/static/hugerte && cp -r node_modules/hugerte/* public/static/hugerte/ && mkdir -p public/static/hugerte/plugins/paste_from_word && cp node_modules/@pangaeatech/tinymce-paste-from-word-lib/index.js public/static/hugerte/plugins/paste_from_word/plugin.min.js && mkdir -p public/static/ace && cp -r node_modules/ace-builds/src-min-noconflict/* public/static/ace/"
   },
   "dependencies": {
-    "@hugerte/hugerte-vue": "^1.0.2",
+    "@hugerte/hugerte-vue": "^2.0.2",
     "@pangaeatech/tinymce-paste-from-word-lib": "^1.3.2",
     "@unhead/vue": "^3.2.3",
     "@vue/devtools-api": "^8.2.1",
