@@ -452,6 +452,13 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			ss.batch = index.NewBatch()
 
 			// The search index was deleted, so every note must be re-indexed.
+			// NB: bbolt deadlocks on a write inside a read transaction, so
+			// collect the updates during Scan and apply them afterwards.
+			type noteUpdate struct {
+				id   []byte
+				data []byte
+			}
+			var updates []noteUpdate
 			checkQuiet(NoteDB.Scan(func(NoteID, data []byte) error {
 				var note NoteType
 				if err := json.Unmarshal(data, &note); err != nil {
@@ -462,8 +469,12 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				if err != nil {
 					return nil
 				}
-				return NoteDB.Set(NoteID, enc)
+				updates = append(updates, noteUpdate{append([]byte(nil), NoteID...), enc})
+				return nil
 			}))
+			for _, u := range updates {
+				checkQuiet(NoteDB.Set(u.id, u.data))
+			}
 
 			FindAllNotes()
 
