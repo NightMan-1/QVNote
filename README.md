@@ -1,6 +1,6 @@
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/NightMan-1/QVNote/QVNote%20Actions?style=flat-square) ![GitHub issues](https://img.shields.io/github/issues/NightMan-1/QVNote?style=flat-square) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/NightMan-1/QVNote?style=flat-square) ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/NightMan-1/QVNote?style=flat-square) ![GitHub All Releases](https://img.shields.io/github/downloads/NightMan-1/QVNote/total?style=flat-square)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/NightMan-1/QVNote/build.yml?style=flat-square) ![GitHub issues](https://img.shields.io/github/issues/NightMan-1/QVNote?style=flat-square) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/NightMan-1/QVNote?style=flat-square) ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/NightMan-1/QVNote?style=flat-square) ![GitHub All Releases](https://img.shields.io/github/downloads/NightMan-1/QVNote/total?style=flat-square)
 
-# QVNote v2.1.3
+# QVNote v2.3.0
 
 The program for storing notes, pages of sites, personal knowledge base and any other text data
 
@@ -24,7 +24,7 @@ You can always download latest stable binary from here - https://github.com/Nigh
 
 #### Project requirements
 
-GoLang >=1.17  
+GoLang >=1.26  
 NodeJS >=18.x
 
 Frontend stack: **Vue 3**, **Vite**, **Pinia**, **vue-i18n**, **HugeRTE**.
@@ -48,7 +48,7 @@ Now you can run the QVNote binary.
 #### Development
 
 ```bash
-./qvnote --server          # backend on :8000
+./qvnote                   # backend on :8000
 npm run serve              # frontend dev on :8080 (proxies /api to :8000)
 ```
 Open http://localhost:8080
