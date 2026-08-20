@@ -12,7 +12,7 @@
  * from those SCSS variables so the application can use them at runtime.
  */
 
-@import "./nord.scss";
+@use "./nord.scss" as *;
 
 :root {
     --nord0: #{$nord0};
