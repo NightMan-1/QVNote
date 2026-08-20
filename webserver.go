@@ -232,11 +232,6 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		}
 	})
 
-	r.HandleFunc("/api/exit", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Good buy!")
-		os.Exit(0)
-	})
-
 	r.HandleFunc("/api/ping", func(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, map[string]string{"result": "pong"})
 	})
