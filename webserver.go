@@ -700,6 +700,16 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 				// refetched/edited notes and raw requests are served as stored.
 				if !request.Raw && noteData.ContentType != "code" && noteData.ContentState == "" {
 					noteData.Content = ClearHTML(noteData.Content, noteData.Title)
+					// Old notes often start with the bare source URL as the first
+					// line; lift it into url_src (response only, stored data
+					// untouched) so it doesn't clutter the content.
+					cleaned, src := stripLeadingSourceLink(noteData.Content)
+					if src != "" {
+						noteData.Content = cleaned
+						if noteData.URL == "" {
+							noteData.URL = src
+						}
+					}
 				}
 
 				noteData.Content = FixNoteImagesLinks(noteData, noteData.Content, r)
@@ -893,6 +903,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			jsonResponse(w, map[string]interface{}{"error": "bad url"})
 			return
 		}
+		target = normalizeFetchURL(target)
 		req, err := http.NewRequest("GET", target, nil)
 		if err != nil {
 			jsonResponse(w, map[string]interface{}{"error": err.Error()})
@@ -1153,4 +1164,23 @@ func FixNoteImagesLinks(note NoteTypeWithContentAPI, content string, r *http.Req
 	content = strings.Replace(content, "quiver-file-url", ImageURL, -1)
 	content = strings.Replace(content, "//"+r.Host+"/resources/", "/resources/", -1) // fix for old cleanup
 	return content
+}
+
+// normalizeFetchURL rewrites URLs of sites that moved domains, so server-side
+// fetch can reach their new home. habrahabr.ru is DNS-dead (resolves to
+// 0.0.0.0 on some networks) while the content lives on at habr.com/ru/<path>
+// (habr's own redirects take it from there).
+func normalizeFetchURL(target string) string {
+	parsed, err := url.Parse(target)
+	if err != nil {
+		return target
+	}
+	switch strings.ToLower(parsed.Hostname()) {
+	case "habrahabr.ru":
+		parsed.Host = "habr.com"
+		if !strings.HasPrefix(parsed.Path, "/ru/") && parsed.Path != "/ru" {
+			parsed.Path = "/ru" + parsed.Path
+		}
+	}
+	return parsed.String()
 }
