@@ -539,11 +539,23 @@ func downloadOneImage(contentDir string, ImageURL string) string {
 		return ""
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("\t\tError: HTTP", resp.StatusCode)
+		optLogf("\t\tERROR: HTTP %d", resp.StatusCode)
+		return ""
+	}
 	ImageType := imageExtByMime(strings.Split(resp.Header.Get("Content-Type"), ";")[0])
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 20*1024*1024))
 	if err != nil {
 		checkQuiet(err)
 		optLogf("\t\tERROR: %s", err)
+		return ""
+	}
+	// anti-hotlink proxies (e.g. imgprx.livejournal.net) answer 200/403 with
+	// an empty octet-stream body — saving that would destroy the image
+	if len(body) == 0 {
+		fmt.Println("\t\tError: empty body")
+		optLogf("\t\tERROR: HTTP %d, empty body", resp.StatusCode)
 		return ""
 	}
 	if ImageType == "" {
