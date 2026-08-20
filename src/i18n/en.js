@@ -62,6 +62,8 @@ export default {
             selectedLabel: 'Selected'
         },
         errorSave: 'Error saving notes...',
+        saving: 'Saving, downloading images...',
+        saved: 'Saved',
         btnLoadOriginal: 'Load original (uncleaned) HTML',
         btnDefuddleImport: 'Import article from URL',
         defuddleURLPlaceholder: 'Article URL...',

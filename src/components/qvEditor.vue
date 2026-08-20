@@ -7,8 +7,10 @@
                 <button class="btn btn-outline-primary ms-auto"
                         @click="$router.push('/notes/' + articleCurrentEditable.NoteBookUUID + '/' + articleCurrentEditable.uuid + '/')"
                         v-if="(articleCurrentEditable.uuid !== '' && articleCurrentEditable.NoteBookUUID !== '')"><i class="bi bi-eye-fill"></i></button>
-                <button class="btn btn-outline-success ms-2" @click="saveData"
-                        :class="{'ms-auto':articleCurrentEditable.uuid === '' && articleCurrentEditable.NoteBookUUID === ''}"><i class="bi bi-floppy-fill"></i>
+                <button class="btn btn-outline-success ms-2" @click="saveData" :disabled="saving"
+                        :class="{'ms-auto':articleCurrentEditable.uuid === '' && articleCurrentEditable.NoteBookUUID === ''}">
+                    <span v-if="saving" class="spinner-border spinner-border-sm"></span>
+                    <i v-else class="bi bi-floppy-fill"></i>
                 </button>
                 <button class="btn btn-outline-secondary ms-2" :title="$t('editor.btnLoadOriginal')" @click="loadOriginal"
                         v-if="(articleCurrentEditable.uuid !== '' && !articleCurrentEditable.content_state)"><i class="bi bi-file-earmark-code"></i>
@@ -120,6 +122,7 @@ export default {
             tagsListFormatted: [],
             editorReady: false,
             defuddleLoading: false,
+            saving: false,
             editorConfig: {
                 skin_url: '/static/hugerte/skins/ui/oxide',
                 content_css: ['/static/hugerte/skins/content/default/content.css', '/static/prism/prism-atom-one-light.css'],
@@ -415,6 +418,8 @@ export default {
                 })
         },
         saveData () {
+            this.saving = true
+            const savingToast = this.toast.info(this.$t('editor.saving'), { timeout: false })
             fetch(this.noteStore.apiFolder + '/note_edit.json',
                 { method: 'POST',
                     body: JSON.stringify({
@@ -430,10 +435,16 @@ export default {
                     this.articleCurrentEditable.NoteBookUUID = jsonData.NoteBookUUID
                     // this.articleCurrentEditable.content = jsonData.html // slow
                     this.noteStore.getAllData()
+                    this.toast.dismiss(savingToast)
+                    this.toast.success(this.$t('editor.saved'))
                 })
                 .catch(error => {
                     console.error('Error save note data:', error)
+                    this.toast.dismiss(savingToast)
                     this.noteStore.setStatus({ errorType: 2, errorText: this.$t('editor.errorSave') })
+                })
+                .finally(() => {
+                    this.saving = false
                 })
         },
         addTag (newTag) {

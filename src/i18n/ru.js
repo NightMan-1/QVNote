@@ -62,6 +62,8 @@ export default {
             selectedLabel: 'Выбрано'
         },
         errorSave: 'Ошибка при сохранении заметки...',
+        saving: 'Сохранение, скачиваются изображения...',
+        saved: 'Сохранено',
         btnLoadOriginal: 'Загрузить оригинальный (неочищенный) HTML',
         btnDefuddleImport: 'Импорт статьи по ссылке',
         defuddleURLPlaceholder: 'Ссылка на статью...',
