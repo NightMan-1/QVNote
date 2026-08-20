@@ -46,6 +46,9 @@ export const useNoteStore = defineStore('note', {
             return '/api'
         },
         getNotebooksCount () {
+            if (this.notebooksList === null) {
+                return 0
+            }
             return Object.keys(this.notebooksList).length
         },
         getTagsCount () {
