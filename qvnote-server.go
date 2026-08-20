@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -22,10 +23,11 @@ import (
 
 	"golang.org/x/net/html"
 
-	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/analysis/lang/ru"
-	"github.com/blevesearch/bleve/index/store/goleveldb"
-	"github.com/blevesearch/bleve/mapping"
+	"github.com/blevesearch/bleve/v2"
+	"github.com/blevesearch/bleve/v2/analysis"
+	"github.com/blevesearch/bleve/v2/analysis/lang/ru"
+	"github.com/blevesearch/bleve/v2/mapping"
+	"github.com/blevesearch/bleve/v2/search/query"
 	"github.com/blevesearch/snowballstem"
 	"github.com/blevesearch/snowballstem/russian"
 )
@@ -43,39 +45,136 @@ func checkQuiet(e error) { //check_no_exit
 	}
 }
 
-func queryStem(query string) string {
-	query = strings.ToLower(strings.TrimSpace(query))
-	words := strings.Fields(query)
+func stemWord(word string) string {
 	env := snowballstem.NewEnv("")
-	for i, word := range words {
-		env.SetCurrent(word)
-		russian.Stem(env)
-		words[i] = env.Current()
-	}
-	result := strings.Join(words, " ")
-	if len(words) == 1 {
-		result += "*"
-	}
-	return result
+	env.SetCurrent(word)
+	russian.Stem(env)
+	return env.Current()
 }
 
-func (ss *SearchService) buildMapping() *mapping.IndexMappingImpl {
-	mappingTMP := bleve.NewIndexMapping()
-	mappingTMP.DefaultAnalyzer = ru.AnalyzerName
-	return mappingTMP
+var htmlTagRE = regexp.MustCompile(`<[^>]+>`)
+
+// htmlToPlainText strips HTML tags and entities for indexing: the index
+// should contain the visible text only, not markup, URLs or attributes.
+func htmlToPlainText(s string) string {
+	s = htmlTagRE.ReplaceAllString(s, " ")
+	return strings.Join(strings.Fields(html.UnescapeString(s)), " ")
+}
+
+func (ss *SearchService) buildMapping() mapping.IndexMapping {
+	indexMapping := bleve.NewIndexMapping()
+	indexMapping.DefaultAnalyzer = ru.AnalyzerName
+	indexMapping.ScoringModel = "bm25"
+
+	titleField := bleve.NewTextFieldMapping()
+	titleField.Store = false
+	contentField := bleve.NewTextFieldMapping()
+	contentField.Store = false
+
+	docMapping := bleve.NewDocumentMapping()
+	docMapping.Dynamic = false
+	docMapping.AddFieldMappingsAt("title", titleField)
+	docMapping.AddFieldMappingsAt("content", contentField)
+	indexMapping.DefaultMapping = docMapping
+	return indexMapping
+}
+
+// searchDoc is what actually goes into the search index.
+type searchDoc struct {
+	Title   string `json:"title"`
+	Content string `json:"content"`
 }
 
 func (ss *SearchService) IndexMessage(data SearchContent) error {
+	doc := searchDoc{Title: data.Title}
+	var sb strings.Builder
+	for _, cell := range data.Cells {
+		sb.WriteString(cell.Data)
+		sb.WriteString(" ")
+	}
+	doc.Content = htmlToPlainText(sb.String())
 	err := ss.index.Delete(data.UUID)
-	err = ss.index.Index(data.UUID, data)
+	err = ss.index.Index(data.UUID, doc)
 	checkQuiet(err)
 	return nil
 }
 
-func (ss *SearchService) Search(query string) (*bleve.SearchResult, error) {
-	qsq := bleve.NewQueryStringQuery(query)
-	search := bleve.NewSearchRequest(qsq)
-	search.Fields = []string{"UUID"}
+var (
+	searchAnalyzerOnce sync.Once
+	searchAnalyzer     analysis.Analyzer
+)
+
+// analyzeTokenCount reports how many tokens the index analyzer produces for
+// a query word. Russian stop words ("как", "что", ...) yield zero tokens;
+// they must not become hard conjuncts or the whole AND-query collapses.
+func analyzeTokenCount(word string) int {
+	searchAnalyzerOnce.Do(func() {
+		im := bleve.NewIndexMapping()
+		searchAnalyzer = im.AnalyzerNamed(ru.AnalyzerName)
+	})
+	return len(searchAnalyzer.Analyze([]byte(word)))
+}
+
+// buildSearchQuery turns raw user text into a query:
+// every word must match (AND) in title (boosted) or content, with
+// fuzziness=1 for typos; the last word also gets a prefix variant
+// so incomplete words match while typing.
+func buildSearchQuery(text string) query.Query {
+	words := strings.Fields(strings.ToLower(strings.TrimSpace(text)))
+	conj := bleve.NewConjunctionQuery()
+	added := 0
+	for i, w := range words {
+		if analyzeTokenCount(w) == 0 {
+			continue // stop word: skip instead of MatchNone
+		}
+		tq := bleve.NewMatchQuery(w)
+		tq.SetField("title")
+		tq.SetBoost(4)
+		cq := bleve.NewMatchQuery(w)
+		cq.SetField("content")
+		// Fuzzy/prefix on short stems are way too broad ("фид" would
+		// match "филе", "ФИО", "Фиджи"), so require 5+ chars.
+		stem := stemWord(w)
+		long := len([]rune(stem)) >= 5
+		if long {
+			tq.SetFuzziness(1)
+			tq.SetPrefix(2)
+			cq.SetFuzziness(1)
+			cq.SetPrefix(2)
+		}
+		disj := bleve.NewDisjunctionQuery(tq, cq)
+		if i == len(words)-1 {
+			// Typeahead: raw-word prefix always applies — it matches the
+			// word exactly as typed ("wind" -> "windows") without the
+			// short-stem explosion ("фидо* does not start" tokens like
+			// "фидж"). Stem prefix on top catches inflections truncated
+			// by the stemmer, but only for 5+ char stems.
+			prt := bleve.NewPrefixQuery(w)
+			prt.SetField("title")
+			prt.SetBoost(2)
+			prc := bleve.NewPrefixQuery(w)
+			prc.SetField("content")
+			disj.AddQuery(prt, prc)
+			if long {
+				pt := bleve.NewPrefixQuery(stem)
+				pt.SetField("title")
+				pt.SetBoost(2)
+				pc := bleve.NewPrefixQuery(stem)
+				pc.SetField("content")
+				disj.AddQuery(pt, pc)
+			}
+		}
+		conj.AddQuery(disj)
+		added++
+	}
+	if added == 0 {
+		return bleve.NewMatchNoneQuery()
+	}
+	return conj
+}
+
+func (ss *SearchService) Search(text string) (*bleve.SearchResult, error) {
+	search := bleve.NewSearchRequestOptions(buildSearchQuery(text), 500, 0, false)
 	return ss.index.Search(search)
 }
 
@@ -168,18 +267,19 @@ func initSystem() {
 		os.RemoveAll(indexName)
 		// time.Sleep(1 * time.Second)
 	}
+	searchIndexRecreated := false
 	index, err := bleve.Open(indexName)
-	if err == bleve.ErrorIndexPathDoesNotExist {
-		mapping := ss.buildMapping()
-		kvStore := goleveldb.Name
-		kvConfig := map[string]interface{}{
-			"create_if_missing": true,
-			//	"write_buffer_size":         536870912,
-			//	"lru_cache_capacity":        536870912,
-			//	"bloom_filter_bits_per_key": 10,
+	if errors.Is(err, bleve.ErrorIndexPathDoesNotExist) {
+		index, err = bleve.New(indexName, ss.buildMapping())
+	} else if err != nil {
+		// Incompatible index left by an older version (e.g. v1 upside_down):
+		// move it aside, build a fresh one and reindex everything below.
+		backup := fmt.Sprintf("%s.backup-%d", indexName, time.Now().Unix())
+		if renErr := os.Rename(indexName, backup); renErr != nil {
+			fmt.Println("Can not move old search index aside:", renErr)
 		}
-
-		index, err = bleve.NewUsing(indexName, mapping, "upside_down", kvStore, kvConfig)
+		index, err = bleve.New(indexName, ss.buildMapping())
+		searchIndexRecreated = true
 	}
 	check(err, "Can not initialize search database")
 
@@ -201,6 +301,9 @@ func initSystem() {
 		configGlobal.requestIndexing = true
 	} else {
 		configGlobal.requestIndexing = false
+	}
+	if searchIndexRecreated {
+		configGlobal.requestIndexing = true
 	}
 
 	data, _ = ConfigDB.Get([]byte("sourceFolder"))

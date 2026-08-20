@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,8 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/index/store/goleveldb"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -438,14 +438,8 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			os.RemoveAll(indexName)
 			time.Sleep(1 * time.Second)
 			index, err := bleve.Open(indexName)
-			if err == bleve.ErrorIndexPathDoesNotExist {
-				mapping := ss.buildMapping()
-				kvStore := goleveldb.Name
-				kvConfig := map[string]interface{}{
-					"create_if_missing": true,
-				}
-
-				index, err = bleve.NewUsing(indexName, mapping, "upside_down", kvStore, kvConfig)
+			if errors.Is(err, bleve.ErrorIndexPathDoesNotExist) {
+				index, err = bleve.New(indexName, ss.buildMapping())
 			}
 			check(err, "Can not initialize search database")
 			ss.index = index
@@ -633,9 +627,11 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		NotesList := make([]SearchResult, 0)
 		NoteListDedup := make(map[string]bool)
 		if len(request.Text) >= 3 {
-			query := bleve.NewQueryStringQuery(queryStem(request.Text))
-			searchRequest := bleve.NewSearchRequestOptions(query, 500, 0, false)
-			searchResult, _ := ss.index.Search(searchRequest)
+			searchResult, err := ss.Search(request.Text)
+			if err != nil || searchResult == nil {
+				jsonResponse(w, NotesList)
+				return
+			}
 			var noteShort SearchResult
 			for _, item := range searchResult.Hits {
 				data, _ := NoteDB.Get([]byte(item.ID))
