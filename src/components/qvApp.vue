@@ -75,6 +75,26 @@
             <button class="btn btn-outline-secondary" :title="$t('articleList.btnFavorites')" @click="addToFavorites">
                 <i class="bi text-black-50" :class="articleCurrent.favorites ? 'bi-star-fill' : 'bi-star'"></i>
             </button>
+            <template v-if="articleCurrent.uuid && !articleCurrent.content_state">
+                <template v-if="!refetchPreview">
+                    <button class="btn btn-outline-secondary ms-2" :class="{'btn-secondary':showOriginal}"
+                            :title="$t('articleList.btnShowOriginal')" @click="toggleOriginal">
+                        <i class="bi bi-file-earmark-code text-black-50"></i>
+                    </button>
+                    <button v-if="articleCurrent.url_src" class="btn btn-outline-secondary ms-2"
+                            :title="$t('articleList.btnRefetch')" @click="refetchFromSource" :disabled="refetchLoading">
+                        <i class="bi text-black-50" :class="refetchLoading ? 'bi-arrow-repeat spin' : 'bi-cloud-arrow-down'"></i>
+                    </button>
+                </template>
+                <template v-else>
+                    <button class="btn btn-outline-success ms-2" :title="$t('articleList.btnRefetchConfirm')" @click="confirmRefetch">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+                    <button class="btn btn-outline-danger ms-2" :title="$t('articleList.btnRefetchCancel')" @click="cancelRefetch">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </template>
+            </template>
         </div>
     	<div class="grid-body-2 bg-white" v-if="pageType === 'articleList'"><div class="scrooll-wrap">
                 <div class="justify-content-center article-info"
@@ -102,7 +122,7 @@
                         <div class="clearfix"></div>
                         <div class="articleCell"
                              :class="'cellType_' + articleCurrent.type"
-                             v-html="articleCurrent.content"
+                             v-html="displayedContent"
                         ></div>
                     </article>
                 </div>
@@ -133,6 +153,9 @@ import 'prismjs/components/prism-csharp'
 import 'prismjs/components/prism-markup-templating'
 import 'prismjs/components/prism-php'
 import 'prismjs/components/prism-ruby'
+import { useToast } from 'vue-toastification'
+import { fetchDefuddleArticle } from '../utils/defuddle'
+
 const qvEditor = defineAsyncComponent(() => import('./qvEditor.vue'))
 
 export default {
@@ -144,11 +167,15 @@ export default {
             searchInput: '',
             notesListBackup: {},
             mutableNotesList: {},
-            gridShow: true
+            gridShow: true,
+            contentOverride: null,
+            showOriginal: false,
+            refetchLoading: false,
+            refetchPreview: false
         }
     },
     setup () {
-        return { noteStore: useNoteStore(), modal: useModal() }
+        return { noteStore: useNoteStore(), modal: useModal(), toast: useToast() }
     },
     computed: {
         gridClass () { return this.noteStore.gridClass },
@@ -161,7 +188,17 @@ export default {
         articleCurrent () { return this.noteStore.currentArticle },
         showAdvancedInfo () { return this.noteStore.showAdvancedNoteInfo },
         readerMode () { return this.noteStore.readerMode },
-        layoutBig () { return this.noteStore.layoutBig }
+        layoutBig () { return this.noteStore.layoutBig },
+        displayedContent () {
+            var content = this.contentOverride !== null
+                ? this.contentOverride
+                : (this.articleCurrent ? this.articleCurrent.content : '')
+            content = content || ''
+            // local .png links are rendered through the webp converter
+            // (the /resources handler serves a cached webp for *.webp URLs);
+            // the editor still works with original .png links
+            return content.replace(/(\/resources\/[^"'\s]+?)\.png/gi, '$1.webp')
+        }
     },
     beforeMount: function () {
         this.noteStore.getConfig()
@@ -276,6 +313,12 @@ export default {
         },
         'articleCurrent.content' () {
             this.highlightCodeBlocks()
+        },
+        'articleCurrent.uuid' () {
+            this.contentOverride = null
+            this.showOriginal = false
+            this.refetchPreview = false
+            this.refetchLoading = false
         }
     },
     methods: {
@@ -287,6 +330,71 @@ export default {
                     Prism.highlightAllUnder(el)
                 }
             })
+        },
+        toggleOriginal () {
+            if (this.showOriginal) {
+                this.contentOverride = null
+                this.showOriginal = false
+                this.highlightCodeBlocks()
+                return
+            }
+            fetch(this.noteStore.apiFolder + '/note.json', { method: 'POST', body: JSON.stringify({ NoteID: this.articleCurrent.uuid, raw: true }) })
+                .then((response) => { return response.json() })
+                .then((jsonData) => {
+                    if (jsonData && jsonData.content !== undefined) {
+                        this.contentOverride = jsonData.content
+                        this.showOriginal = true
+                        this.highlightCodeBlocks()
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error fetching raw note:', error)
+                    this.toast.error(this.$t('articleList.refetchError'))
+                })
+        },
+        async refetchFromSource () {
+            this.refetchLoading = true
+            try {
+                const article = await fetchDefuddleArticle(this.articleCurrent.url_src)
+                this.contentOverride = article.html
+                this.refetchPreview = true
+                this.highlightCodeBlocks()
+            } catch (e) {
+                console.error('Defuddle refetch error:', e)
+                this.toast.error(this.$t('articleList.refetchError') + ': ' + e.message)
+            } finally {
+                this.refetchLoading = false
+            }
+        },
+        cancelRefetch () {
+            this.contentOverride = null
+            this.refetchPreview = false
+            this.highlightCodeBlocks()
+        },
+        confirmRefetch () {
+            fetch(this.noteStore.apiFolder + '/note_edit.json', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: this.articleCurrent.title,
+                    url: this.articleCurrent.url_src,
+                    uuid: this.articleCurrent.uuid,
+                    type: this.articleCurrent.type === 'code' ? 'code' : 'text',
+                    content: this.contentOverride,
+                    tags: this.articleCurrent.tags,
+                    content_state: 'refetched'
+                })
+            }).then((response) => { return response.json() })
+                .then(() => {
+                    this.contentOverride = null
+                    this.refetchPreview = false
+                    this.noteStore.getAllData()
+                    this.noteStore.getArticle(this.articleCurrent.uuid)
+                    this.toast.success(this.$t('articleList.refetchDone'))
+                })
+                .catch((error) => {
+                    console.error('Error saving refetched note:', error)
+                    this.toast.error(this.$t('editor.errorSave'))
+                })
         },
         tagSelect (nbUUID, noteUUID) {
             this.articleListType = 'tags'

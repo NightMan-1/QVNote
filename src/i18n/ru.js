@@ -33,6 +33,7 @@ export default {
         yesBig: 'Да',
         noBig: 'Нет',
         modalClose: 'Закрыть',
+        cancel: 'Отмена',
         serverOfflineTitle: 'Сервер недоступен',
         serverDownMessage: 'Связь с сервером потеряна.',
         serverBackMessage: 'Связь восстановлена.',
@@ -60,7 +61,14 @@ export default {
             deselectLabel: 'Нажмите для удаление',
             selectedLabel: 'Выбрано'
         },
-        errorSave: 'Ошибка при сохранении заметки...'
+        errorSave: 'Ошибка при сохранении заметки...',
+        btnLoadOriginal: 'Загрузить оригинальный (неочищенный) HTML',
+        btnDefuddleImport: 'Импорт статьи по ссылке',
+        defuddleURLPlaceholder: 'Ссылка на статью...',
+        defuddleImportBtn: 'Импорт',
+        defuddleHint: 'Статья будет загружена и заменит текущий текст в редакторе (сохранение только по кнопке).',
+        defuddleError: 'Ошибка импорта статьи',
+        loadOriginalError: 'Ошибка загрузки оригинального содержимого'
     },
     setting: {
         global: {
@@ -80,6 +88,10 @@ export default {
             msgSearchComplete: 'Индексация успешно завершена!',
             msgOptimizationStatus: 'Выполняется обработка данных ({0} из {1})',
             msgOptimizationComplete: 'Обработка успешно завершена!',
+            btnWebpCacheClear: 'очистить кэш картинок',
+            msgWebpCacheCleared: 'Кэш картинок очищен',
+            msgWebpCacheError: 'Ошибка очистки кэша картинок',
+            webpCacheHint: 'Удаляет кэшированные WebP-копии картинок. Оригиналы не затрагиваются, кэш пересоздаётся по мере обращений.',
             notificationErrorGetSearchStatus: 'Ошибка получения статуса поиска...',
             notificationAddDataRefreshed: 'Данные успешно обновлены...',
             editor: 'Редактор',
@@ -132,7 +144,13 @@ export default {
         notificationErrorMove: 'Ошибка при перемещении заметки...',
         btnFavorites: 'добавить в избранное',
         btnReaderMode: 'режим чтения',
-        btnHideSidebar: 'скрыть боковую панель'
+        btnHideSidebar: 'скрыть боковую панель',
+        btnShowOriginal: 'Показать оригинальное (неочищенное) содержимое',
+        btnRefetch: 'Загрузить статью заново по ссылке',
+        btnRefetchConfirm: 'Сохранить загруженное',
+        btnRefetchCancel: 'Отменить загруженное',
+        refetchError: 'Ошибка загрузки статьи',
+        refetchDone: 'Заметка обновлена из источника'
 
     },
     dashboard: {

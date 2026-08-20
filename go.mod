@@ -12,6 +12,9 @@ require (
 )
 
 require (
+	github.com/HugoSmits86/nativewebp v1.3.0 // indirect
+	github.com/JohannesKaufmann/dom v0.3.1 // indirect
+	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.2 // indirect
 	github.com/RoaringBitmap/roaring v1.9.4 // indirect
 	github.com/bits-and-blooms/bitset v1.24.6 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
@@ -34,6 +37,8 @@ require (
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
+	github.com/yuin/goldmark v1.8.5 // indirect
+	golang.org/x/image v0.24.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -161,9 +163,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		noteUUID := chi.URLParam(r, "noteUUID")
 		image := chi.URLParam(r, "image")
 		imageFile, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookUUID + ".qvnotebook/" + noteUUID + ".qvnote/resources/" + image)
-		if _, err := os.Stat(imageFile); err == nil {
-			http.ServeFile(w, r, imageFile)
-		} else {
+		if !serveResourceImage(w, r, imageFile) {
 			http.NotFound(w, r)
 		}
 	})
@@ -671,6 +671,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	r.HandleFunc("/api/note.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			NoteID string `json:"NoteID"`
+			Raw    bool   `json:"raw"`
 		}
 		readJSON(r, &request)
 		if request.NoteID != "" {
@@ -694,7 +695,12 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 					noteData.Content += text.Data
 					noteData.ContentType = text.Type
 				}
-				noteData.Content = ClearHTML(noteData.Content)
+
+				// Legacy notes (no content_state) are normalized on read.
+				// refetched/edited notes and raw requests are served as stored.
+				if !request.Raw && noteData.ContentType != "code" && noteData.ContentState == "" {
+					noteData.Content = ClearHTML(noteData.Content, noteData.Title)
+				}
 
 				noteData.Content = FixNoteImagesLinks(noteData, noteData.Content, r)
 
@@ -714,12 +720,13 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 	r.HandleFunc("/api/note_edit.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
-			Title   string   `json:"title"`
-			URL     string   `json:"url"`
-			UUID    string   `json:"uuid"`
-			Type    string   `json:"type"`
-			Content string   `json:"content"`
-			Tags    []string `json:"tags"`
+			Title        string   `json:"title"`
+			URL          string   `json:"url"`
+			UUID         string   `json:"uuid"`
+			Type         string   `json:"type"`
+			Content      string   `json:"content"`
+			Tags         []string `json:"tags"`
+			ContentState string   `json:"content_state"`
 		}
 		readJSON(r, &request)
 
@@ -738,9 +745,16 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			notebookUUID = noteData.NoteBookUUID
 		}
 
-		noteData.Title = request.Title
+		noteData.Title = normalizeWhitespace(request.Title)
 		noteData.URL = request.URL
 		noteData.SearchIndex = false
+		// A note saved through the editor or confirmed after a defuddle
+		// refetch is never auto-normalized again.
+		if request.ContentState == "refetched" {
+			noteData.ContentState = "refetched"
+		} else {
+			noteData.ContentState = "edited"
+		}
 
 		if request.UUID == "" {
 			noteData.CreatedAt = int32(time.Now().Unix())
@@ -756,12 +770,13 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		noteDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookUUID + ".qvnotebook/" + noteUUID + ".qvnote")
 		os.MkdirAll(noteDir, 0755)
 		var meta struct {
-			CreatedAt int32    `json:"created_at"`
-			UpdatedAt int32    `json:"updated_at"`
-			Tags      []string `json:"tags"`
-			Title     string   `json:"title"`
-			UUID      string   `json:"uuid"`
-			URL       string   `json:"url_src"`
+			CreatedAt    int32    `json:"created_at"`
+			UpdatedAt    int32    `json:"updated_at"`
+			Tags         []string `json:"tags"`
+			Title        string   `json:"title"`
+			UUID         string   `json:"uuid"`
+			URL          string   `json:"url_src"`
+			ContentState string   `json:"content_state,omitempty"`
 		}
 		meta.CreatedAt = noteData.CreatedAt
 		meta.UpdatedAt = noteData.UpdatedAt
@@ -769,6 +784,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		meta.UUID = noteData.UUID
 		meta.URL = noteData.URL
 		meta.Tags = request.Tags
+		meta.ContentState = noteData.ContentState
 		metaJSON, _ := json.MarshalIndent(meta, "", "  ")
 		err := ioutil.WriteFile(noteDir+"/meta.json", metaJSON, 0644)
 		checkQuiet(err)
@@ -778,6 +794,11 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			Cells []ContentCellsType `json:"cells"`
 		}
 		content.Title = noteData.Title
+		// External images are downloaded into resources/ on save, so notes
+		// never depend on third-party hotlinks.
+		if request.Type != "code" {
+			request.Content = downloadNoteImages(noteDir, request.Content)
+		}
 		content.Cells = make([]ContentCellsType, 1)
 		content.Cells[0] = ContentCellsType{Type: request.Type, Data: request.Content}
 		var buf bytes.Buffer
@@ -856,12 +877,65 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		jsonResponse(w, map[string]interface{}{"NoteBookUUID": notebookUUID, "uuid": noteUUID})
 	})
 
+	// Fetches a web page server-side so the frontend can run defuddle on it
+	// (direct browser fetch is blocked by CORS on most sites).
+	r.HandleFunc("/api/fetch.json", func(w http.ResponseWriter, r *http.Request) {
+		var request struct {
+			URL string `json:"url"`
+		}
+		readJSON(r, &request)
+		target := strings.TrimSpace(request.URL)
+		if !strings.HasPrefix(target, "http://") && !strings.HasPrefix(target, "https://") {
+			target = "https://" + target
+		}
+		parsed, err := url.Parse(target)
+		if err != nil || parsed.Host == "" {
+			jsonResponse(w, map[string]interface{}{"error": "bad url"})
+			return
+		}
+		req, err := http.NewRequest("GET", target, nil)
+		if err != nil {
+			jsonResponse(w, map[string]interface{}{"error": err.Error()})
+			return
+		}
+		req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		client := &http.Client{Timeout: 60 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			jsonResponse(w, map[string]interface{}{"error": err.Error()})
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			jsonResponse(w, map[string]interface{}{"error": "HTTP " + strconv.Itoa(resp.StatusCode), "status": resp.StatusCode})
+			return
+		}
+		body, err := io.ReadAll(io.LimitReader(resp.Body, 15*1024*1024))
+		if err != nil {
+			jsonResponse(w, map[string]interface{}{"error": err.Error()})
+			return
+		}
+		jsonResponse(w, map[string]interface{}{"html": string(body), "url": resp.Request.URL.String()})
+	})
+
 	r.HandleFunc("/api/cleanup_html.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Content string `json:"content"`
+			Title   string `json:"title"`
 		}
 		readJSON(r, &request)
-		jsonResponse(w, map[string]string{"content": ClearHTML(request.Content)})
+		jsonResponse(w, map[string]string{"content": ClearHTML(request.Content, request.Title)})
+	})
+
+	// Drops the derived webp image cache (see webp.go); originals are untouched.
+	r.HandleFunc("/api/webp_cache_clear.json", func(w http.ResponseWriter, r *http.Request) {
+		err := clearWebPCache()
+		if err != nil {
+			jsonResponse(w, map[string]interface{}{"status": "error", "error": err.Error()})
+			return
+		}
+		jsonResponse(w, map[string]interface{}{"status": "done"})
 	})
 
 	r.HandleFunc("/api/tag_edit.json", func(w http.ResponseWriter, r *http.Request) {

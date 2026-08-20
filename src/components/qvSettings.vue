@@ -69,10 +69,17 @@
                         <button class="btn btn-success me-2" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="indexingStart">{{$t('setting.global.btnIndexChanges')}}</button>
                         <button class="btn btn-warning" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="refreshData('reloadAll')">{{$t('setting.global.btnFullReload')}}</button>
 
-                        <br>
-                        <button class="btn btn-dark mt-4" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="optimizationStart">{{$t('setting.global.btnDownloadImages')}}</button>
-                        <br>
-                        <i>{{$t('setting.global.downloadWarnLine1')}}<br><span class="text-danger">{{$t('setting.global.downloadWarnLine2')}}</span></i>
+                        <div class="mt-4">
+                            <button class="btn btn-dark" v-bind:disabled="searchStatus.status !== 'idle' && searchStatus.status !== 'done'" @click="optimizationStart">{{$t('setting.global.btnDownloadImages')}}</button>
+                        </div>
+                        <div class="mt-1"><i>{{$t('setting.global.downloadWarnLine1')}}<br><span class="text-danger">{{$t('setting.global.downloadWarnLine2')}}</span></i></div>
+
+                        <div class="mt-4">
+                            <button class="btn btn-outline-danger" :disabled="webpCacheStatus === 'processing'" @click="webpCacheClear">{{$t('setting.global.btnWebpCacheClear')}}</button>
+                            <span class="text-success ms-2 align-middle" v-if="webpCacheStatus === 'done'">{{$t('setting.global.msgWebpCacheCleared')}}</span>
+                            <span class="text-danger ms-2 align-middle" v-if="webpCacheStatus === 'error'">{{$t('setting.global.msgWebpCacheError')}}</span>
+                        </div>
+                        <div class="mt-1 mb-2"><i>{{$t('setting.global.webpCacheHint')}}</i></div>
 
                         <div v-if="searchStatus.status === 'indexing'">
                             <p class="mt-3"><b>{{$t('setting.global.msgIndexing', [searchStatus.notesCurrent, searchStatus.notesTotal])}}:</b></p>
@@ -181,6 +188,7 @@ export default {
                 'status': 'idle',
                 'persent': 0
             },
+            webpCacheStatus: 'idle',
             langSelected: localStorage.getItem('locale') || 'ru'
         }
     },
@@ -198,6 +206,18 @@ export default {
 
     },
     methods: {
+        webpCacheClear () {
+            this.webpCacheStatus = 'processing'
+            fetch(this.noteStore.apiFolder + '/webp_cache_clear.json', { method: 'POST', body: '{}' })
+                .then(response => { return response.json() })
+                .then(jsonData => {
+                    this.webpCacheStatus = jsonData.status === 'done' ? 'done' : 'error'
+                })
+                .catch(error => {
+                    console.error('Error fetching webp_cache_clear.json:', error)
+                    this.webpCacheStatus = 'error'
+                })
+        },
         favoritesImportSelected: function (event) {
             if (event.target.files[0].type === 'application/json') {
                 let reader = new FileReader()

@@ -1,6 +1,6 @@
 {
   "name": "qvnote",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "scripts": {
     "serve": "vite",
@@ -16,9 +16,11 @@
     "ace-builds": "^1.44.0",
     "bootstrap": "5.3.8",
     "bootstrap-icons": "^1.13.1",
+    "defuddle": "^0.19.2",
     "echarts": "^5.6.0",
     "hugerte": "^1.0.12",
     "js-beautify": "^1.15.4",
+    "markdown-it": "^15.0.0",
     "pinia": "^3.0.4",
     "postcss-import": "^15.1.0",
     "postcss-url": "^10.1.4",

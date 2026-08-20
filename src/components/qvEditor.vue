@@ -10,13 +10,19 @@
                 <button class="btn btn-outline-success ms-2" @click="saveData"
                         :class="{'ms-auto':articleCurrentEditable.uuid === '' && articleCurrentEditable.NoteBookUUID === ''}"><i class="bi bi-floppy-fill"></i>
                 </button>
+                <button class="btn btn-outline-secondary ms-2" :title="$t('editor.btnLoadOriginal')" @click="loadOriginal"
+                        v-if="(articleCurrentEditable.uuid !== '' && !articleCurrentEditable.content_state)"><i class="bi bi-file-earmark-code"></i>
+                </button>
+                <button class="btn btn-outline-secondary ms-2"
+                        :title="$t('editor.btnDefuddleImport')" @click="openDefuddleModal"><i class="bi bi-cloud-arrow-down text-black-50"></i>
+                </button>
                 <!--<button class="btn btn-outline-secondary ms-2"><i class="bi bi-eraser text-muted"></i></button>-->
                 <div class="btn-group ms-4" role="group" aria-label="Button group">
                     <button class="btn btn-outline-secondary" :class="{'active':articleCurrentEditable.type === 'text'}"
                             @click="articleCurrentEditable.type = 'text'"><i class="bi bi-pencil-fill"></i></button>
                     <!--<button class="btn btn-outline-secondary" :class="{'active':editorType === 'markdown'}" @click="editorType = 'markdown'"><i class="bi bi-layout-split"></i></button>-->
                     <button class="btn btn-outline-secondary" :class="{'active':articleCurrentEditable.type === 'code'}"
-                            @click="articleCurrentEditable.type = 'code'"><i class="bi bi-code-slash"></i></button>
+                            @click="articleCurrentEditable.type = 'code'"><i class="bi bi-code-slash text-black-50"></i></button>
                 </div>
             </div>
         </div>
@@ -95,6 +101,9 @@ import 'hugerte/plugins/fullscreen'
 import 'hugerte/plugins/codesample'
 
 import Multiselect from 'vue-multiselect'
+import { useToast } from 'vue-toastification'
+import { useModal } from '../composables/useModal'
+import { fetchDefuddleArticle, normalizeTitle } from '../utils/defuddle'
 import { registerBootstrapIcons } from '../hugerte-icons'
 // import { html as BeautifyHtml } from 'js-beautify'
 
@@ -110,6 +119,7 @@ export default {
             articleCurrentEditable: { title: '', uuid: '', NoteBookUUID: '', status: '', tags: [], CreatedDate: '', UpdatedDate: '', cells: {}, content: '', type: 'text', url_src: '' },
             tagsListFormatted: [],
             editorReady: false,
+            defuddleLoading: false,
             editorConfig: {
                 skin_url: '/static/hugerte/skins/ui/oxide',
                 content_css: ['/static/hugerte/skins/content/default/content.css', '/static/prism/prism-atom-one-light.css'],
@@ -191,7 +201,7 @@ export default {
                         onAction: () => {
                             fetch(this.noteStore.apiFolder + '/cleanup_html.json', {
                                 method: 'POST',
-                                body: JSON.stringify({ content: editor.getContent() })
+                                body: JSON.stringify({ content: editor.getContent(), title: this.articleCurrentEditable.title })
                             }).then(response => response.json())
                                 .then(jsonData => {
                                     editor.setContent(jsonData.content)
@@ -293,7 +303,7 @@ export default {
         PrismEditor
     },
     setup () {
-        return { noteStore: useNoteStore() }
+        return { noteStore: useNoteStore(), toast: useToast(), modal: useModal() }
     },
     computed: {
         articleCurrent () { return this.noteStore.currentArticle },
@@ -334,6 +344,75 @@ export default {
         highlighter (code) {
             if (!code) return ''
             return Prism.highlight(code, Prism.languages.markup, 'markup')
+        },
+        openDefuddleModal () {
+            const self = this
+            const modal = this.modal.createModal(this.$t('general.modalClose'))
+            const url = (this.articleCurrentEditable.url_src || '').replace(/"/g, '&quot;')
+            modal.setContent(
+                '<h4 class="ml--1">' + this.$t('editor.btnDefuddleImport') + '</h4>' +
+                '<div class="mt-4 mb-0 bg-light pt-3 pb-3 px-3">' +
+                    '<input id="defuddle-url" type="text" class="form-control" placeholder="' + this.$t('editor.defuddleURLPlaceholder') + '" value="' + url + '">' +
+                    '<div class="form-text mt-1">' + this.$t('editor.defuddleHint') + '</div>' +
+                '</div>'
+            )
+            modal.addFooterBtn(this.$t('editor.defuddleImportBtn'), 'tingle-btn tingle-btn--warning tingle-btn--pull-right me-3', async function () {
+                const input = document.getElementById('defuddle-url')
+                const btn = this
+                btn.disabled = true
+                btn.textContent = self.$t('general.loading')
+                const ok = await self.importFromDefuddle(input.value)
+                if (ok) {
+                    modal.destroy()
+                } else {
+                    btn.disabled = false
+                    btn.textContent = self.$t('editor.defuddleImportBtn')
+                }
+            })
+            modal.addFooterBtn(this.$t('general.cancel'), 'tingle-btn tingle-btn--primary tingle-btn--pull-right', function () {
+                modal.destroy()
+            })
+            modal.open()
+            const input = document.getElementById('defuddle-url')
+            input.focus()
+            input.addEventListener('keyup', function (e) {
+                if (e.key === 'Enter') {
+                    document.querySelector('.tingle-modal .tingle-btn--warning').click()
+                }
+            })
+        },
+        async importFromDefuddle (url) {
+            this.defuddleLoading = true
+            try {
+                const article = await fetchDefuddleArticle(url)
+                this.articleCurrentEditable.content = article.html
+                if (this.articleCurrentEditable.title === '' && article.title !== '') {
+                    this.articleCurrentEditable.title = article.title
+                }
+                if (this.articleCurrentEditable.url_src === '') {
+                    this.articleCurrentEditable.url_src = String(url || '').trim()
+                }
+                return true
+            } catch (e) {
+                console.error('Defuddle import error:', e)
+                this.toast.error(this.$t('editor.defuddleError') + ': ' + e.message)
+                return false
+            } finally {
+                this.defuddleLoading = false
+            }
+        },
+        loadOriginal () {
+            fetch(this.noteStore.apiFolder + '/note.json', { method: 'POST', body: JSON.stringify({ NoteID: this.articleCurrentEditable.uuid, raw: true }) })
+                .then((response) => { return response.json() })
+                .then((jsonData) => {
+                    if (jsonData && jsonData.content !== undefined) {
+                        this.articleCurrentEditable.content = jsonData.content
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error fetching raw note:', error)
+                    this.toast.error(this.$t('editor.loadOriginalError'))
+                })
         },
         saveData () {
             fetch(this.noteStore.apiFolder + '/note_edit.json',

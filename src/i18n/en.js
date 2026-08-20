@@ -33,6 +33,7 @@ export default {
         yesBig: 'Yes',
         noBig: 'No',
         modalClose: 'Close',
+        cancel: 'Cancel',
         serverOfflineTitle: 'Server offline',
         serverDownMessage: 'Server connection lost.',
         serverBackMessage: 'Connection restored.',
@@ -60,7 +61,14 @@ export default {
             deselectLabel: 'Click to remove',
             selectedLabel: 'Selected'
         },
-        errorSave: 'Error saving notes...'
+        errorSave: 'Error saving notes...',
+        btnLoadOriginal: 'Load original (uncleaned) HTML',
+        btnDefuddleImport: 'Import article from URL',
+        defuddleURLPlaceholder: 'Article URL...',
+        defuddleImportBtn: 'Import',
+        defuddleHint: 'The article will be fetched and will replace the current editor content (not saved until you click save).',
+        defuddleError: 'Error importing article',
+        loadOriginalError: 'Error loading original note content'
     },
     setting: {
         global: {
@@ -80,6 +88,10 @@ export default {
             msgSearchComplete: 'Indexing successfully completed!',
             msgOptimizationStatus: 'Data processing in progress ({0} of {1})',
             msgOptimizationComplete: 'Processing completed successfully!',
+            btnWebpCacheClear: 'clear image cache',
+            msgWebpCacheCleared: 'Image cache cleared',
+            msgWebpCacheError: 'Error clearing image cache',
+            webpCacheHint: 'Deletes cached WebP copies of images. Originals are not affected, the cache is rebuilt on demand.',
             notificationErrorGetSearchStatus: 'Error retrieving search status...',
             notificationAddDataRefreshed: 'Data successfully updated...',
             editor: 'Editor',
@@ -132,7 +144,13 @@ export default {
         notificationErrorMove: 'Error moving note...',
         btnFavorites: 'add to favorites',
         btnReaderMode: 'reading mode',
-        btnHideSidebar: 'hide sidebar'
+        btnHideSidebar: 'hide sidebar',
+        btnShowOriginal: 'Show original (uncleaned) content',
+        btnRefetch: 'Re-fetch article from source URL',
+        btnRefetchConfirm: 'Save fetched content',
+        btnRefetchCancel: 'Discard fetched content',
+        refetchError: 'Error fetching article',
+        refetchDone: 'Note updated from source'
     },
     dashboard: {
         infoTitle: 'Statistics',

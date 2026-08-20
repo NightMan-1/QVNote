@@ -79,6 +79,7 @@ type NoteType struct {
 	URL          string   `json:"url_src"`
 	NoteBookUUID string
 	SearchIndex  bool
+	ContentState string `json:"content_state,omitempty"`
 }
 
 type NoteTypeWithContentAPI struct {
@@ -90,6 +91,7 @@ type NoteTypeWithContentAPI struct {
 	URL          string   `json:"url_src"`
 	NoteBookUUID string
 	SearchIndex  bool
+	ContentState string `json:"content_state,omitempty"`
 	Content      string `json:"content"`
 	ContentType  string `json:"type"`
 	Favorites    bool   `json:"favorites"`

@@ -413,3 +413,13 @@ i.me-1 {width: 1.1em; text-align: center;}
 }
 
 /* purgecss end ignore */
+
+/* loading indicator for icon buttons (e.g. defuddle refetch) */
+@keyframes qv-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spin {
+    display: inline-block;
+    animation: qv-spin 1s linear infinite;
+}

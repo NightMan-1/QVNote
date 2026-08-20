@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -16,6 +17,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/blevesearch/bleve"
@@ -442,142 +444,155 @@ func SaveConfig() bool {
 	return true
 }
 
-// clear HTML
-func ClearHTML(content string) string {
-	r := regexp.MustCompile(`<pre([^>]*)>`)
-	content = r.ReplaceAllStringFunc(content, func(s string) string {
-		re := regexp.MustCompile(`class=["'](language-[^"']+)["']`)
-		if m := re.FindStringSubmatch(s); m != nil {
-			return `<pre class="` + m[1] + `">`
-		}
-		return "<pre>"
-	})
-	r = regexp.MustCompile(`<code (.*?)>`)
-	content = r.ReplaceAllString(content, "<code>")
+var imageHTTPClient = &http.Client{Timeout: 15 * time.Second}
 
-	// Extract <pre> blocks first so nested <code> (and any other tags) survive cleanup.
-	r = regexp.MustCompile(`(?s)<pre[^>]*>.*?</pre>`)
+// optLog is set for the duration of a batch optimizeAllNotes() run; every run
+// writes its own log file into the datadir.
+var optLog *log.Logger
+
+func optLogf(format string, args ...interface{}) {
+	if optLog != nil {
+		optLog.Printf(format, args...)
+	}
+}
+
+// Downloads external (http/https) images referenced in content into the
+// note's resources/ folder and rewrites their src to quiver-image-url/<file>.
+// URLs that fail to download (or are not images) are left as-is.
+func downloadNoteImages(contentDir string, content string) string {
+	// (?s): img tags may span newlines; [^>]* keeps the match inside one tag
+	r := regexp.MustCompile(`(?s)<img[^>]*?src=["|'](https?://[^"']*)["|']`)
 	matchData := r.FindAllStringSubmatch(content, -1)
-	savePRE := make(map[string]string)
+	if len(matchData) == 0 {
+		optLogf("\tno external images")
+		return content
+	}
+	os.MkdirAll(contentDir+"/resources", 0755)
+
+	// collect unique URLs
+	var urls []string
+	seen := make(map[string]bool)
 	for _, match := range matchData {
-		preIndex := RandStringBytes(64)
-		savePRE[preIndex] = match[0]
-		content = strings.Replace(content, match[0], preIndex, 1)
+		if !seen[match[1]] {
+			seen[match[1]] = true
+			urls = append(urls, match[1])
+		}
 	}
 
-	r = regexp.MustCompile(`\s{2,}`)
-	content = r.ReplaceAllString(content, " ")
-
-	// Extract any <code> blocks that are not already inside a saved <pre> block.
-	r = regexp.MustCompile(`(?s)<code>.*?</code>`)
-	matchData = r.FindAllStringSubmatch(content, -1)
-	saveCODE := make(map[string]string)
-	for _, match := range matchData {
-		preIndex := RandStringBytes(64)
-		saveCODE[preIndex] = match[0]
-		content = strings.Replace(content, match[0], preIndex, 1)
+	// download in parallel: dead/slow hosts hit the 15s timeout each and
+	// would otherwise serialize into minutes of waiting per note
+	type result struct {
+		url  string
+		file string
 	}
-
-	content = strings.Replace(content, "\n", "", -1)
-
-	r = regexp.MustCompile(`<div`)
-	content = r.ReplaceAllString(content, "<p")
-	r = regexp.MustCompile(`</div>`)
-	content = r.ReplaceAllString(content, "</p>")
-
-	r = regexp.MustCompile(`<h(.).*?>`)
-	content = r.ReplaceAllString(content, `<h$1>`)
-
-	r = regexp.MustCompile(`<(p|br|hr).*?>`)
-	content = r.ReplaceAllString(content, "<$1>")
-
-	r = regexp.MustCompile(`<(p|h1|h2|h3|h4|h5|h6)>\s+`)
-	content = r.ReplaceAllString(content, "<$1>")
-	r = regexp.MustCompile(`\s+<(/p|/h1|/h2|/h3|/h4|/h5|/h6)>`)
-	content = r.ReplaceAllString(content, "<$1>")
-
-	r = regexp.MustCompile("(<p>){2,}")
-	content = r.ReplaceAllString(content, `<p>`)
-	r = regexp.MustCompile("(</p>){2,}")
-	content = r.ReplaceAllString(content, `</p>`)
-
-	r = regexp.MustCompile("<(p|h1|h2|h3|h4|h5|h6)><br>")
-	content = r.ReplaceAllString(content, `<$1>`)
-
-	r = regexp.MustCompile("<p>&nbsp;</p>")
-	content = r.ReplaceAllString(content, ``)
-
-	r = regexp.MustCompile(`<(span|p|h1|h2|h3|h4|h5|h6)></(span|p|h1|h2|h3|h4|h5|h6)>`)
-	content = r.ReplaceAllString(content, "")
-
-	// r = regexp.MustCompile(`<img.*?src=["|'](.*?)["|'].*?>`)
-	// content = r.ReplaceAllString(content, `<img src="$1">`)
-
-	// r = regexp.MustCompile(`class=["|'](.*?)["|']`)
-	// content = r.ReplaceAllString(content, "")
-	r = regexp.MustCompile(`id=["|'](.*?)["|']`)
-	content = r.ReplaceAllString(content, "")
-
-	r = regexp.MustCompile(`data-\w*?=["|'](.*?)["|']`)
-	content = r.ReplaceAllString(content, "")
-	r = regexp.MustCompile(`data-\w*?-\w*?=["|'](.*?)["|']`)
-	content = r.ReplaceAllString(content, "")
-
-	r = regexp.MustCompile(`font-family:(.*?);`)
-	content = r.ReplaceAllString(content, "")
-	r = regexp.MustCompile(`font-size:(.*?);`)
-	content = r.ReplaceAllString(content, "")
-
-	r = regexp.MustCompile(`position:(.*?);`)
-	content = r.ReplaceAllString(content, "")
-
-	r = regexp.MustCompile(`<table>`)
-	content = r.ReplaceAllString(content, `<table class="table table-sm">`)
-
-	//r = regexp.MustCompile(`width:(.*?);`)
-	//content = r.ReplaceAllString(content, "")
-	//r = regexp.MustCompile(`width:(.*?)px`)
-	//content = r.ReplaceAllString(content, "")
-	//r = regexp.MustCompile(`max-width:(.*?);`)
-	//content = r.ReplaceAllString(content, "")
-	//r = regexp.MustCompile(`padding-bottom:(.*?)%;`)
-	//content = r.ReplaceAllString(content, "")
-
-	//r = regexp.MustCompile(`style=["|']\s*["|']`)
-	//content = r.ReplaceAllString(content, "")
-
-	r = regexp.MustCompile(`<font.*?>(.*?)</font>`)
-	content = r.ReplaceAllString(content, "$1")
-
-	// Convert <br> to \n inside <pre> blocks before restoring
-	for index, pre := range savePRE {
-		pre = strings.Replace(pre, "<br>", "\n", -1)
-		pre = strings.Replace(pre, "<br/>", "\n", -1)
-		pre = strings.Replace(pre, "<br />", "\n", -1)
-		savePRE[index] = pre
+	jobs := make(chan string)
+	results := make(chan result)
+	var wg sync.WaitGroup
+	for w := 0; w < 8; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for u := range jobs {
+				results <- result{u, downloadOneImage(contentDir, u)}
+			}
+		}()
 	}
+	go func() {
+		for _, u := range urls {
+			jobs <- u
+		}
+		close(jobs)
+	}()
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
 
-	for index, code := range saveCODE {
-		content = strings.Replace(content, index, code, 1)
+	okCount, failCount := 0, 0
+	for res := range results {
+		if res.file != "" {
+			content = strings.Replace(content, res.url, "quiver-image-url/"+res.file, -1)
+			okCount++
+		} else {
+			failCount++
+		}
 	}
-	for index, code := range savePRE {
-		content = strings.Replace(content, index, code, 1)
-	}
-
-	//r = regexp.MustCompile(`<(p|pre|h1|h2|h3|h4|h5|ul|ol|/ul|/ol)>`)
-	//content = r.ReplaceAllString(content, "\n<$1>")
-	//r = regexp.MustCompile(`<li>`)
-	//content = r.ReplaceAllString(content, "\n    <li>")
-	//r = regexp.MustCompile(`^\n`)
-	//content = r.ReplaceAllString(content, "")
-	//r = regexp.MustCompile(`(\n|\s+)\n`)
-	//content = r.ReplaceAllString(content, "\n")
-
-	//content += `<div class="clearfix"></div>`
-
-	//fmt.Println(content)
-
+	optLogf("\tsummary: %d unique image urls, %d downloaded, %d failed", len(urls), okCount, failCount)
 	return content
+}
+
+// Downloads one image URL into the note's resources/ folder.
+// Returns the saved file name, or "" on any failure.
+func downloadOneImage(contentDir string, ImageURL string) string {
+	fmt.Println("\tdownloading", ImageURL)
+	optLogf("\tdownloading %s", ImageURL)
+	req, err := http.NewRequest("GET", ImageURL, nil)
+	if err != nil {
+		optLogf("\t\tERROR: %s", err)
+		return ""
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+	resp, err := imageHTTPClient.Do(req)
+	if err != nil {
+		fmt.Println("\t\tError:", err)
+		optLogf("\t\tERROR: %s", err)
+		return ""
+	}
+	defer resp.Body.Close()
+	ImageType := imageExtByMime(strings.Split(resp.Header.Get("Content-Type"), ";")[0])
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 20*1024*1024))
+	if err != nil {
+		checkQuiet(err)
+		optLogf("\t\tERROR: %s", err)
+		return ""
+	}
+	if ImageType == "" {
+		// servers like habrastorage serve images as application/octet-stream:
+		// sniff the magic bytes; if even that fails, assume png and let the
+		// browser figure out the real format
+		sniffed := imageExtByMime(http.DetectContentType(body))
+		if sniffed != "" {
+			ImageType = sniffed
+			optLogf("\t\tcontent type %s, sniffed as %s", resp.Header.Get("Content-Type"), sniffed)
+		} else if strings.HasPrefix(resp.Header.Get("Content-Type"), "application/octet-stream") || resp.Header.Get("Content-Type") == "" {
+			ImageType = ".png"
+			optLogf("\t\tcontent type %s, assumed png", resp.Header.Get("Content-Type"))
+		}
+	}
+	if ImageType == "" {
+		fmt.Println("\t\tError: wrong content type:", resp.Header.Get("Content-Type"))
+		optLogf("\t\tERROR: HTTP %d, wrong content type: %s", resp.StatusCode, resp.Header.Get("Content-Type"))
+		return ""
+	}
+	FileName := RandStringBytes(32) + ImageType
+	FileNameFull, _ := filepath.Abs(contentDir + "/resources/" + FileName)
+	err = os.WriteFile(FileNameFull, body, 0644)
+	if err != nil {
+		checkQuiet(err)
+		optLogf("\t\tERROR: %s", err)
+		return ""
+	}
+	optLogf("\t\tOK -> %s (%d bytes)", FileName, len(body))
+	return FileName
+}
+
+// Maps an image MIME type to a file extension; "" for non-images.
+func imageExtByMime(mime string) string {
+	switch mime {
+	case "image/png":
+		return ".png"
+	case "image/gif":
+		return ".gif"
+	case "image/jpeg":
+		return ".jpg"
+	case "image/webp":
+		return ".webp"
+	case "image/svg+xml":
+		return ".svg"
+	case "image/bmp":
+		return ".bmp"
+	}
+	return ""
 }
 
 func OptimizeResources(uuid string) {
@@ -593,6 +608,7 @@ func OptimizeResources(uuid string) {
 	contentDir := configGlobal.sourceFolder + "/" + noteData.NoteBookUUID + ".qvnotebook/" + noteData.UUID + ".qvnote"
 	contentPath := contentDir + "/content.json"
 	if _, err := os.Stat(contentPath); err == nil {
+		optLogf("note %s \"%s\"", uuid, noteData.Title)
 		os.MkdirAll(contentDir+"/resources", 0755)
 
 		jsonFile, err := os.Open(contentPath)
@@ -609,57 +625,8 @@ func OptimizeResources(uuid string) {
 			contentType = text.Type
 		}
 
-		r := regexp.MustCompile(`<img.*?src=["|'](http.*?)["|'].*?>`)
-		matchData := r.FindAllStringSubmatch(content, -1)
-		if len(matchData) > 0 {
-			fmt.Println("Optimization start for", uuid)
-
-		}
-		for _, match := range matchData {
-			ImageURL := match[1]
-			fmt.Println("\tdownloading", ImageURL)
-			resp, err := http.Get(ImageURL)
-			if err == nil {
-				if ct := resp.Header.Get("Content-Type"); ct != "" {
-					ImageType := ""
-					ContentTypeTrue := strings.Split(ct, ";")
-					switch ContentTypeTrue[0] {
-					case "image/png":
-						ImageType = ".png"
-					case "image/gif":
-						ImageType = ".gif"
-					case "image/jpeg":
-						ImageType = ".jpg"
-					case "image/webp":
-						ImageType = ".webp"
-					case "image/svg+xml":
-						ImageType = ".svg"
-					}
-
-					if ImageType != "" {
-						FileName := RandStringBytes(32) + ImageType
-						FileNameFull, _ := filepath.Abs(contentDir + "/resources/" + FileName)
-						out, err := os.Create(FileNameFull)
-						if err == nil {
-							_, err = io.Copy(out, resp.Body)
-							out.Close()
-							if err == nil {
-								content = strings.Replace(content, ImageURL, "quiver-image-url/"+FileName, 1)
-							} else {
-								checkQuiet(err)
-							}
-						}
-					} else {
-						fmt.Println("\t\tError: wrong image type:", ContentTypeTrue[0])
-					}
-				} else {
-					fmt.Println("\t\tError: wrong headers")
-				}
-				resp.Body.Close()
-			} else {
-				fmt.Println(err)
-			}
-		}
+		fmt.Println("Optimization start for", uuid)
+		content = downloadNoteImages(contentDir, content)
 		var ContentFile struct {
 			Title string             `json:"title"`
 			Cells []ContentCellsType `json:"cells"`
@@ -677,8 +644,8 @@ func OptimizeResources(uuid string) {
 		checkQuiet(err)
 
 		//delete unnecessary files
-		r = regexp.MustCompile(`["|']quiver-image-url/(.*?)["|']`)
-		matchData = r.FindAllStringSubmatch(content, -1)
+		r := regexp.MustCompile(`["|']quiver-image-url/(.*?)["|']`)
+		matchData := r.FindAllStringSubmatch(content, -1)
 		InternalImages := make(map[string]bool)
 		for _, match := range matchData {
 			InternalImages[match[1]] = true
@@ -747,6 +714,19 @@ func indexingAllNotes() {
 func optimizeAllNotes() {
 	optimizationStatus.Status = "processing"
 
+	// every batch run gets its own log file in the datadir
+	logPath := filepath.Join(configGlobal.dataDir, "optimize-"+time.Now().Format("20060102-150405")+".log")
+	logFile, err := os.Create(logPath)
+	if err == nil {
+		optLog = log.New(logFile, "", log.LstdFlags)
+		defer func() {
+			optLog = nil
+			logFile.Close()
+		}()
+	}
+	optLogf("optimization run started")
+	fmt.Println("Optimization log:", logPath)
+
 	var NotesForOptimization []string
 	checkQuiet(NoteDB.Keys(func(NoteID []byte) error {
 		NotesForOptimization = append(NotesForOptimization, string(NoteID))
@@ -763,6 +743,7 @@ func optimizeAllNotes() {
 
 		}
 	}
+	optLogf("optimization run finished: %d notes processed", len(NotesForOptimization))
 	optimizationStatus.Status = "done"
 
 }
