@@ -20,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/html"
+
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/analysis/lang/ru"
 	"github.com/blevesearch/bleve/index/store/goleveldb"
@@ -469,7 +471,8 @@ func downloadNoteImages(contentDir string, content string) string {
 	}
 	os.MkdirAll(contentDir+"/resources", 0755)
 
-	// collect unique URLs
+	// collect unique URLs (unescaping HTML entities: VK CDN and others
+	// answer 403 when the query string arrives with literal &amp;)
 	var urls []string
 	seen := make(map[string]bool)
 	for _, match := range matchData {
@@ -482,7 +485,7 @@ func downloadNoteImages(contentDir string, content string) string {
 	// download in parallel: dead/slow hosts hit the 15s timeout each and
 	// would otherwise serialize into minutes of waiting per note
 	type result struct {
-		url  string
+		raw  string
 		file string
 	}
 	jobs := make(chan string)
@@ -493,7 +496,7 @@ func downloadNoteImages(contentDir string, content string) string {
 		go func() {
 			defer wg.Done()
 			for u := range jobs {
-				results <- result{u, downloadOneImage(contentDir, u)}
+				results <- result{u, downloadOneImage(contentDir, html.UnescapeString(u))}
 			}
 		}()
 	}
@@ -511,7 +514,7 @@ func downloadNoteImages(contentDir string, content string) string {
 	okCount, failCount := 0, 0
 	for res := range results {
 		if res.file != "" {
-			content = strings.Replace(content, res.url, "quiver-image-url/"+res.file, -1)
+			content = strings.Replace(content, res.raw, "quiver-image-url/"+res.file, -1)
 			okCount++
 		} else {
 			failCount++
