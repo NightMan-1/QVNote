@@ -38,3 +38,4 @@ public/static/hugerte/
 
 # Local working notes (design discussions, migration plans) — never commit
 *.local.md
+.agents/
