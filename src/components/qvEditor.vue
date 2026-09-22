@@ -6,6 +6,7 @@
             <div class="float-end">
                 <button class="btn btn-outline-primary ms-auto"
                         @click="$router.push('/notes/' + articleCurrentEditable.NoteBookUUID + '/' + articleCurrentEditable.uuid + '/')"
+                        :disabled="saving"
                         v-if="(articleCurrentEditable.uuid !== '' && articleCurrentEditable.NoteBookUUID !== '')"><i class="bi bi-eye-fill"></i></button>
                 <button class="btn btn-outline-success ms-2" @click="saveData" :disabled="saving"
                         :class="{'ms-auto':articleCurrentEditable.uuid === '' && articleCurrentEditable.NoteBookUUID === ''}">
@@ -436,7 +437,6 @@ export default {
                     // this.articleCurrentEditable.content = jsonData.html // slow
                     this.noteStore.getAllData()
                     this.toast.dismiss(savingToast)
-                    this.toast.success(this.$t('editor.saved'))
                 })
                 .catch(error => {
                     console.error('Error save note data:', error)

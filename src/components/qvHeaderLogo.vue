@@ -66,7 +66,7 @@ export default {
             this.noteStore.doEmptyCurrentArticle()
             this.noteStore.setCurrentNotebookID('')
             this.noteStore.setPageType('editor')
-            this.$router.push({ name: 'qvNotes' })
+            this.$router.push({ name: 'qvEditor' })
         },
         openSettings () {
             this.noteStore.setPageType('settings')
