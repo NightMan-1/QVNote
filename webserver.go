@@ -710,6 +710,12 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 					}
 				}
 
+				// CodePen markers are expanded into iframes only for display;
+				// the editor (raw) and the stored content keep the original markup.
+				if !request.Raw && noteData.ContentType != "code" {
+					noteData.Content = RenderCodePenEmbeds(noteData.Content)
+				}
+
 				noteData.Content = FixNoteImagesLinks(noteData, noteData.Content, r)
 
 				dataExists, _ := FavoritesDB.Exists([]byte(request.NoteID))
@@ -926,6 +932,12 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			return
 		}
 		jsonResponse(w, map[string]interface{}{"html": string(body), "url": resp.Request.URL.String()})
+	})
+
+	// Serves a CodePen pen as a standalone, framable HTML document, with a
+	// two-level (memory + disk) cache. See codepen.go for the proxy details.
+	r.HandleFunc("/api/codepen/{user}/{slug}", func(w http.ResponseWriter, r *http.Request) {
+		serveCodePenEmbed(w, r, chi.URLParam(r, "user"), chi.URLParam(r, "slug"))
 	})
 
 	r.HandleFunc("/api/cleanup_html.json", func(w http.ResponseWriter, r *http.Request) {

@@ -26,6 +26,9 @@ export async function fetchDefuddleArticle (url) {
     if (!article.content || !article.content.trim()) {
         throw new Error('no content extracted')
     }
+    // CodePen embeds are left as defuddle outputs them (a <p class="codepen"
+    // data-slug-hash=...> marker or a plain link). The server expands them back
+    // into iframes when the note is displayed, never on import or in the editor.
     return {
         title: normalizeTitle(article.title || ''),
         description: article.description || '',

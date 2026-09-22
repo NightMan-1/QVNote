@@ -164,7 +164,7 @@ export default {
                 paste_data_images: true,
                 // Disable automatic upload — images are embedded as base64 via paste_data_images
                 automatic_uploads: false,
-                content_style: 'body { font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; line-height: 1.7; margin: 0; padding: 0 1rem 0 1rem; } h1 { font-size: 2.2rem; font-weight: 500; } h2 { font-size: 1.8rem; font-weight: 500; } h3 { font-size: 1.5rem; font-weight: 500; } h4 { font-size: 1.25rem; } h5 { font-size: 1.1rem; } h6 { font-size: 1rem; color: #6c757d; } p { margin-bottom: 0.75rem; } img { max-width: 100%; height: auto; } pre:not([class*="language-"]) { background-color: #f0f3f5; color: #363636; padding: 0.5rem; } pre:not([class*="language-"]) code { background-color: transparent; color: inherit; padding: 0; }  .mce-content-body pre [data-mce-selected="inline-boundary"] { background-color: transparent; } :not(pre) > code[class*="language-"], pre[class*="language-"] {color: #383942;} pre[class*="language-"] {padding: 0.5rem; margin: 1rem 0;}',
+                content_style: 'body { font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; line-height: 1.7; margin: 0; padding: 0 1rem 0 1rem; } h1 { font-size: 2.2rem; font-weight: 500; } h2 { font-size: 1.8rem; font-weight: 500; } h3 { font-size: 1.5rem; font-weight: 500; } h4 { font-size: 1.25rem; } h5 { font-size: 1.1rem; } h6 { font-size: 1rem; color: #6c757d; } p { margin-bottom: 0.75rem; } img { max-width: 100%; height: auto; } iframe { max-width: 100%; } iframe[src*="/api/codepen/"] { width: 100%; } pre:not([class*="language-"]) { background-color: #f0f3f5; color: #363636; padding: 0.5rem; } pre:not([class*="language-"]) code { background-color: transparent; color: inherit; padding: 0; }  .mce-content-body pre [data-mce-selected="inline-boundary"] { background-color: transparent; } :not(pre) > code[class*="language-"], pre[class*="language-"] {color: #383942;} pre[class*="language-"] {padding: 0.5rem; margin: 1rem 0;}',
                 setup: (editor) => {
                     registerBootstrapIcons(editor)
                     // Syntax highlighting for code blocks using PrismJS
@@ -337,6 +337,13 @@ export default {
         if (this.articleCurrentEditable.type === '') {
             this.articleCurrentEditable.type = 'text'
         }
+        // The store holds the display (reader) content, where the server has
+        // expanded CodePen markers into <figure>/<iframe> embeds. The editor must
+        // always work with the raw stored content, or a save would write the
+        // rendered version back into the note.
+        if (this.articleCurrentEditable.uuid !== '') {
+            this.loadRawContent()
+        }
 
         for (const tag in this.tagsList) {
             if (this.tagsList[tag].name !== '') {
@@ -404,6 +411,18 @@ export default {
             } finally {
                 this.defuddleLoading = false
             }
+        },
+        loadRawContent () {
+            fetch(this.noteStore.apiFolder + '/note.json', { method: 'POST', body: JSON.stringify({ NoteID: this.articleCurrentEditable.uuid, raw: true }) })
+                .then((response) => { return response.json() })
+                .then((jsonData) => {
+                    if (jsonData && jsonData.content !== undefined) {
+                        this.articleCurrentEditable.content = jsonData.content
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error fetching raw note:', error)
+                })
         },
         loadOriginal () {
             fetch(this.noteStore.apiFolder + '/note.json', { method: 'POST', body: JSON.stringify({ NoteID: this.articleCurrentEditable.uuid, raw: true }) })

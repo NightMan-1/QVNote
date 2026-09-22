@@ -123,6 +123,7 @@
                         <div class="articleCell"
                              :class="'cellType_' + articleCurrent.type"
                              v-html="displayedContent"
+                             @click="onArticleClick"
                         ></div>
                     </article>
                 </div>
@@ -197,7 +198,10 @@ export default {
             // local .png links are rendered through the webp converter
             // (the /resources handler serves a cached webp for *.webp URLs);
             // the editor still works with original .png links
-            return content.replace(/(\/resources\/[^"'\s]+?)\.png/gi, '$1.webp')
+            content = content.replace(/(\/resources\/[^"'\s]+?)\.png/gi, '$1.webp')
+            // CodePen markers / iframes are expanded server-side in note.json
+            // (RenderCodePenEmbeds) for reader requests only.
+            return content
         }
     },
     beforeMount: function () {
@@ -330,6 +334,29 @@ export default {
                     Prism.highlightAllUnder(el)
                 }
             })
+        },
+        onArticleClick (event) {
+            var btn = event.target.closest('.codepen-refresh')
+            if (!btn) {
+                return
+            }
+            event.preventDefault()
+            var src = btn.getAttribute('data-codepen-refresh')
+            if (!src) {
+                return
+            }
+            var iframe = btn.closest('.codepen-figure') ? btn.closest('.codepen-figure').querySelector('iframe') : null
+            if (!iframe) {
+                return
+            }
+            btn.classList.add('codepen-refresh--loading')
+            var url = src + (src.indexOf('?') >= 0 ? '&' : '?') + 'refresh=1'
+            fetch(url, { method: 'POST' })
+                .catch(() => {})
+                .then(() => {
+                    btn.classList.remove('codepen-refresh--loading')
+                    iframe.src = src + (src.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()
+                })
         },
         toggleOriginal () {
             if (this.showOriginal) {
