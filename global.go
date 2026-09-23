@@ -20,6 +20,9 @@ type configGlobalStruct struct {
 	requestIndexing      bool //необходимость запустить переиндексацию поиска
 	atStartCheckNewNotes bool
 	cmdPort              string
+	mcpEnabled           bool
+	mcpAllowWrite        bool
+	mcpToken             string
 }
 
 var configGlobal (configGlobalStruct)

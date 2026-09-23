@@ -328,6 +328,17 @@ func initSystem() {
 	} else {
 		configGlobal.atStartCheckNewNotes = false
 	}
+
+	data, _ = ConfigDB.Get([]byte("mcpEnabled"))
+	configGlobal.mcpEnabled = string(data) == "true"
+
+	data, _ = ConfigDB.Get([]byte("mcpAllowWrite"))
+	// default true: a fresh install gets full functionality until the user
+	// turns the write switch off
+	configGlobal.mcpAllowWrite = string(data) != "false"
+
+	data, _ = ConfigDB.Get([]byte("mcpToken"))
+	configGlobal.mcpToken = string(data)
 }
 
 func addToIndex(path string, uuid string) error {
@@ -543,6 +554,26 @@ func SaveConfig() bool {
 		tmp = "true"
 	}
 	if err := ConfigDB.Set([]byte("atStartCheckNewNotes"), []byte(tmp)); err != nil {
+		return false
+	}
+
+	tmp = "false"
+	if configGlobal.mcpEnabled {
+		tmp = "true"
+	}
+	if err := ConfigDB.Set([]byte("mcpEnabled"), []byte(tmp)); err != nil {
+		return false
+	}
+
+	tmp = "false"
+	if configGlobal.mcpAllowWrite {
+		tmp = "true"
+	}
+	if err := ConfigDB.Set([]byte("mcpAllowWrite"), []byte(tmp)); err != nil {
+		return false
+	}
+
+	if err := ConfigDB.Set([]byte("mcpToken"), []byte(configGlobal.mcpToken)); err != nil {
 		return false
 	}
 

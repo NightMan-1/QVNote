@@ -23,11 +23,18 @@
                         {{$t('general.sidebarSettingsNotebooks')}}
                     </button>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item mb-1">
                     <button class="nav-link" @click="noteStore.setSettingsPageType('tags')"
                             :class="{'active':settingsPageType === 'tags'}">
                         <i class="bi bi-tags-fill me-1"></i>
                         {{$t('general.sidebarSettingsTags')}}
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" @click="noteStore.setSettingsPageType('mcp')"
+                            :class="{'active':settingsPageType === 'mcp'}">
+                        <i class="bi bi-plug-fill me-1"></i>
+                        {{$t('general.sidebarSettingsMCP')}}
                     </button>
                 </li>
             </ul>
@@ -158,6 +165,50 @@
                     </div>
                 </div>
             </div>
+            <div class="main-content pt-0" :class="{'d-none':settingsPageType !== 'mcp'}">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="m-0 ">{{$t('setting.mcp.title')}}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted"><i>{{$t('setting.mcp.tips')}}</i></p>
+
+                        <div class="form-check form-switch mb-3">
+                            <input type="checkbox" class="form-check-input" id="McpEnabledSwitch"
+                                   v-model="mcpEnabled" @change="saveMcpSettings">
+                            <label class="form-check-label" for="McpEnabledSwitch">{{$t('setting.mcp.enabled')}}</label>
+                        </div>
+
+                        <div class="form-check form-switch mb-3" :class="{'opacity-50': !mcpEnabled}">
+                            <input type="checkbox" class="form-check-input" id="McpAllowWriteSwitch"
+                                   v-model="mcpAllowWrite" :disabled="!mcpEnabled" @change="saveMcpSettings">
+                            <label class="form-check-label" for="McpAllowWriteSwitch">{{$t('setting.mcp.allowWrite')}}</label>
+                        </div>
+                        <div class="mt-1 mb-3"><i>{{$t('setting.mcp.allowWriteHint')}}</i></div>
+
+                        <div class="row mt-4 mb-0 bg-light pt-2 pb-1" :class="{'opacity-50': !mcpEnabled}">
+                            <label class="col-3 col-form-label"><b>{{$t('setting.mcp.token')}}:</b></label>
+                            <div class="col-6">
+                                <input type="text" class="form-control font-monospace" :value="mcpToken" readonly>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-warning w-100" :disabled="!mcpEnabled" @click="mcpRegenToken">
+                                    {{$t('setting.mcp.btnRegenToken')}}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-1 mb-2"><i>{{$t('setting.mcp.tokenHint')}}</i></div>
+
+                        <div class="mt-3">
+                            <code>{{mcpEndpoint}}</code>
+                        </div>
+                        <div class="mt-1"><i>{{$t('setting.mcp.endpointHint')}}</i></div>
+
+                        <span class="text-success ms-2 align-middle" v-if="mcpSaveStatus === 'done'">{{$t('setting.mcp.msgSaved')}}</span>
+                        <span class="text-danger ms-2 align-middle" v-if="mcpSaveStatus === 'error'">{{$t('setting.mcp.msgError')}}</span>
+                    </div>
+                </div>
+            </div>
       </div>
     </div>
 </template>
@@ -189,11 +240,18 @@ export default {
                 'persent': 0
             },
             webpCacheStatus: 'idle',
-            langSelected: localStorage.getItem('locale') || 'ru'
+            langSelected: localStorage.getItem('locale') || 'ru',
+            mcpEnabled: false,
+            mcpAllowWrite: true,
+            mcpToken: '',
+            mcpSaveStatus: 'idle'
         }
     },
     created () {
         this.checkboxCheckNew = this.noteStore.config.atStartCheckNewNotes
+        this.mcpEnabled = !!this.noteStore.config.mcpEnabled
+        this.mcpAllowWrite = this.noteStore.config.mcpAllowWrite !== false
+        this.mcpToken = this.noteStore.config.mcpToken || ''
     },
     watch: {
         'checkboxCheckNew' () {
@@ -202,6 +260,11 @@ export default {
         'langSelected' () {
             localStorage.setItem('locale', this.langSelected)
             this.$i18n.locale = this.langSelected
+        },
+        'noteStore.config' (config) {
+            this.mcpEnabled = !!config.mcpEnabled
+            this.mcpAllowWrite = config.mcpAllowWrite !== false
+            this.mcpToken = config.mcpToken || ''
         }
 
     },
@@ -254,6 +317,41 @@ export default {
                 .catch(error => {
                     console.error('Error fetching config.json:', error)
                     this.noteStore.setStatus({ errorType: 2, errorText: this.$t('setting.global.notificationErrorGetSearchStatus') })
+                })
+        },
+        saveMcpSettings () {
+            this.mcpSaveStatus = 'idle'
+            const body = {
+                mcpEnabled: this.mcpEnabled,
+                mcpAllowWrite: this.mcpAllowWrite
+            }
+            fetch(this.noteStore.apiFolder + '/config.json', { method: 'POST', body: JSON.stringify(body) })
+                .then(response => { return response.json() })
+                .then(jsonData => {
+                    this.noteStore.setConfig(jsonData)
+                    this.mcpSaveStatus = 'done'
+                })
+                .catch(error => {
+                    console.error('Error saving MCP config:', error)
+                    this.mcpSaveStatus = 'error'
+                })
+        },
+        mcpRegenToken () {
+            this.mcpSaveStatus = 'idle'
+            const body = {
+                mcpEnabled: this.mcpEnabled,
+                mcpAllowWrite: this.mcpAllowWrite,
+                mcpRegenerateToken: true
+            }
+            fetch(this.noteStore.apiFolder + '/config.json', { method: 'POST', body: JSON.stringify(body) })
+                .then(response => { return response.json() })
+                .then(jsonData => {
+                    this.noteStore.setConfig(jsonData)
+                    this.mcpSaveStatus = 'done'
+                })
+                .catch(error => {
+                    console.error('Error regenerating MCP token:', error)
+                    this.mcpSaveStatus = 'error'
                 })
         },
         notebookEdit: function (uuid, title) {
@@ -410,7 +508,8 @@ export default {
         localesList () { return this.noteStore.localesList },
         notebooksList () { return this.noteStore.notebooksList },
         tagsList () { return this.noteStore.tagsList },
-        config () { return this.noteStore.config }
+        config () { return this.noteStore.config },
+        mcpEndpoint () { return window.location.origin + '/mcp' }
     }
 }
 </script>

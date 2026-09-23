@@ -18,6 +18,7 @@ export default {
         sidebarSettingsGeneral: 'General',
         sidebarSettingsNotebooks: 'Notebooks',
         sidebarSettingsTags: 'Tags',
+        sidebarSettingsMCP: 'MCP',
         sidebarSwitchNotebooks: 'Notebooks',
         sidebarSwitchTags: 'Tags',
         modalNewNotebookTitle: 'New notebook',
@@ -115,6 +116,19 @@ export default {
             modalBtnCancel: 'Cancel',
             modalBtnSave: 'Save',
             statusErrorUpdate: 'Notepad title update failed...'
+        },
+        mcp: {
+            title: 'MCP server',
+            tips: 'Model Context Protocol server for AI clients (Claude, Cursor, etc.). Endpoint: /mcp (Streamable HTTP, Bearer token).',
+            enabled: 'Enable MCP server',
+            allowWrite: 'Allow write operations',
+            allowWriteHint: 'When disabled, clients can only search and read notes/notebooks/tags. When enabled — create, edit, delete and move notes, notebooks and tags.',
+            token: 'Access token',
+            btnRegenToken: 'Regenerate',
+            tokenHint: 'Send as "Authorization: Bearer <token>" header. Required whenever the MCP server is enabled.',
+            endpointHint: 'MCP endpoint URL for client configuration.',
+            msgSaved: 'Settings saved',
+            msgError: 'Error saving settings'
         },
         tags: {
             title: 'Manage your tags',

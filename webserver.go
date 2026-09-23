@@ -1,18 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -109,6 +106,9 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("User-agent: *\nDisallow: /\n"))
 	})
+
+	// MCP Streamable HTTP endpoint (bearer-token protected; 403 when disabled)
+	registerMCPRoutes(r)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
@@ -238,7 +238,10 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 
 	r.HandleFunc("/api/config.json", func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
-			CheckNewNotes string `json:"atStartCheckNewNotes"`
+			CheckNewNotes  string `json:"atStartCheckNewNotes"`
+			MCPEnabled     *bool  `json:"mcpEnabled"`
+			MCPAllowWrite  *bool  `json:"mcpAllowWrite"`
+			MCPRegenToken  bool   `json:"mcpRegenerateToken"`
 		}
 		readJSON(r, &request)
 
@@ -248,6 +251,17 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		case "false":
 			configGlobal.atStartCheckNewNotes = false
 		}
+		if request.MCPEnabled != nil {
+			configGlobal.mcpEnabled = *request.MCPEnabled
+		}
+		if request.MCPAllowWrite != nil {
+			configGlobal.mcpAllowWrite = *request.MCPAllowWrite
+		}
+		// Token is generated on first enable (or explicit regeneration) so
+		// MCP clients always have a non-empty bearer to send.
+		if request.MCPRegenToken || (configGlobal.mcpEnabled && configGlobal.mcpToken == "") {
+			configGlobal.mcpToken = RandStringBytes(32)
+		}
 
 		SaveConfig()
 
@@ -256,6 +270,9 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			"sourceFolder":         configGlobal.sourceFolder,
 			"requestIndexing":      configGlobal.requestIndexing,
 			"atStartCheckNewNotes": configGlobal.atStartCheckNewNotes,
+			"mcpEnabled":           configGlobal.mcpEnabled,
+			"mcpAllowWrite":        configGlobal.mcpAllowWrite,
+			"mcpToken":             configGlobal.mcpToken,
 		})
 	})
 
@@ -283,36 +300,16 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	})
 
 	r.Get("/api/notebooks.json", func(w http.ResponseWriter, r *http.Request) {
-		var noteBooksList []NoteBookTypeAPI
-		checkQuiet(NoteBookDB.Scan(func(NoteBookID, data []byte) error {
-			var notebookData NoteBookType
-			if err := json.Unmarshal(data, &notebookData); err != nil {
-				return err
-			}
-			noteBooksList = append(noteBooksList, NoteBookTypeAPI{notebookData.UUID, notebookData.Name, len(notebookData.Notes)})
-			return nil
-		}))
-
-		sort.Slice(noteBooksList, func(i, j int) bool {
-			return strings.ToLower(noteBooksList[i].Name) < strings.ToLower(noteBooksList[j].Name)
-		})
-		jsonResponse(w, noteBooksList)
+		jsonResponse(w, listNotebooks())
 	})
 
 	r.Get("/api/tags.json", func(w http.ResponseWriter, r *http.Request) {
-		var TagsCloud []TagsListStruct
-		checkQuiet(TagsDB.Scan(func(TagID, data []byte) error {
-			var tagsData []string
-			if err := json.Unmarshal(data, &tagsData); err != nil {
-				return err
-			}
-			TagsCloud = append(TagsCloud, TagsListStruct{len(tagsData), strings.Trim(string(TagID), " "), url.PathEscape(string(TagID))})
-			return nil
-		}))
-		sort.Slice(TagsCloud, func(i, j int) bool {
-			return strings.ToLower(TagsCloud[i].Name) < strings.ToLower(TagsCloud[j].Name)
-		})
-
+		// The HTTP API exposes URL-escaped tag names (the frontend uses them
+		// as path segments); listTags returns raw names.
+		TagsCloud := listTags()
+		for i := range TagsCloud {
+			TagsCloud[i].URL = url.PathEscape(TagsCloud[i].URL)
+		}
 		jsonResponse(w, TagsCloud)
 	})
 
@@ -321,57 +318,11 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			NotebookID string `json:"NotebookID"`
 		}
 		readJSON(r, &request)
-		switch {
-		case request.NotebookID == "Favorites":
-			var NotesList []NoteTypeAPI
-			checkQuiet(FavoritesDB.Keys(func(NoteID []byte) error {
-				data, _ := NoteDB.Get(NoteID)
-				var note NoteTypeAPI
-				if err := json.Unmarshal(data, &note); err != nil {
-					return err
-				}
-				note.NoteBookUUID = "Favorites"
-				NotesList = append(NotesList, note)
-				return nil
-			}))
-			sort.Slice(NotesList, func(i, j int) bool {
-				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
-			})
-			jsonResponse(w, NotesList)
-		case request.NotebookID == "Allnotes":
-			var NotesList []NoteTypeAPI
-			checkQuiet(NoteDB.Scan(func(NoteID, data []byte) error {
-				var note NoteTypeAPI
-				if err := json.Unmarshal(data, &note); err != nil {
-					return err
-				}
-				NotesList = append(NotesList, note)
-				return nil
-			}))
-			sort.Slice(NotesList, func(i, j int) bool {
-				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
-			})
-			jsonResponse(w, NotesList)
-		case len(request.NotebookID) > 0:
-			var NotesList []NoteTypeAPI
-			data, _ := NoteBookDB.Get([]byte(request.NotebookID))
-			var notebookData NoteBookType
-			err := json.Unmarshal(data, &notebookData)
-			checkQuiet(err)
-			for NoteBookID := range notebookData.Notes {
-				data, _ := NoteDB.Get([]byte(NoteBookID))
-				var note NoteTypeAPI
-				err := json.Unmarshal(data, &note)
-				checkQuiet(err)
-				NotesList = append(NotesList, note)
-			}
-			sort.Slice(NotesList, func(i, j int) bool {
-				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
-			})
-			jsonResponse(w, NotesList)
-		default:
+		if request.NotebookID == "" {
 			jsonResponse(w, map[string]interface{}{})
+			return
 		}
+		jsonResponse(w, listNotesAtNotebook(request.NotebookID))
 	})
 
 	r.HandleFunc("/api/statistic.json", func(w http.ResponseWriter, r *http.Request) {
@@ -518,93 +469,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			Title  string `json:"title"`
 		}
 		readJSON(r, &request)
-		switch {
-		case request.Action == "rename" && request.UUID != "":
-			// update file
-			var meta struct {
-				Name string `json:"name"`
-				UUID string `json:"uuid"`
-			}
-			meta.Name = request.Title
-			meta.UUID = request.UUID
-			metaJSON, _ := json.Marshal(meta)
-			jsonFile, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.UUID + ".qvnotebook/meta.json")
-			err := ioutil.WriteFile(jsonFile, metaJSON, 0644)
-			checkQuiet(err)
-
-			// update database
-			data, _ := NoteBookDB.Get([]byte(request.UUID))
-			var notebookData NoteBookType
-			json.Unmarshal(data, &notebookData)
-			notebookData.Name = request.Title
-			enc, err := json.Marshal(notebookData)
-			checkQuiet(err)
-			NoteBookDB.Set([]byte(request.UUID), enc)
-		case request.Action == "new" && request.UUID == "":
-			u1 := strings.ToUpper(generateUUID())
-
-			// new file
-			notebookDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + u1 + ".qvnotebook")
-			metaFile, _ := filepath.Abs(notebookDir + "/meta.json")
-			var meta struct {
-				Name string `json:"name"`
-				UUID string `json:"uuid"`
-			}
-			meta.Name = request.Title
-			meta.UUID = u1
-			metaJSON, _ := json.MarshalIndent(meta, "", "  ")
-			os.MkdirAll(notebookDir, 0755)
-			err := ioutil.WriteFile(metaFile, metaJSON, 0644)
-			checkQuiet(err)
-
-			// update database
-			var notebookNew NoteBookType
-			notebookNew.Name = request.Title
-			notebookNew.UUID = u1
-			notebookNew.Notes = make(map[string]int64)
-			enc, err := json.Marshal(notebookNew)
-			checkQuiet(err)
-			NoteBookDB.Set([]byte(u1), enc)
-		case request.Action == "remove" && request.UUID != "" && request.UUID != "Inbox" && request.UUID != "Trash":
-			data, _ := NoteBookDB.Get([]byte("Trash"))
-			var notebookDataTrash NoteBookType
-			json.Unmarshal(data, &notebookDataTrash)
-
-			data, _ = NoteBookDB.Get([]byte(request.UUID))
-			var notebookData NoteBookType
-			json.Unmarshal(data, &notebookData)
-			if notebookData.UUID != "" {
-				canDelete := true
-				for noteUUID := range notebookData.Notes {
-					var note NoteType
-					data, _ := NoteDB.Get([]byte(noteUUID))
-					json.Unmarshal(data, &note)
-					noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.UUID + ".qvnotebook/" + noteUUID + ".qvnote")
-					noteDirDst, _ := filepath.Abs(configGlobal.sourceFolder + "/Trash.qvnotebook/" + noteUUID + ".qvnote")
-
-					err := CopyDir(noteDirSrc, noteDirDst)
-					if err == nil {
-						note.NoteBookUUID = "Trash"
-						enc, _ := json.Marshal(note)
-						NoteDB.Set([]byte(noteUUID), enc)
-
-						notebookDataTrash.Notes[noteUUID] = time.Now().Unix()
-						enc, _ = json.Marshal(notebookDataTrash)
-						NoteBookDB.Set([]byte("Trash"), enc)
-
-						os.RemoveAll(noteDirSrc)
-					} else {
-						canDelete = false
-					}
-				}
-				if canDelete {
-					srcFolder, _ := filepath.Abs(configGlobal.sourceFolder + "/" + request.UUID + ".qvnotebook/")
-					os.RemoveAll(srcFolder)
-					NoteBookDB.Del([]byte(request.UUID))
-				}
-			}
-		}
-
+		editNotebook(request.Action, request.UUID, request.Title)
 		jsonResponse(w, map[string]interface{}{})
 	})
 
@@ -614,29 +479,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			Text string `json:"text"`
 		}
 		readJSON(r, &request)
-
-		NotesList := make([]SearchResult, 0)
-		NoteListDedup := make(map[string]bool)
-		if len(request.Text) >= 3 {
-			searchResult, err := ss.Search(request.Text)
-			if err != nil || searchResult == nil {
-				jsonResponse(w, NotesList)
-				return
-			}
-			var noteShort SearchResult
-			for _, item := range searchResult.Hits {
-				data, _ := NoteDB.Get([]byte(item.ID))
-				err := json.Unmarshal(data, &noteShort)
-				checkQuiet(err)
-				if _, ok := NoteListDedup[noteShort.UUID]; ok {
-					// duplicate detected
-				} else {
-					NoteListDedup[noteShort.UUID] = true
-					NotesList = append(NotesList, noteShort)
-				}
-			}
-		}
-		jsonResponse(w, NotesList)
+		jsonResponse(w, searchNotes(request.Text))
 	})
 
 	r.HandleFunc("/api/notes_with_tag.json", func(w http.ResponseWriter, r *http.Request) {
@@ -645,22 +488,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		}
 		readJSON(r, &request)
 		if request.TagName != "" {
-			var NotesList []NoteTypeAPI
-			data, _ := TagsDB.Get([]byte(request.TagName))
-			var notesListTMP []string
-			err := json.Unmarshal(data, &notesListTMP)
-			checkQuiet(err)
-			for _, tagID := range notesListTMP {
-				data, _ := NoteDB.Get([]byte(tagID))
-				var note NoteTypeAPI
-				err := json.Unmarshal(data, &note)
-				checkQuiet(err)
-				NotesList = append(NotesList, note)
-			}
-			sort.Slice(NotesList, func(i, j int) bool {
-				return NotesList[i].UpdatedAt > NotesList[j].UpdatedAt
-			})
-			jsonResponse(w, NotesList)
+			jsonResponse(w, listNotesByTag(request.TagName))
 		} else {
 			jsonResponse(w, map[string]interface{}{})
 		}
@@ -672,64 +500,12 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			Raw    bool   `json:"raw"`
 		}
 		readJSON(r, &request)
-		if request.NoteID != "" {
-			data, _ := NoteDB.Get([]byte(request.NoteID))
-			var noteData NoteTypeWithContentAPI
-			err := json.Unmarshal(data, &noteData)
-			checkQuiet(err)
-
-			contentDir := configGlobal.sourceFolder + "/" + noteData.NoteBookUUID + ".qvnotebook/" + noteData.UUID + ".qvnote"
-			contentPath := contentDir + "/content.json"
-			if _, err := os.Stat(contentPath); err == nil {
-				jsonFile, err := os.Open(contentPath)
-				checkQuiet(err)
-				byteValue, _ := ioutil.ReadAll(jsonFile)
-				var contentFile SearchContent
-				json.Unmarshal(byteValue, &contentFile)
-				jsonFile.Close()
-
-				noteData.Content = ""
-				for _, text := range contentFile.Cells {
-					noteData.Content += text.Data
-					noteData.ContentType = text.Type
-				}
-
-				// Legacy notes (no content_state) are normalized on read.
-				// refetched/edited notes and raw requests are served as stored.
-				if !request.Raw && noteData.ContentType != "code" && noteData.ContentState == "" {
-					noteData.Content = ClearHTML(noteData.Content, noteData.Title)
-					// Old notes often start with the bare source URL as the first
-					// line; lift it into url_src (response only, stored data
-					// untouched) so it doesn't clutter the content.
-					cleaned, src := stripLeadingSourceLink(noteData.Content)
-					if src != "" {
-						noteData.Content = cleaned
-						if noteData.URL == "" {
-							noteData.URL = src
-						}
-					}
-				}
-
-				// CodePen markers are expanded into iframes only for display;
-				// the editor (raw) and the stored content keep the original markup.
-				if !request.Raw && noteData.ContentType != "code" {
-					noteData.Content = RenderCodePenEmbeds(noteData.Content)
-				}
-
-				noteData.Content = FixNoteImagesLinks(noteData, noteData.Content, r)
-
-				dataExists, _ := FavoritesDB.Exists([]byte(request.NoteID))
-				if dataExists {
-					noteData.Favorites = true
-				}
-
-				jsonResponse(w, noteData)
-			} else {
-				jsonResponse(w, map[string]interface{}{})
-			}
-		} else {
+		noteData := loadNote(request.NoteID, request.Raw, r.Host)
+		if noteData == nil {
 			jsonResponse(w, map[string]interface{}{})
+			return
 		}
+		jsonResponse(w, noteData)
 	})
 
 	r.HandleFunc("/api/note_edit.json", func(w http.ResponseWriter, r *http.Request) {
@@ -744,151 +520,20 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		}
 		readJSON(r, &request)
 
-		var noteUUID string
-		var notebookUUID string
-		var noteData NoteType
-		if request.UUID == "" {
-			noteUUID = strings.ToUpper(generateUUID())
-			notebookUUID = "Inbox"
-			noteData.NoteBookUUID = notebookUUID
-			noteData.UUID = noteUUID
-		} else {
-			noteUUID = request.UUID
-			data, _ := NoteDB.Get([]byte(noteUUID))
-			json.Unmarshal(data, &noteData)
-			notebookUUID = noteData.NoteBookUUID
+		result, err := saveNote(saveNoteParams{
+			UUID:         request.UUID,
+			Title:        request.Title,
+			URL:          request.URL,
+			Type:         request.Type,
+			Content:      request.Content,
+			Tags:         request.Tags,
+			ContentState: request.ContentState,
+		})
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-
-		noteData.Title = normalizeWhitespace(request.Title)
-		noteData.URL = request.URL
-		noteData.SearchIndex = false
-		// A note saved through the editor or confirmed after a defuddle
-		// refetch is never auto-normalized again.
-		if request.ContentState == "refetched" {
-			noteData.ContentState = "refetched"
-		} else {
-			noteData.ContentState = "edited"
-		}
-
-		if request.UUID == "" {
-			noteData.CreatedAt = int32(time.Now().Unix())
-			noteData.UpdatedAt = noteData.CreatedAt
-		} else {
-			noteData.UpdatedAt = int32(time.Now().Unix())
-		}
-		if request.Type == "tinymce" {
-			request.Type = "text"
-		}
-
-		// update file
-		noteDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookUUID + ".qvnotebook/" + noteUUID + ".qvnote")
-		os.MkdirAll(noteDir, 0755)
-		var meta struct {
-			CreatedAt    int32    `json:"created_at"`
-			UpdatedAt    int32    `json:"updated_at"`
-			Tags         []string `json:"tags"`
-			Title        string   `json:"title"`
-			UUID         string   `json:"uuid"`
-			URL          string   `json:"url_src"`
-			ContentState string   `json:"content_state,omitempty"`
-		}
-		meta.CreatedAt = noteData.CreatedAt
-		meta.UpdatedAt = noteData.UpdatedAt
-		meta.Title = noteData.Title
-		meta.UUID = noteData.UUID
-		meta.URL = noteData.URL
-		meta.Tags = request.Tags
-		meta.ContentState = noteData.ContentState
-		metaJSON, _ := json.MarshalIndent(meta, "", "  ")
-		err := ioutil.WriteFile(noteDir+"/meta.json", metaJSON, 0644)
-		checkQuiet(err)
-
-		var content struct {
-			Title string             `json:"title"`
-			Cells []ContentCellsType `json:"cells"`
-		}
-		content.Title = noteData.Title
-		// External images are downloaded into resources/ on save, so notes
-		// never depend on third-party hotlinks.
-		if request.Type != "code" {
-			request.Content = downloadNoteImages(noteDir, request.Content)
-		}
-		content.Cells = make([]ContentCellsType, 1)
-		content.Cells[0] = ContentCellsType{Type: request.Type, Data: request.Content}
-		var buf bytes.Buffer
-		enc := json.NewEncoder(&buf)
-		enc.SetEscapeHTML(false)
-		enc.Encode(content)
-
-		err = ioutil.WriteFile(noteDir+"/content.json", buf.Bytes(), 0644)
-		checkQuiet(err)
-
-		// remove old tags from cloud
-		for _, tagID := range noteData.Tags {
-			data, _ := TagsDB.Get([]byte(tagID))
-			var notesListOld []string
-			var notesListNew []string
-			err := json.Unmarshal(data, &notesListOld)
-			checkQuiet(err)
-			for _, noteID := range notesListOld {
-				if noteID != noteUUID {
-					notesListNew = append(notesListNew, noteID)
-				}
-			}
-			if len(notesListNew) == 0 {
-				if err := TagsDB.Del([]byte(tagID)); err != nil {
-					checkQuiet(err)
-				}
-			} else {
-				enc, err := json.Marshal(notesListNew)
-				checkQuiet(err)
-				TagsDB.Set([]byte(tagID), enc)
-			}
-		}
-
-		// Add new tags to cloud
-		for _, tagID := range request.Tags {
-			data, _ := TagsDB.Get([]byte(tagID))
-			dataString := string(data)
-			var notesList []string
-			if dataString == "" {
-				// new tag
-			} else {
-				// exist tag
-				err := json.Unmarshal(data, &notesList)
-				checkQuiet(err)
-			}
-			notesList = append(notesList, noteUUID)
-
-			enc, err := json.Marshal(notesList)
-			checkQuiet(err)
-			err = TagsDB.Set([]byte(tagID), enc)
-			checkQuiet(err)
-		}
-
-		// add to search index
-		addToIndex(noteDir+"/content.json", noteUUID)
-		noteData.SearchIndex = true
-
-		// update database
-		noteData.Tags = request.Tags
-		encNote, _ := json.Marshal(noteData)
-		err = NoteDB.Set([]byte(noteUUID), encNote)
-		checkQuiet(err)
-
-		// add new note to inbox
-		if request.UUID == "" {
-			data, _ := NoteBookDB.Get([]byte("Inbox"))
-			var notebookDataInbox NoteBookType
-			json.Unmarshal(data, &notebookDataInbox)
-			notebookDataInbox.Notes[noteUUID] = time.Now().Unix()
-			encData, _ := json.Marshal(notebookDataInbox)
-			NoteBookDB.Set([]byte("Inbox"), encData)
-		}
-
-		SaveConfig()
-
-		jsonResponse(w, map[string]interface{}{"NoteBookUUID": notebookUUID, "uuid": noteUUID})
+		jsonResponse(w, result)
 	})
 
 	// Fetches a web page server-side so the frontend can run defuddle on it
@@ -967,96 +612,7 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		}
 		readJSON(r, &request)
 		request.URL, _ = url.PathUnescape(request.URL)
-
-		if request.URL != "" || (request.Action == "rename" && request.URL != "" && request.URL != request.Title) {
-			data, _ := TagsDB.Get([]byte(request.URL))
-			if string(data) != "" {
-				var tagsData []string
-				err := json.Unmarshal(data, &tagsData)
-				checkQuiet(err)
-				for _, noteID := range tagsData {
-					// change files
-					dataNote, _ := NoteDB.Get([]byte(noteID))
-					if string(dataNote) != "" {
-						var note NoteType
-						err := json.Unmarshal(dataNote, &note)
-						checkQuiet(err)
-
-						metaFile, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote/meta.json")
-
-						jsonFile, err := os.Open(metaFile)
-						if err == nil {
-							byteValue, _ := ioutil.ReadAll(jsonFile)
-							json.Unmarshal(byteValue, &note)
-							jsonFile.Close()
-							var tagsNew = make([]string, 0)
-							for _, tagName := range note.Tags {
-								if tagName != request.URL && tagName != request.Title {
-									tagsNew = append(tagsNew, tagName)
-								}
-							}
-							switch request.Action {
-							case "rename":
-								tagsNew = append(tagsNew, request.Title) // add new tag name
-							case "remove":
-								// do nothing
-							}
-							note.Tags = tagsNew
-
-							// save file with meta data
-							var meta struct {
-								CreatedAt int32    `json:"created_at"`
-								UpdatedAt int32    `json:"updated_at"`
-								Tags      []string `json:"tags"`
-								Title     string   `json:"title"`
-								UUID      string   `json:"uuid"`
-							}
-							meta.CreatedAt = note.CreatedAt
-							meta.UpdatedAt = note.UpdatedAt
-							meta.Title = note.Title
-							meta.UUID = note.UUID
-							meta.Tags = note.Tags
-
-							metaJSON, _ := json.MarshalIndent(meta, "", "  ")
-							err = ioutil.WriteFile(metaFile, metaJSON, 0644)
-							checkQuiet(err)
-
-							// update NoteDB
-							enc, _ := json.Marshal(note)
-							NoteDB.Set([]byte(note.UUID), enc)
-						}
-					}
-				}
-
-				// save tags
-				if request.Action == "remove" {
-					// remove old data
-					TagsDB.Del([]byte(request.URL))
-				} else if request.Action == "rename" {
-					// remove old data
-					TagsDB.Del([]byte(request.URL))
-
-					// add new data
-					data, _ := TagsDB.Get([]byte(request.Title)) // check the existence of a new tag (required for merging)
-					if string(data) != "" {
-						var tagsDataExist []string
-						err := json.Unmarshal(data, &tagsDataExist)
-						checkQuiet(err)
-
-						for _, tagName := range tagsDataExist {
-							if !inArray(tagName, tagsData) {
-								tagsData = append(tagsData, tagName)
-							}
-						}
-					}
-
-					enc, err := json.Marshal(tagsData)
-					checkQuiet(err)
-					TagsDB.Set([]byte(request.Title), enc)
-				}
-			}
-		}
-
+		editTag(request.Action, request.URL, request.Title)
 		jsonResponse(w, map[string]interface{}{})
 	})
 
@@ -1069,111 +625,22 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		readJSON(r, &request)
 		switch {
 		case request.UUID != "" && request.Action == "move":
-			// get note info
-			var note NoteType
-			data, _ := NoteDB.Get([]byte(request.UUID))
-			json.Unmarshal(data, &note)
-
-			// get source notebook info
-			var notebookSRC NoteBookType
-			data, _ = NoteBookDB.Get([]byte(note.NoteBookUUID))
-			json.Unmarshal(data, &notebookSRC)
-
-			// get target notebook info
-			var notebookDST NoteBookType
-			data, _ = NoteBookDB.Get([]byte(request.Target))
-			json.Unmarshal(data, &notebookDST)
-			if notebookDST.UUID != "" {
-				// move folder
-				noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote")
-				noteDirDst, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookDST.UUID + ".qvnotebook/" + note.UUID + ".qvnote")
-
-				err := CopyDir(noteDirSrc, noteDirDst)
-				if err == nil {
-					// update database
-					note.NoteBookUUID = notebookDST.UUID
-					enc, _ := json.Marshal(note)
-					NoteDB.Set([]byte(note.UUID), enc)
-
-					delete(notebookSRC.Notes, note.UUID)
-					encSRC, _ := json.Marshal(notebookSRC)
-					NoteBookDB.Set([]byte(notebookSRC.UUID), encSRC)
-
-					notebookDST.Notes[note.UUID] = time.Now().Unix()
-					encDST, _ := json.Marshal(notebookDST)
-					NoteBookDB.Set([]byte(notebookDST.UUID), encDST)
-
-					os.RemoveAll(noteDirSrc)
-				} else { //nolint:staticcheck
-					go showNotificationDialog("Error! Can not move folder " + noteDirSrc + " to " + noteDirDst)
-				}
-			} else { //nolint:staticcheck
-				go showNotificationDialog("Error! Notebook " + notebookDST.UUID + " not exist")
+			if err := moveNote(request.UUID, request.Target); err != nil {
+				go showNotificationDialog("Error! Can not move note: " + err.Error())
 			}
 		case request.UUID != "" && request.Action == "delete":
-			// get note info
-			var note NoteType
-			data, _ := NoteDB.Get([]byte(request.UUID))
-			json.Unmarshal(data, &note)
-
-			// get source notebook info
-			var notebookSRC NoteBookType
-			data, _ = NoteBookDB.Get([]byte(note.NoteBookUUID))
-			json.Unmarshal(data, &notebookSRC)
-
-			if notebookSRC.UUID == "Trash" {
-				// delete
-				delete(notebookSRC.Notes, note.UUID)
-				encSRC, _ := json.Marshal(notebookSRC)
-				NoteBookDB.Set([]byte(notebookSRC.UUID), encSRC)
-
-				NoteDB.Del([]byte(note.UUID))
-
-				noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote")
-				os.RemoveAll(noteDirSrc)
-				ss.index.Delete(note.UUID) // delete from search index
-			} else {
-				// move to trash
-				var notebookDST NoteBookType
-				data, _ = NoteBookDB.Get([]byte("Trash"))
-				json.Unmarshal(data, &notebookDST)
-				noteDirSrc, _ := filepath.Abs(configGlobal.sourceFolder + "/" + note.NoteBookUUID + ".qvnotebook/" + note.UUID + ".qvnote")
-				noteDirDst, _ := filepath.Abs(configGlobal.sourceFolder + "/" + notebookDST.UUID + ".qvnotebook/" + note.UUID + ".qvnote")
-				err := CopyDir(noteDirSrc, noteDirDst)
-				if err == nil {
-					// update database
-					note.NoteBookUUID = notebookDST.UUID
-					enc, _ := json.Marshal(note)
-					NoteDB.Set([]byte(note.UUID), enc)
-
-					delete(notebookSRC.Notes, note.UUID)
-					encSRC, _ := json.Marshal(notebookSRC)
-					NoteBookDB.Set([]byte(notebookSRC.UUID), encSRC)
-
-					notebookDST.Notes[note.UUID] = time.Now().Unix()
-					encDST, _ := json.Marshal(notebookDST)
-					NoteBookDB.Set([]byte(notebookDST.UUID), encDST)
-
-					os.RemoveAll(noteDirSrc)
-				} else { //nolint:staticcheck
-					go showNotificationDialog("Error! Can not move folder " + noteDirSrc + " to " + noteDirDst)
-				}
+			if err := deleteNote(request.UUID); err != nil {
+				go showNotificationDialog("Error! Can not delete note: " + err.Error())
 			}
 		default:
 			jsonResponse(w, map[string]interface{}{})
+			return
 		}
+		jsonResponse(w, map[string]interface{}{})
 	})
 
 	fmt.Println("Server started on port " + configGlobal.cmdPort)
 	log.Fatal(http.ListenAndServe(":"+configGlobal.cmdPort, r))
-}
-
-func FixNoteImagesLinks(note NoteTypeWithContentAPI, content string, r *http.Request) string {
-	ImageURL := "/resources/" + note.NoteBookUUID + "/" + note.UUID + ""
-	content = strings.Replace(content, "quiver-image-url", ImageURL, -1)
-	content = strings.Replace(content, "quiver-file-url", ImageURL, -1)
-	content = strings.Replace(content, "//"+r.Host+"/resources/", "/resources/", -1) // fix for old cleanup
-	return content
 }
 
 // normalizeFetchURL rewrites URLs of sites that moved domains, so server-side

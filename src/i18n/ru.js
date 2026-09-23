@@ -18,6 +18,7 @@ export default {
         sidebarSettingsGeneral: 'Основные',
         sidebarSettingsNotebooks: 'Блокноты',
         sidebarSettingsTags: 'Теги',
+        sidebarSettingsMCP: 'MCP',
         sidebarSwitchNotebooks: 'Блокноты',
         sidebarSwitchTags: 'Теги',
         modalNewNotebookTitle: 'Новый блокнот',
@@ -115,6 +116,19 @@ export default {
             modalBtnCancel: 'Отмена',
             modalBtnSave: 'Сохранить',
             statusErrorUpdate: 'Ошибка обновления заголовка блокнота...'
+        },
+        mcp: {
+            title: 'MCP-сервер',
+            tips: 'MCP-сервер (Model Context Protocol) для AI-клиентов (Claude, Cursor и т.д.). Эндпоинт: /mcp (Streamable HTTP, Bearer-токен).',
+            enabled: 'Включить MCP-сервер',
+            allowWrite: 'Разрешить операции записи',
+            allowWriteHint: 'Если выключено — клиенты могут только искать и читать заметки/блокноты/теги. Если включено — создание, редактирование, удаление и перемещение заметок, блокнотов и тегов.',
+            token: 'Токен доступа',
+            btnRegenToken: 'Перегенерировать',
+            tokenHint: 'Передаётся в заголовке "Authorization: Bearer <token>". Обязателен, пока MCP-сервер включён.',
+            endpointHint: 'URL эндпоинта MCP для настройки клиента.',
+            msgSaved: 'Настройки сохранены',
+            msgError: 'Ошибка сохранения настроек'
         },
         tags: {
             title: 'Управление тегами',
