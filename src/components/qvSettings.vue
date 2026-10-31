@@ -286,11 +286,9 @@ export default {
     },
     methods: {
         goBack () {
-            if (window.history.length > 1) {
-                this.$router.back()
-            } else {
-                this.$router.push('/')
-            }
+            // the mobile shell keeps its last tab in the store, so opening "/"
+            // returns to "More" instead of the overview
+            this.$router.push('/')
         },
         webpCacheClear () {
             this.webpCacheStatus = 'processing'

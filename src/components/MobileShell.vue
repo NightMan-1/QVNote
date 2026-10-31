@@ -52,6 +52,7 @@
                 <div class="mshell__list">
                     <div v-if="searchText.trim().length < 3" class="mshell__hint">{{ $t('articleList.searchHint') }}</div>
                     <div v-else-if="searchResults.length === 0" class="mshell__hint">{{ $t('articleList.searchNothing') }}</div>
+                    <div v-else class="mshell__hint">{{ $t('articleList.searchFound', { count: searchResults.length }) }}</div>
                     <button
                         v-for="note in searchResults"
                         :key="note.uuid"
@@ -68,11 +69,15 @@
                 <button class="mshell__item mshell__item--action" @click="openSettings">
                     <i class="bi bi-gear me-2"></i>{{ $t('general.buttonSettings') }}
                 </button>
+                <button v-if="canInstall" class="mshell__item mshell__item--action" @click="installApp">
+                    <i class="bi bi-download me-2"></i>{{ $t('general.installApp') }}
+                </button>
             </div>
 
             <qv-dashboard v-else-if="activeTab === 'overview'" />
 
             <div v-else class="mshell__list">
+                <div v-if="notes.length === 0" class="mshell__hint">{{ $t('articleList.emptyNotebook') }}</div>
                 <button
                     v-for="note in notes"
                     :key="note.uuid"
@@ -218,8 +223,8 @@ export default {
     components: { NoteArticle, qvDashboard, qvEditor, QvBrand },
     data () {
         return {
-            activeTab: 'overview',
             actionSheet: null,
+            installPrompt: null,
             libraryOpen: false,
             libraryType: 'notebooks',
             searchText: '',
@@ -231,6 +236,13 @@ export default {
         return { noteStore: useNoteStore() }
     },
     computed: {
+        activeTab: {
+            get () { return this.noteStore.mobileTab },
+            set (value) { this.noteStore.setMobileTab(value) }
+        },
+        canInstall () {
+            return !!this.installPrompt && !window.matchMedia('(display-mode: standalone)').matches
+        },
         tabs () {
             return [
                 { id: 'overview', icon: 'bi-bar-chart', label: this.$t('general.tabOverview') },
@@ -314,9 +326,29 @@ export default {
         }
     },
     mounted () {
-        this.syncTabWithRoute()
+        // deep links to a note/tag should open the notes tab; on the root
+        // route keep the last tab (so Settings returns to "More")
+        if (this.$route.name !== 'qvApp') {
+            this.syncTabWithRoute()
+        }
+        window.addEventListener('beforeinstallprompt', this.onBeforeInstallPrompt)
+    },
+    beforeUnmount () {
+        window.removeEventListener('beforeinstallprompt', this.onBeforeInstallPrompt)
     },
     methods: {
+        onBeforeInstallPrompt (event) {
+            event.preventDefault()
+            this.installPrompt = event
+        },
+        installApp () {
+            const prompt = this.installPrompt
+            if (!prompt) {
+                return
+            }
+            this.installPrompt = null
+            prompt.prompt()
+        },
         syncTabWithRoute () {
             if (this.$route.name === 'qvApp') {
                 this.activeTab = 'overview'
