@@ -10,6 +10,8 @@
                 <i class="bi bi-chevron-down"></i>
             </button>
 
+            <QvBrand v-else-if="activeTab === 'overview'" />
+
             <div v-else class="mshell__title">{{ pageTitle }}</div>
 
             <div class="mshell__grow"></div>
@@ -159,13 +161,14 @@
 import { defineAsyncComponent } from 'vue'
 import { useNoteStore } from '../store'
 import NoteArticle from './NoteArticle.vue'
+import QvBrand from './QvBrand.vue'
 
 const qvDashboard = defineAsyncComponent(() => import('./qvDashboard.vue'))
 const qvEditor = defineAsyncComponent(() => import('./qvEditor.vue'))
 
 export default {
     name: 'MobileShell',
-    components: { NoteArticle, qvDashboard, qvEditor },
+    components: { NoteArticle, qvDashboard, qvEditor, QvBrand },
     data () {
         return {
             activeTab: 'overview',

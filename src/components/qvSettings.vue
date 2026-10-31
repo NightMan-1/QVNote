@@ -1,6 +1,12 @@
 <template>
-    <div :class="gridClass">
+    <div :class="[gridClass, 'settings-page']">
         <div class="mobile-backdrop d-lg-none" v-if="noteStore.mobileSidebar" @click="noteStore.setMobileSidebar(false)"></div>
+        <div class="settings-mobile-bar d-lg-none">
+            <button class="settings-mobile-back" :aria-label="$t('articleList.backToList')" @click="goBack">
+                <i class="bi bi-arrow-left"></i>
+            </button>
+            <div class="settings-mobile-title">{{ $t('general.buttonSettings') }}</div>
+        </div>
     	<div class="grid-head-1">
             <qv-header-logo></qv-header-logo>
         </div>
@@ -279,6 +285,13 @@ export default {
 
     },
     methods: {
+        goBack () {
+            if (window.history.length > 1) {
+                this.$router.back()
+            } else {
+                this.$router.push('/')
+            }
+        },
         webpCacheClear () {
             this.webpCacheStatus = 'processing'
             fetch(this.noteStore.apiFolder + '/webp_cache_clear.json', { method: 'POST', body: '{}' })
@@ -525,3 +538,142 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+@media (max-width: 991.98px) {
+    .settings-page {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: #fff;
+    }
+
+    .settings-page .mobile-backdrop,
+    .settings-page .grid-head-1,
+    .settings-page .grid-sidebar-wrap,
+    .settings-page .grid-footer-1,
+    .settings-page .grid-head-2 {
+        display: none;
+    }
+
+    .settings-mobile-bar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        min-height: 3.2rem;
+        padding: .25rem .5rem;
+        border-bottom: 1px solid var(--nord4);
+    }
+
+    .settings-mobile-back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        padding: 0;
+        border: 1px solid var(--nord4);
+        border-radius: .35rem;
+        background: #fff;
+        color: var(--nord3);
+        font-size: 1.1rem;
+    }
+
+    .settings-mobile-title {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: var(--nord0);
+    }
+
+    /* the section switcher becomes a horizontal tab strip */
+    .settings-page .grid-sidebar-1 {
+        position: static;
+        transform: none;
+        width: auto;
+        height: auto;
+        max-height: none;
+        padding: 0;
+        overflow: visible;
+        flex: 0 0 auto;
+        background: #fff;
+        border: 0;
+    }
+
+    .settings-page .grid-sidebar-1 .sidebar-nav .nav {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: .4rem;
+        margin: 0;
+        padding: .5rem .6rem;
+        overflow: visible;
+        background: var(--nord6);
+        border-bottom: 1px solid var(--nord4);
+    }
+
+    .settings-page .grid-sidebar-1 .nav-title {
+        display: none;
+    }
+
+    .settings-page .grid-sidebar-1 .nav-item {
+        flex: 0 0 auto;
+        width: auto;
+        margin: 0 !important;
+    }
+
+    .settings-page .grid-sidebar-1 .nav-link {
+        display: flex;
+        align-items: center;
+        width: auto;
+        gap: .3rem;
+        padding: .45rem .7rem;
+        border: 1px solid var(--nord4);
+        border-radius: .4rem;
+        background: #fff;
+        color: var(--nord3);
+        white-space: nowrap;
+    }
+
+    .settings-page .grid-sidebar-1 .nav-link.active {
+        background: var(--nord8);
+        border-color: var(--nord8);
+        color: #fff;
+    }
+
+    .settings-page .grid-body-1 {
+        flex: 1 1 auto;
+        width: 100%;
+        height: auto;
+        overflow-y: auto;
+    }
+
+    .settings-page .main-content {
+        padding: .75rem;
+    }
+
+    .settings-page .card {
+        margin-bottom: 1rem;
+    }
+
+    .settings-page .card-header h5 {
+        font-size: 1rem;
+    }
+
+    /* comfortable, evenly spaced actions instead of inline buttons */
+    .settings-page .card-body .btn {
+        display: block;
+        width: 100%;
+        margin: 0 0 .5rem !important;
+        padding: .55rem .9rem;
+    }
+
+    .settings-page .card-body .btn:last-child {
+        margin-bottom: 0 !important;
+    }
+
+    .settings-page .form-check {
+        margin-bottom: .75rem;
+    }
+}
+</style>
