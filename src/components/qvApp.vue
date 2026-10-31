@@ -138,6 +138,7 @@ import qvHeaderLogo from './qvHeaderLogo.vue'
 import qvDashboard from './qvDashboard.vue'
 import qvSidebar from './qvSidebar.vue'
 import { useModal } from '../composables/useModal'
+import { escapeHtml } from '../utils/escape'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-javascript'
@@ -514,9 +515,9 @@ export default {
             let selectRAW = '<select class="form-control" id="notebookTarget">'
             for (let i in this.notebooksList) {
                 if (this.articleCurrent.NoteBookUUID === this.notebooksList[i].uuid) {
-                    selectRAW += '<option value="' + this.notebooksList[i].uuid + '" selected>' + this.notebooksList[i].name + '</option>'
+                    selectRAW += '<option value="' + escapeHtml(this.notebooksList[i].uuid) + '" selected>' + escapeHtml(this.notebooksList[i].name) + '</option>'
                 } else {
-                    selectRAW += '<option value="' + this.notebooksList[i].uuid + '">' + this.notebooksList[i].name + '</option>'
+                    selectRAW += '<option value="' + escapeHtml(this.notebooksList[i].uuid) + '">' + escapeHtml(this.notebooksList[i].name) + '</option>'
                 }
             }
             selectRAW += '</select>'

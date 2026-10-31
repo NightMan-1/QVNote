@@ -106,6 +106,7 @@ import 'hugerte/plugins/codesample'
 import Multiselect from 'vue-multiselect'
 import { push } from 'notivue'
 import { useModal } from '../composables/useModal'
+import { escapeHtml } from '../utils/escape'
 import { fetchDefuddleArticle, normalizeTitle } from '../utils/defuddle'
 import { registerBootstrapIcons } from '../hugerte-icons'
 // import { html as BeautifyHtml } from 'js-beautify'
@@ -359,7 +360,7 @@ export default {
         openDefuddleModal () {
             const self = this
             const modal = this.modal.createModal(this.$t('general.modalClose'))
-            const url = (this.articleCurrentEditable.url_src || '').replace(/"/g, '&quot;')
+            const url = escapeHtml(this.articleCurrentEditable.url_src || '')
             modal.setContent(
                 '<h4 class="ml--1">' + this.$t('editor.btnDefuddleImport') + '</h4>' +
                 '<div class="mt-4 mb-0 bg-light pt-3 pb-3 px-3">' +

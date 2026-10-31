@@ -14,7 +14,7 @@ import './style/bootstrap/bootstrap.scss'
 import './style/grid.css'
 import './style/main.css'
 import './style/typography.scss'
-import 'tingle.js/dist/tingle.css'
+import './vendor/tingle/tingle.css'
 
 import App from './App.vue'
 import router from './router'

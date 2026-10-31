@@ -28,7 +28,6 @@
     "postcss-url": "^10.1.4",
     "prismjs": "^1.30.0",
     "sass": "^1.102.0",
-    "tingle.js": "^0.16.0",
     "tippy.js": "^6.3.7",
     "vue": "^3.5.40",
     "vue-echarts": "^8.1.0",

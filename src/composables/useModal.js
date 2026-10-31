@@ -1,4 +1,4 @@
-import tingle from 'tingle.js'
+import tingle from '../vendor/tingle/tingle.js'
 
 const defaultOptions = {
     footer: true,
@@ -6,6 +6,15 @@ const defaultOptions = {
     closeMethods: ['overlay', 'button', 'escape']
 }
 
+/**
+ * Thin wrapper around the vendored tingle.js (see src/vendor/tingle).
+ *
+ * The vendored copy already handles idempotent destroy(), per-instance busy
+ * state, focus management and the scroll lock, so no local patches are needed.
+ *
+ * Modal content is set as an HTML string (setContent → innerHTML): escape any
+ * interpolated data with `escapeHtml` from utils/escape.js.
+ */
 export function useModal () {
     return {
         createModal (closeLabel, options = {}) {
@@ -15,16 +24,6 @@ export function useModal () {
                 onClose: () => { modal.destroy() },
                 ...options
             })
-            // tingle crashes when destroy() runs twice (e.g. a footer button
-            // destroys the modal and the close handler fires destroy again)
-            let destroyed = false
-            const origDestroy = modal.destroy.bind(modal)
-            modal.destroy = () => {
-                if (!destroyed) {
-                    destroyed = true
-                    origDestroy()
-                }
-            }
             return modal
         }
     }

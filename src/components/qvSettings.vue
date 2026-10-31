@@ -138,7 +138,11 @@
                             class="col-4"
                             v-for="item in notebooksList"
                             :key="item.uuid"
+                            role="button"
+                            tabindex="0"
                             @click="notebookEdit(item.uuid, item.name)"
+                            @keydown.enter.prevent="notebookEdit(item.uuid, item.name)"
+                            @keydown.space.prevent="notebookEdit(item.uuid, item.name)"
                     >
                         <div class="notebook-edit-link">
                             {{item.name}}
@@ -156,7 +160,11 @@
                             class="col-4"
                             v-for="item in tagsList"
                             :key="item.url"
+                            role="button"
+                            tabindex="0"
                             @click="tagEdit(item.url, item.name)"
+                            @keydown.enter.prevent="tagEdit(item.url, item.name)"
+                            @keydown.space.prevent="tagEdit(item.url, item.name)"
                     >
                         <div class="notebook-edit-link">
                             {{item.name}}
@@ -216,6 +224,7 @@
 <script>
 import { useNoteStore } from '../store'
 import { useModal } from '../composables/useModal'
+import { escapeHtml } from '../utils/escape'
 import qvHeaderLogo from './qvHeaderLogo.vue'
 
 export default {
@@ -357,8 +366,9 @@ export default {
         notebookEdit: function (uuid, title) {
             let thisGlobal = this
             let modal = this.modal.createModal(this.$t('general.modalClose'))
-            modal.setContent('<h4 class="ml--1">' + this.$t('setting.notebooks.modalTitle') + ' <span class="text-primary">"' + title + '"</span></h4>' +
-          '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.notebooks.modalNewTitle') + ':</b></label><div class="col-9"><input id="notebook-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
+            const safeTitle = escapeHtml(title)
+            modal.setContent('<h4 class="ml--1">' + this.$t('setting.notebooks.modalTitle') + ' <span class="text-primary">"' + safeTitle + '"</span></h4>' +
+          '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.notebooks.modalNewTitle') + ':</b></label><div class="col-9"><input id="notebook-new-name" type="text" value="' + safeTitle + '" class="form-control"></div></div>' +
           '')
             modal.addFooterBtn(this.$t('setting.notebooks.modalBtnDelete'), 'tingle-btn tingle-btn--danger tingle-btn--pull-left', function () {
                 fetch(thisGlobal.noteStore.apiFolder + '/notebook_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'uuid': uuid }) }).then(response => { return response.text() })
@@ -392,8 +402,9 @@ export default {
         tagEdit: function (url, title) {
             let thisGlobal = this
             let modal = this.modal.createModal(this.$t('general.modalClose'))
-            modal.setContent('<h4 class="ml--1">' + this.$t('setting.tags.modalTitle') + ' <span class="text-primary">"' + title + '"</span></h4>' +
-          '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.tags.modalNewTitle') + ':</b></label><div class="col-9"><input id="tag-new-name" type="text" value="' + title + '" class="form-control"></div></div>' +
+            const safeTitle = escapeHtml(title)
+            modal.setContent('<h4 class="ml--1">' + this.$t('setting.tags.modalTitle') + ' <span class="text-primary">"' + safeTitle + '"</span></h4>' +
+          '<div class="row mt-4 mb-0 bg-light pt-2 pb-1"><label class="col-3 col-form-label"><b>' + this.$t('setting.tags.modalNewTitle') + ':</b></label><div class="col-9"><input id="tag-new-name" type="text" value="' + safeTitle + '" class="form-control"></div></div>' +
           '')
             modal.addFooterBtn(this.$t('setting.tags.modalBtnDelete'), 'tingle-btn tingle-btn--danger tingle-btn--pull-left', function () {
                 fetch(thisGlobal.noteStore.apiFolder + '/tag_edit.json', { method: 'POST', body: JSON.stringify({ 'action': 'remove', 'url': url }) }).then(response => { return response.text() })

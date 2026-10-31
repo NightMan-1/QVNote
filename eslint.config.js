@@ -2,7 +2,7 @@ import vue from 'eslint-plugin-vue'
 
 export default [
     {
-        ignores: ['dist/**', 'templates/**', 'public/static/**', 'node_modules/**']
+        ignores: ['dist/**', 'templates/**', 'public/static/**', 'node_modules/**', 'src/vendor/**']
     },
     ...vue.configs['flat/essential'],
     {
