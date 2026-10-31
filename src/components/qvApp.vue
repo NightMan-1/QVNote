@@ -1,5 +1,6 @@
 <template>
-    <div :class="[gridClass, { 'mobile-note-open': isNoteOpen }]" id="grid">
+    <mobile-shell v-if="isMobile" />
+    <div v-else :class="[gridClass, { 'mobile-note-open': isNoteOpen }]" id="grid">
         <div class="mobile-backdrop d-lg-none" v-if="noteStore.mobileSidebar" @click="noteStore.setMobileSidebar(false)"></div>
     	<div class="grid-head-1">
             <qv-header-logo></qv-header-logo>
@@ -138,6 +139,7 @@ import { defineAsyncComponent } from 'vue'
 import { useNoteStore } from '../store'
 import qvHeaderLogo from './qvHeaderLogo.vue'
 import qvSidebar from './qvSidebar.vue'
+import MobileShell from './MobileShell.vue'
 import { useModal } from '../composables/useModal'
 import { escapeHtml } from '../utils/escape'
 import Prism from 'prismjs'
@@ -164,9 +166,11 @@ const qvDashboard = defineAsyncComponent(() => import('./qvDashboard.vue'))
 
 export default {
     name: 'qvApp',
-    components: { qvHeaderLogo, qvDashboard, qvSidebar, qvEditor },
+    components: { qvHeaderLogo, qvDashboard, qvSidebar, qvEditor, MobileShell },
     data () {
         return {
+            isMobile: false,
+            viewportQuery: null,
             articleListType: 'notes', // tags
             searchInput: '',
             notesListBackup: {},
@@ -216,6 +220,13 @@ export default {
         this.noteStore.getFavoritesCount()
     },
     mounted: function () {
+        // switch to the dedicated mobile shell on phones and portrait tablets
+        if (window.matchMedia) {
+            this.viewportQuery = window.matchMedia('(max-width: 991.98px)')
+            this.isMobile = this.viewportQuery.matches
+            this.viewportQuery.addEventListener('change', this.onViewportChange)
+        }
+
         // Load Prism syntax-highlighting theme once
         if (!document.querySelector('link[data-prism-theme="atom-one-light"]')) {
             var prismLink = document.createElement('link')
@@ -232,6 +243,11 @@ export default {
         } else if (this.$route.name === 'qvTag' || this.$route.name === 'qvTagsList') {
             this.noteStore.setSidebarType('tagsList')
             this.tagSelect(this.$route.params.nbUUID, this.$route.params.noteUUID)
+        }
+    },
+    beforeUnmount: function () {
+        if (this.viewportQuery) {
+            this.viewportQuery.removeEventListener('change', this.onViewportChange)
         }
     },
     watch: {
@@ -510,6 +526,9 @@ export default {
             if (this.articleCurrent.uuid !== articleCurrentUUID) {
                 this.noteStore.getArticle(articleCurrentUUID)
             }
+        },
+        onViewportChange (event) {
+            this.isMobile = event.matches
         },
         isMobileViewport () {
             return window.matchMedia('(max-width: 991.98px)').matches
