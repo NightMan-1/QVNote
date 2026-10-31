@@ -7,7 +7,7 @@
     "build": "vite build",
     "lint": "eslint src/",
     "preview": "vite preview",
-    "postinstall": "mkdir -p public/static/hugerte && cp -r node_modules/hugerte/* public/static/hugerte/ && mkdir -p public/static/hugerte/plugins/paste_from_word && cp node_modules/@pangaeatech/tinymce-paste-from-word-lib/index.js public/static/hugerte/plugins/paste_from_word/plugin.min.js && mkdir -p public/static/ace && cp -r node_modules/ace-builds/src-min-noconflict/* public/static/ace/"
+    "postinstall": "mkdir -p public/static/hugerte && cp -r node_modules/hugerte/* public/static/hugerte/ && mkdir -p public/static/hugerte/plugins/paste_from_word && cp node_modules/@pangaeatech/tinymce-paste-from-word-lib/index.js public/static/hugerte/plugins/paste_from_word/plugin.min.js && rm -rf public/static/ace && mkdir -p public/static/ace && cp node_modules/ace-builds/src-min-noconflict/ace.js node_modules/ace-builds/src-min-noconflict/mode-html.js node_modules/ace-builds/src-min-noconflict/mode-css.js node_modules/ace-builds/src-min-noconflict/mode-javascript.js node_modules/ace-builds/src-min-noconflict/mode-xml.js node_modules/ace-builds/src-min-noconflict/mode-scss.js node_modules/ace-builds/src-min-noconflict/ext-searchbox.js node_modules/ace-builds/src-min-noconflict/worker-base.js node_modules/ace-builds/src-min-noconflict/worker-html.js public/static/ace/"
   },
   "dependencies": {
     "@hugerte/hugerte-vue": "^2.0.2",
@@ -33,7 +33,6 @@
     "vue-echarts": "^8.1.0",
     "vue-i18n": "^11.4.8",
     "vue-multiselect": "^3.5.0",
-    "vue-prism-editor": "^2.0.0-alpha.2",
     "vue-router": "^5.2.0",
     "vue3-calendar-heatmap": "^2.0.5"
   },

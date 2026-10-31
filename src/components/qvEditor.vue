@@ -65,8 +65,8 @@
                  <div class="editor mt-2" v-if="articleCurrentEditable.type === 'text' && editorReady">
                     <Editor v-model="articleCurrentEditable.content" :init="editorConfig" />
                 </div>
-                <div class="editor prism mt-2" v-if="articleCurrentEditable.type === 'code'">
-                    <prism-editor v-model="articleCurrentEditable.content" language="html" :line-numbers="true" :highlight="highlighter"></prism-editor>
+                <div class="editor ace mt-2" v-if="articleCurrentEditable.type === 'code'">
+                    <ace-code-editor v-model="articleCurrentEditable.content" />
                 </div>
                 <div class="clearfix"></div>
         </div>
@@ -75,21 +75,11 @@
 
 <script>
 import { useNoteStore } from '../store'
-import Prism from 'prismjs'
-import 'prismjs/components/prism-markup'
-import { PrismEditor } from 'vue-prism-editor'
-import 'vue-prism-editor/dist/prismeditor.min.css'
+import { loadAce, ACE_THEME_CSS } from '../utils/aceLoader'
 
 import Editor from '@hugerte/hugerte-vue'
-import 'ace-builds/src-min-noconflict/ace'
-import 'ace-builds/src-min-noconflict/theme-crimson_editor'
-import 'ace-builds/src-min-noconflict/mode-html'
-import 'ace-builds/src-min-noconflict/ext-language_tools'
+import AceCodeEditor from './AceCodeEditor.vue'
 import { html as htmlBeautify } from 'js-beautify'
-
-if (window.ace && window.ace.config) {
-    window.ace.config.set('basePath', '/static/ace/')
-}
 window.html_beautify = htmlBeautify
 // Self-hosted: core JS bundled by Vite, static assets (skins/icons) served from public/static/hugerte/
 import 'hugerte'
@@ -136,7 +126,11 @@ export default {
                     supercode: '/static/supercode/plugin.min.js'
                 },
                 supercode: {
-                    theme: 'crimson_editor',
+                    theme: 'ayu-light',
+                    // supercode renders Ace inside a shadow root, where the
+                    // theme module's stylesheet does not reach; hand it the
+                    // same CSS explicitly.
+                    aceCss: ACE_THEME_CSS,
                     language: 'html',
                     fontSize: 14,
                     wrap: true,
@@ -305,7 +299,7 @@ export default {
     components: {
         Editor,
         Multiselect,
-        PrismEditor
+        AceCodeEditor
     },
     setup () {
         return { noteStore: useNoteStore(), modal: useModal() }
@@ -315,6 +309,11 @@ export default {
         tagsList () { return this.noteStore.tagsList }
     },
     mounted () {
+        // The HugeRTE "supercode" plugin uses the global `window.ace` when the
+        // user opens the source-code view (Ctrl+Space), so start loading it as
+        // soon as the editor page mounts instead of waiting for a code note.
+        loadAce().catch(e => console.error(e))
+
         // Load paste_from_word library before rendering the editor.
         // The library is a TinyMCE UMD module that expects window.tinymce.
         if (typeof window.tinymce === 'undefined' && typeof window.hugerte !== 'undefined') {
@@ -353,10 +352,6 @@ export default {
         }
     },
     methods: {
-        highlighter (code) {
-            if (!code) return ''
-            return Prism.highlight(code, Prism.languages.markup, 'markup')
-        },
         openDefuddleModal () {
             const self = this
             const modal = this.modal.createModal(this.$t('general.modalClose'))
@@ -506,19 +501,6 @@ export default {
         max-width: 100%;
     }
 
-    /* Prism editor: fix invisible cursor and text selection */
-    .prism-editor-wrapper .prism-editor__textarea {
-        caret-color: #363636;
-    }
-    .prism-editor-wrapper .prism-editor__textarea::selection {
-        background-color: rgba(32, 168, 216, 0.3);
-    }
-    .prism-editor-wrapper .prism-editor__textarea::-moz-selection {
-        background-color: rgba(32, 168, 216, 0.3);
-    }
-    .prism-editor-wrapper :is(.prism-editor__editor, .prism-editor__textarea) {
-        font-variant-numeric: tabular-nums;
-    }
     .tox-shadowhost.tox-fullscreen, .tox.tox-hugerte.tox-fullscreen {
         height: 100% !important;
     }
@@ -553,21 +535,9 @@ export default {
       flex-direction: column;
     }
 
-    .editor.prism {
-      background-color: rgb(240, 243, 245);
+    .editor.ace {
       height: 70vh;
-      overflow: auto;
-      font-size: .85rem;
-    }
-
-    .prism-editor__editor {
-        background: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    .prism-editor-wrapper .prism-editor__container {
-        background: white;
-        padding-left: 5px;
+      overflow: hidden;
     }
 
     .multiselect {
@@ -616,15 +586,7 @@ export default {
     .multiselect__placeholder{
         margin-bottom: 0.53rem;
     }
-    .prism-editor__code, pre[class*="language-"] { overflow: inherit; margin: 0;}
-    .prism-editor__code code { padding: 0; overflow: inherit;}
-    .prism-editor__line-numbers {
-        width: 2rem;
-        float: left;
-        margin-top: 0 !important;
-        text-align: right;
-        margin-right: 0.5rem;
-    }
+    pre[class*="language-"] { overflow: inherit; margin: 0;}
 
     /* purgecss end ignore */
 </style>
