@@ -7,7 +7,7 @@ require (
 	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.2
 	github.com/blevesearch/bleve/v2 v2.6.0
 	github.com/blevesearch/snowballstem v0.9.0
-	github.com/go-chi/chi/v5 v5.3.2
+	github.com/go-chi/chi/v5 v5.4.0
 	github.com/go-chi/cors v1.2.2
 	github.com/ledisdb/ledisdb v0.0.0-20200510135210-d35789ec47e6 // temporary: used only by migrate.go for one-time legacy data import
 	github.com/modelcontextprotocol/go-sdk v1.6.0
