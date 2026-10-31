@@ -38,10 +38,14 @@
     "vue-toastification": "^2.0.0-rc.5",
     "vue3-calendar-heatmap": "^2.0.5"
   },
+  "overrides": {
+    "minimatch": "^11.0.1",
+    "glob": "^14.0.3"
+  },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.8",
     "autoprefixer": "^10.5.4",
-    "cssnano": "^8.0.2",
+    "cssnano": "^9.9.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.8.1",
     "eslint-plugin-vue": "^10.10.0",
