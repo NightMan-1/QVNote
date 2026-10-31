@@ -612,6 +612,10 @@ export default {
 .mshell__item {
     display: block;
     width: 100%;
+    /* long unbreakable strings (raw URLs in note titles) must not create a
+       horizontal scrollbar */
+    overflow-wrap: anywhere;
+    word-break: break-word;
     padding: .8rem 1rem;
     border: 0;
     border-bottom: 1px solid var(--nord5);
@@ -641,6 +645,7 @@ export default {
 .mshell__hint {
     padding: 1.25rem 1rem;
     color: var(--nord3);
+    overflow-wrap: anywhere;
 }
 
 .mshell__group {

@@ -36,6 +36,14 @@ Written with **Go** and **Vue 3**.
 
 > The program runs a local server. You can access your notes by opening http://localhost:8000 in any browser on this computer, or from any other device on the network via this computer's IP address, e.g. http://192.168.x.x:8000
 
+> **Linux security note.** Go 1.24+ enables MPTCP on TCP listeners by default, and kernels without the fix for [CVE-2026-98432](https://security-tracker.debian.org/tracker/CVE-2026-98432) (upstream 7.3-rc7, Debian trixie 6.12.113) are vulnerable to a remote use-after-free in TCP/IPv4. Until your distribution ships a patched kernel, keep the listener off the affected path:
+>
+> ```bash
+> GODEBUG=multipathtcp=0 ./qvnote
+> ```
+>
+> `sysctl -w net.mptcp.enabled=0` also works, but note that it does not affect network namespaces of containers.
+
 ## Build from source
 
 #### Requirements

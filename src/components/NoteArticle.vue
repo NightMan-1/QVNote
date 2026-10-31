@@ -62,6 +62,7 @@ function onContentClick (event) {
 <style scoped>
 .m-article {
     padding: .25rem 1rem 3rem;
+    overflow-wrap: anywhere;
 }
 
 .m-article h1 {
