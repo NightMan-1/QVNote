@@ -82,6 +82,7 @@ export default {
         loadOriginalError: 'Ошибка загрузки оригинального содержимого'
     },
     setting: {
+        filterPlaceholder: 'Фильтр по названию',
         global: {
             settingsTitle: 'Основные настройки',
             folder: 'Директория с данными',

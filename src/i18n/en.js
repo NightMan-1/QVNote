@@ -82,6 +82,7 @@ export default {
         loadOriginalError: 'Error loading original note content'
     },
     setting: {
+        filterPlaceholder: 'Filter by name',
         global: {
             settingsTitle: 'General settings',
             folder: 'Data directory',

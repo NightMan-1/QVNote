@@ -140,10 +140,16 @@
             <div class="main-content pt-0" :class="{'d-none':settingsPageType !== 'notebooks'}">
                 <h3 class="mt-2">{{$t('setting.notebooks.title')}}</h3>
                 <p class="text-muted"><i>{{$t('setting.notebooks.tips')}}</i></p>
+                <input
+                    type="search"
+                    class="form-control mb-3"
+                    v-model="notebookFilter"
+                    :placeholder="$t('setting.filterPlaceholder')"
+                >
                 <div class="row" id="notebooksList">
                     <div
                             class="col-12 col-sm-6 col-xl-4 mb-2"
-                            v-for="item in notebooksList"
+                            v-for="item in filteredNotebooks"
                             :key="item.uuid"
                             role="button"
                             tabindex="0"
@@ -162,10 +168,16 @@
             <div class="main-content pt-0" :class="{'d-none':settingsPageType !== 'tags'}">
                 <h3 class="mt-2">{{$t('setting.tags.title')}}</h3>
                 <p class="text-muted"><i>{{$t('setting.tags.tips')}}</i></p>
+                <input
+                    type="search"
+                    class="form-control mb-3"
+                    v-model="tagFilter"
+                    :placeholder="$t('setting.filterPlaceholder')"
+                >
                 <div class="row" id="tagsList">
                     <div
                             class="col-12 col-sm-6 col-xl-4 mb-2"
-                            v-for="item in tagsList"
+                            v-for="item in filteredTags"
                             :key="item.url"
                             role="button"
                             tabindex="0"
@@ -201,12 +213,18 @@
                         </div>
                         <div class="mt-1 mb-3"><i>{{$t('setting.mcp.allowWriteHint')}}</i></div>
 
-                        <div class="mcp-token mt-4 mb-0 bg-light pt-2 pb-2 px-2" :class="{'opacity-50': !mcpEnabled}">
-                            <label class="form-label mb-1"><b>{{$t('setting.mcp.token')}}:</b></label>
-                            <input type="text" class="form-control font-monospace mb-2" :value="mcpToken" readonly>
-                            <button class="btn btn-warning w-100" :disabled="!mcpEnabled" @click="mcpRegenToken">
-                                {{$t('setting.mcp.btnRegenToken')}}
-                            </button>
+                        <div class="mcp-token row g-2 mt-4 mb-0 bg-light pt-2 pb-2" :class="{'opacity-50': !mcpEnabled}">
+                            <div class="col-12 col-md-3">
+                                <label class="col-form-label"><b>{{$t('setting.mcp.token')}}:</b></label>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <input type="text" class="form-control font-monospace" :value="mcpToken" readonly>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <button class="btn btn-warning w-100" :disabled="!mcpEnabled" @click="mcpRegenToken">
+                                    {{$t('setting.mcp.btnRegenToken')}}
+                                </button>
+                            </div>
                         </div>
                         <div class="mt-1 mb-2"><i>{{$t('setting.mcp.tokenHint')}}</i></div>
 
@@ -241,6 +259,8 @@ export default {
     },
     data () {
         return {
+            notebookFilter: '',
+            tagFilter: '',
             checkboxCheckNew: false,
             searchStatus: {
                 'notesCurrent': 0,
@@ -526,6 +546,16 @@ export default {
     },
     computed: {
         gridClass () { return this.noteStore.gridClass },
+        filteredNotebooks () {
+            const query = this.notebookFilter.trim().toLowerCase()
+            const list = Array.isArray(this.notebooksList) ? this.notebooksList : []
+            return query ? list.filter(n => n.name.toLowerCase().includes(query)) : list
+        },
+        filteredTags () {
+            const query = this.tagFilter.trim().toLowerCase()
+            const list = Array.isArray(this.tagsList) ? this.tagsList : []
+            return query ? list.filter(t => t.name.toLowerCase().includes(query)) : list
+        },
         settingsPageType () { return this.noteStore.settingsPageType },
         localesList () { return this.noteStore.localesList },
         notebooksList () { return this.noteStore.notebooksList },
