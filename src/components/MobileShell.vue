@@ -368,7 +368,16 @@ export default {
             }
         },
         selectTab (id) {
-            const previous = this.activeTab
+            if (id === 'search') {
+                if (this.activeTab === 'search') {
+                    this.closeSearch()
+                } else {
+                    this.activeTab = 'search'
+                    this.$nextTick(() => this.$refs.searchField && this.$refs.searchField.focus())
+                }
+                return
+            }
+
             this.activeTab = id
             if (id === 'overview') {
                 if (this.$route.name !== 'qvApp') {
@@ -382,13 +391,6 @@ export default {
                     this.$router.push('/notes/' + (this.currentNotebookID || 'Allnotes') + '/')
                 }
                 return
-            }
-            if (id === 'search') {
-                if (previous === 'search') {
-                    this.closeSearch()
-                } else {
-                    this.$nextTick(() => this.$refs.searchField && this.$refs.searchField.focus())
-                }
             }
         },
         openNotebook (uuid) {
@@ -480,9 +482,20 @@ export default {
             this.$router.push({ name: 'qvEditor' })
         },
         closeSearch () {
-            this.activeTab = 'notes'
             this.searchText = ''
             this.searchResults = []
+            this.activeTab = 'notes'
+
+            // the notes tab renders whatever qvApp loaded for the current
+            // route, so make sure a list route is active (All Notes by
+            // default) — otherwise the list stays empty
+            const onNotesRoute = this.$route.name === 'qvNote' ||
+                this.$route.name === 'qvNotebooks' ||
+                this.$route.name === 'qvTag' ||
+                this.$route.name === 'qvTagsList'
+            if (!onNotesRoute) {
+                this.$router.push('/notes/' + (this.currentNotebookID || 'Allnotes') + '/')
+            }
         },
         runSearch () {
             if (this.searchTimer) {
