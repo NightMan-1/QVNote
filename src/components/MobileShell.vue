@@ -27,6 +27,9 @@
                 <button class="mshell__btn" :aria-label="$t('editor.titleExist')" @click="editNote">
                     <i class="bi bi-pencil"></i>
                 </button>
+                <button class="mshell__btn" :aria-label="$t('general.actions')" @click="actionSheet = 'actions'">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
             </template>
             <button v-else-if="activeTab === 'search'" class="mshell__btn" @click="closeSearch">
                 <i class="bi bi-x-lg"></i>
@@ -91,6 +94,50 @@
                 <span>{{ tab.label }}</span>
             </button>
         </nav>
+
+        <div v-if="actionSheet" class="mshell__backdrop" @click="actionSheet = null"></div>
+        <div v-if="actionSheet" class="mshell__sheet mshell__sheet--bottom">
+            <header class="mshell__sheet-bar">
+                <div class="mshell__title">{{ actionSheetTitle }}</div>
+                <div class="mshell__grow"></div>
+                <button class="mshell__btn" @click="actionSheet = null"><i class="bi bi-x-lg"></i></button>
+            </header>
+            <div class="mshell__sheet-list">
+                <template v-if="actionSheet === 'actions'">
+                    <button class="mshell__item mshell__item--action" @click="toggleFavorite">
+                        <i class="bi me-2" :class="article.favorites ? 'bi-star-fill text-warning' : 'bi-star'"></i>
+                        {{ article.favorites ? $t('articleList.btnRemoveFavorites') : $t('articleList.btnFavorites') }}
+                    </button>
+                    <button class="mshell__item mshell__item--action" @click="actionSheet = 'move'">
+                        <i class="bi bi-arrow-left-right me-2"></i>{{ $t('articleList.btnMove') }}
+                    </button>
+                    <button class="mshell__item mshell__item--action text-danger" @click="actionSheet = 'delete'">
+                        <i class="bi bi-trash me-2"></i>{{ $t('articleList.btnDelete') }}
+                    </button>
+                </template>
+
+                <template v-else-if="actionSheet === 'move'">
+                    <div class="mshell__group">{{ $t('articleList.modalMoveNotebook') }}</div>
+                    <button
+                        v-for="notebook in notebooks"
+                        :key="notebook.uuid"
+                        class="mshell__item"
+                        :class="{ 'fw-semibold': notebook.uuid === currentNotebookID }"
+                        @click="moveTo(notebook.uuid)"
+                    >{{ notebook.name }}</button>
+                </template>
+
+                <template v-else-if="actionSheet === 'delete'">
+                    <div class="mshell__group">{{ $t('articleList.modalDeleteTitle') }}</div>
+                    <button class="mshell__item mshell__item--action text-danger" @click="deleteNote">
+                        <i class="bi bi-trash me-2"></i>{{ $t('general.yesBig') }}
+                    </button>
+                    <button class="mshell__item mshell__item--action" @click="actionSheet = 'actions'">
+                        {{ $t('general.noBig') }}
+                    </button>
+                </template>
+            </div>
+        </div>
 
         <div v-if="libraryOpen" class="mshell__sheet">
             <header class="mshell__sheet-bar">
@@ -172,6 +219,7 @@ export default {
     data () {
         return {
             activeTab: 'overview',
+            actionSheet: null,
             libraryOpen: false,
             libraryType: 'notebooks',
             searchText: '',
@@ -215,6 +263,15 @@ export default {
         currentNotebookID () { return this.noteStore.currentNotebookID },
         currentTagURL () { return this.noteStore.currentTagURL },
         isNoteRoute () { return this.$route.name === 'qvNote' || this.$route.name === 'qvTag' },
+        actionSheetTitle () {
+            if (this.actionSheet === 'move') {
+                return this.$t('articleList.btnMove')
+            }
+            if (this.actionSheet === 'delete') {
+                return this.$t('articleList.btnDelete')
+            }
+            return this.$t('general.actions')
+        },
         focusMode () { return this.isNoteRoute || this.pageType === 'editor' },
         pageTitle () {
             if (this.activeTab === 'overview') {
@@ -249,6 +306,7 @@ export default {
         },
         '$route' () {
             this.libraryOpen = false
+            this.actionSheet = null
             this.syncTabWithRoute()
         },
         pageType () {
@@ -317,6 +375,54 @@ export default {
         },
         editNote () {
             this.$router.push({ name: 'qvEditor' })
+        },
+        toggleFavorite () {
+            const uuid = this.article.uuid
+            const add = !this.article.favorites
+            fetch(this.noteStore.apiFolder + '/favorites.json', {
+                method: 'POST',
+                body: JSON.stringify({ action: add ? 'add' : 'remove', UUID: uuid })
+            })
+                .then(() => {
+                    this.noteStore.setFavoritesStatus(add)
+                    this.noteStore.getFavoritesCount()
+                })
+                .catch(error => console.error('Favorites error:', error))
+            this.actionSheet = null
+        },
+        moveTo (target) {
+            const uuid = this.article.uuid
+            fetch(this.noteStore.apiFolder + '/note_move.json', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'move', uuid, target })
+            })
+                .then(() => {
+                    this.noteStore.getAllData()
+                    this.actionSheet = null
+                    this.$router.push('/notes/' + target + '/' + uuid + '/')
+                })
+                .catch(error => console.error('Move error:', error))
+        },
+        deleteNote () {
+            const uuid = this.article.uuid
+            const route = this.$route
+            // the article object can be stale after a move, so prefer the
+            // notebook from the current route
+            const notebook = route.params.nbUUID || this.currentNotebookID
+            fetch(this.noteStore.apiFolder + '/note_move.json', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'delete', uuid })
+            })
+                .then(() => {
+                    this.noteStore.getAllData()
+                    this.actionSheet = null
+                    if (route.name === 'qvTag') {
+                        this.$router.push('/tags/' + route.params.nbUUID + '/')
+                    } else {
+                        this.$router.push('/notes/' + notebook + '/')
+                    }
+                })
+                .catch(error => console.error('Delete error:', error))
         },
         openSettings () {
             this.$router.push('/settings/')
@@ -511,6 +617,15 @@ export default {
 
 .mshell__tab--active {
     color: var(--nord10);
+}
+
+/* two classes so it wins over the base .mshell__sheet rule below */
+.mshell__sheet.mshell__sheet--bottom {
+    inset: auto 0 0 0;
+    height: auto;
+    max-height: 70vh;
+    border-radius: 1rem 1rem 0 0;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, .18);
 }
 
 .mshell__sheet {
