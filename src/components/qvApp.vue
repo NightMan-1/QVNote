@@ -29,7 +29,7 @@
             </div>
         </div>
     	<div class="grid-body-1"><div class="scrooll-wrap">
-            <qv-dashboard v-if="pageType === 'dashboard'" />
+            <qv-dashboard v-if="pageType === 'dashboard' && $route.name === 'qvApp'" />
 
             <qv-editor v-if="pageType === 'editor'"></qv-editor>
 
@@ -135,7 +135,6 @@
 import { defineAsyncComponent } from 'vue'
 import { useNoteStore } from '../store'
 import qvHeaderLogo from './qvHeaderLogo.vue'
-import qvDashboard from './qvDashboard.vue'
 import qvSidebar from './qvSidebar.vue'
 import { useModal } from '../composables/useModal'
 import { escapeHtml } from '../utils/escape'
@@ -159,6 +158,7 @@ import { push } from 'notivue'
 import { fetchDefuddleArticle } from '../utils/defuddle'
 
 const qvEditor = defineAsyncComponent(() => import('./qvEditor.vue'))
+const qvDashboard = defineAsyncComponent(() => import('./qvDashboard.vue'))
 
 export default {
     name: 'qvApp',
