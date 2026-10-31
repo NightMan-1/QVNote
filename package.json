@@ -7,13 +7,12 @@
     "build": "vite build",
     "lint": "eslint src/",
     "preview": "vite preview",
-    "postinstall": "mkdir -p public/static/hugerte && cp -r node_modules/hugerte/* public/static/hugerte/ && mkdir -p public/static/hugerte/plugins/paste_from_word && cp node_modules/@pangaeatech/tinymce-paste-from-word-lib/index.js public/static/hugerte/plugins/paste_from_word/plugin.min.js && rm -rf public/static/ace && mkdir -p public/static/ace && cp node_modules/ace-builds/src-min-noconflict/ace.js node_modules/ace-builds/src-min-noconflict/mode-html.js node_modules/ace-builds/src-min-noconflict/mode-css.js node_modules/ace-builds/src-min-noconflict/mode-javascript.js node_modules/ace-builds/src-min-noconflict/mode-xml.js node_modules/ace-builds/src-min-noconflict/mode-scss.js node_modules/ace-builds/src-min-noconflict/ext-searchbox.js node_modules/ace-builds/src-min-noconflict/worker-base.js node_modules/ace-builds/src-min-noconflict/worker-html.js public/static/ace/"
+    "postinstall": "rm -rf public/static/hugerte && mkdir -p public/static/hugerte/skins/ui public/static/hugerte/skins/content public/static/hugerte/plugins && cp -r node_modules/hugerte/skins/ui/oxide public/static/hugerte/skins/ui/ && cp -r node_modules/hugerte/skins/content/default public/static/hugerte/skins/content/ && mkdir -p public/static/hugerte/plugins/paste_from_word && cp node_modules/@pangaeatech/tinymce-paste-from-word-lib/index.js public/static/hugerte/plugins/paste_from_word/plugin.min.js && mkdir -p public/static/hugerte/plugins/codesample && cp node_modules/hugerte/plugins/codesample/plugin.min.js public/static/hugerte/plugins/codesample/ && rm -rf public/static/ace && mkdir -p public/static/ace && cp node_modules/ace-builds/src-min-noconflict/ace.js node_modules/ace-builds/src-min-noconflict/mode-html.js node_modules/ace-builds/src-min-noconflict/mode-css.js node_modules/ace-builds/src-min-noconflict/mode-javascript.js node_modules/ace-builds/src-min-noconflict/mode-xml.js node_modules/ace-builds/src-min-noconflict/mode-scss.js node_modules/ace-builds/src-min-noconflict/ext-searchbox.js node_modules/ace-builds/src-min-noconflict/worker-base.js node_modules/ace-builds/src-min-noconflict/worker-html.js public/static/ace/"
   },
   "dependencies": {
     "@hugerte/hugerte-vue": "^2.0.2",
     "@pangaeatech/tinymce-paste-from-word-lib": "^1.3.2",
     "@unhead/vue": "^3.2.3",
-    "@vue/devtools-api": "^8.2.1",
     "ace-builds": "^1.44.0",
     "bootstrap": "5.3.8",
     "bootstrap-icons": "^1.13.1",
