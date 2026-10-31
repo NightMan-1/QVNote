@@ -2,8 +2,10 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 import { createHead } from '@unhead/vue/client'
-import Toast from 'vue-toastification'
-import 'vue-toastification/dist/index.css'
+import { createNotivue } from 'notivue'
+import 'notivue/notification.css'
+import 'notivue/notification-progress.css'
+import 'notivue/animations.css'
 import 'vue3-calendar-heatmap/dist/style.css'
 
 import 'bootstrap-icons/font/bootstrap-icons.css'
@@ -70,13 +72,16 @@ app.use(pinia)
 
 const head = createHead()
 app.use(head)
-app.use(Toast, {
+const notivue = createNotivue({
     position: 'top-right',
-    timeout: 5000,
-    closeOnClick: true,
     pauseOnHover: true,
-    hideProgressBar: false,
-    newestOnTop: true
+    pauseOnTouch: true,
+    pauseOnTabChange: false,
+    limit: 4,
+    notifications: {
+        global: { duration: 5000 }
+    }
 })
+app.use(notivue)
 
 app.mount('#app')

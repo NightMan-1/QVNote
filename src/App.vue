@@ -2,6 +2,11 @@
     <div class="app">
         <router-view/>
 
+        <Notivue v-slot="item">
+            <Notification :item="item" :theme="lightTheme">
+                <NotificationProgress :item="item" />
+            </Notification>
+        </Notivue>
     </div>
 </template>
 
@@ -9,7 +14,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
-import { useToast } from 'vue-toastification'
+import { Notivue, Notification, NotificationProgress, push, lightTheme } from 'notivue'
 import { useI18n } from 'vue-i18n'
 import { useNoteStore } from './store'
 
@@ -36,10 +41,10 @@ const getLastRoute = () => {
 
 export default {
     name: 'App',
+    components: { Notivue, Notification, NotificationProgress },
     setup () {
         const noteStore = useNoteStore()
         const router = useRouter()
-        const toast = useToast()
         const { t } = useI18n()
         const isOnline = ref(true)
         let pingInterval = null
@@ -63,7 +68,7 @@ export default {
             if (!online && router.currentRoute.value.name !== 'qvOffline') {
                 router.push({ name: 'qvOffline' })
             } else if (online && router.currentRoute.value.name === 'qvOffline') {
-                toast.success(t('general.serverBackMessage'), { timeout: 5000 })
+                push.success({ message: t('general.serverBackMessage'), duration: 5000 })
                 // Full page reload guarantees that qvApp re-mounts and loads
                 // the notebook/note data for the saved route.
                 window.location.assign(getLastRoute())
@@ -74,12 +79,12 @@ export default {
             // global warning
             watch(() => noteStore.status.errorType, (errorType) => {
                 if (errorType === 1) {
-                    toast.error(noteStore.status.errorText, { timeout: 15000 })
+                    push.error({ message: noteStore.status.errorText, duration: 15000 })
                     router.push({ name: 'qvErrorFatal' })
                 } else if (errorType === 2) {
-                    toast.warning(noteStore.status.errorText, { timeout: 7000 })
+                    push.warning({ message: noteStore.status.errorText, duration: 7000 })
                 } else if (errorType === 5) {
-                    toast.success(noteStore.status.errorText, { timeout: 5000 })
+                    push.success({ message: noteStore.status.errorText, duration: 5000 })
                 }
             })
 
@@ -102,7 +107,7 @@ export default {
         })
 
         useHead({ title: 'QVNote' })
-        return { noteStore }
+        return { noteStore, lightTheme }
     }
 }
 </script>

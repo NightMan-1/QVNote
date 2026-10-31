@@ -493,3 +493,11 @@ i.me-1 {width: 1.1em; text-align: center;}
     display: inline-block;
     animation: qv-spin 1s linear infinite;
 }
+
+/* Notivue toast stream: default z-index (500) sits below the app chrome
+   (.grid-head-3/.grid-body-2 use 1001), which clipped the top of the toasts.
+   Keep the stream above the UI and clear of the header row. */
+ol[data-notivue-align] {
+    --nv-z: 2000;
+    --nv-root-top: 3.75rem;
+}

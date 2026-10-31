@@ -104,7 +104,7 @@ import 'hugerte/plugins/fullscreen'
 import 'hugerte/plugins/codesample'
 
 import Multiselect from 'vue-multiselect'
-import { useToast } from 'vue-toastification'
+import { push } from 'notivue'
 import { useModal } from '../composables/useModal'
 import { fetchDefuddleArticle, normalizeTitle } from '../utils/defuddle'
 import { registerBootstrapIcons } from '../hugerte-icons'
@@ -307,7 +307,7 @@ export default {
         PrismEditor
     },
     setup () {
-        return { noteStore: useNoteStore(), toast: useToast(), modal: useModal() }
+        return { noteStore: useNoteStore(), modal: useModal() }
     },
     computed: {
         articleCurrent () { return this.noteStore.currentArticle },
@@ -406,7 +406,7 @@ export default {
                 return true
             } catch (e) {
                 console.error('Defuddle import error:', e)
-                this.toast.error(this.$t('editor.defuddleError') + ': ' + e.message)
+                push.error(this.$t('editor.defuddleError') + ': ' + e.message)
                 return false
             } finally {
                 this.defuddleLoading = false
@@ -434,12 +434,12 @@ export default {
                 })
                 .catch((error) => {
                     console.error('Error fetching raw note:', error)
-                    this.toast.error(this.$t('editor.loadOriginalError'))
+                    push.error(this.$t('editor.loadOriginalError'))
                 })
         },
         saveData () {
             this.saving = true
-            const savingToast = this.toast.info(this.$t('editor.saving'), { timeout: false })
+            const savingToast = push.info({ message: this.$t('editor.saving'), duration: Infinity })
             fetch(this.noteStore.apiFolder + '/note_edit.json',
                 { method: 'POST',
                     body: JSON.stringify({
@@ -455,11 +455,11 @@ export default {
                     this.articleCurrentEditable.NoteBookUUID = jsonData.NoteBookUUID
                     // this.articleCurrentEditable.content = jsonData.html // slow
                     this.noteStore.getAllData()
-                    this.toast.dismiss(savingToast)
+                    savingToast.clear()
                 })
                 .catch(error => {
                     console.error('Error save note data:', error)
-                    this.toast.dismiss(savingToast)
+                    savingToast.clear()
                     this.noteStore.setStatus({ errorType: 2, errorText: this.$t('editor.errorSave') })
                 })
                 .finally(() => {

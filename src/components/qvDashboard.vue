@@ -41,6 +41,7 @@
 
 <script>
 import { useNoteStore } from '../store'
+import { push } from 'notivue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -136,7 +137,7 @@ export default {
                     errorType: 2,
                     errorText: this.$t('dashboard.errorDownloadingStatistic')
                 }
-                this.$toast.error(this.$t('dashboard.errorDownloadingStatistic'), { timeout: 7000 })
+                push.error({ message: this.$t('dashboard.errorDownloadingStatistic'), duration: 7000 })
             })
     }
 }

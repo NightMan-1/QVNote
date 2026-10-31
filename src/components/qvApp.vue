@@ -154,7 +154,7 @@ import 'prismjs/components/prism-csharp'
 import 'prismjs/components/prism-markup-templating'
 import 'prismjs/components/prism-php'
 import 'prismjs/components/prism-ruby'
-import { useToast } from 'vue-toastification'
+import { push } from 'notivue'
 import { fetchDefuddleArticle } from '../utils/defuddle'
 
 const qvEditor = defineAsyncComponent(() => import('./qvEditor.vue'))
@@ -176,7 +176,7 @@ export default {
         }
     },
     setup () {
-        return { noteStore: useNoteStore(), modal: useModal(), toast: useToast() }
+        return { noteStore: useNoteStore(), modal: useModal() }
     },
     computed: {
         gridClass () { return this.noteStore.gridClass },
@@ -376,7 +376,7 @@ export default {
                 })
                 .catch((error) => {
                     console.error('Error fetching raw note:', error)
-                    this.toast.error(this.$t('articleList.refetchError'))
+                    push.error(this.$t('articleList.refetchError'))
                 })
         },
         async refetchFromSource () {
@@ -388,7 +388,7 @@ export default {
                 this.highlightCodeBlocks()
             } catch (e) {
                 console.error('Defuddle refetch error:', e)
-                this.toast.error(this.$t('articleList.refetchError') + ': ' + e.message)
+                push.error(this.$t('articleList.refetchError') + ': ' + e.message)
             } finally {
                 this.refetchLoading = false
             }
@@ -416,11 +416,11 @@ export default {
                     this.refetchPreview = false
                     this.noteStore.getAllData()
                     this.noteStore.getArticle(this.articleCurrent.uuid)
-                    this.toast.success(this.$t('articleList.refetchDone'))
+                    push.success(this.$t('articleList.refetchDone'))
                 })
                 .catch((error) => {
                     console.error('Error saving refetched note:', error)
-                    this.toast.error(this.$t('editor.errorSave'))
+                    push.error(this.$t('editor.errorSave'))
                 })
         },
         tagSelect (nbUUID, noteUUID) {
