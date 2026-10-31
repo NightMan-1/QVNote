@@ -11,7 +11,7 @@
             <qv-header-logo></qv-header-logo>
         </div>
         <div class="grid-sidebar-wrap"></div>
-    	<div class="grid-sidebar-1" :class="{ 'mobile-open': noteStore.mobileSidebar }">
+    	<div class="grid-sidebar-1 mb-3" :class="{ 'mobile-open': noteStore.mobileSidebar }">
             <nav class="sidebar-nav">
             <ul class="nav">
                 <li class="nav-title text-primary mb-2">{{$t('general.sidebarSettings')}}</li>
@@ -142,7 +142,7 @@
                 <p class="text-muted"><i>{{$t('setting.notebooks.tips')}}</i></p>
                 <div class="row" id="notebooksList">
                     <div
-                            class="col-4"
+                            class="col-12 col-sm-6 col-xl-4 mb-2"
                             v-for="item in notebooksList"
                             :key="item.uuid"
                             role="button"
@@ -164,7 +164,7 @@
                 <p class="text-muted"><i>{{$t('setting.tags.tips')}}</i></p>
                 <div class="row" id="tagsList">
                     <div
-                            class="col-4"
+                            class="col-12 col-sm-6 col-xl-4 mb-2"
                             v-for="item in tagsList"
                             :key="item.url"
                             role="button"
@@ -201,16 +201,12 @@
                         </div>
                         <div class="mt-1 mb-3"><i>{{$t('setting.mcp.allowWriteHint')}}</i></div>
 
-                        <div class="row mt-4 mb-0 bg-light pt-2 pb-1" :class="{'opacity-50': !mcpEnabled}">
-                            <label class="col-3 col-form-label"><b>{{$t('setting.mcp.token')}}:</b></label>
-                            <div class="col-6">
-                                <input type="text" class="form-control font-monospace" :value="mcpToken" readonly>
-                            </div>
-                            <div class="col-3">
-                                <button class="btn btn-warning w-100" :disabled="!mcpEnabled" @click="mcpRegenToken">
-                                    {{$t('setting.mcp.btnRegenToken')}}
-                                </button>
-                            </div>
+                        <div class="mcp-token mt-4 mb-0 bg-light pt-2 pb-2 px-2" :class="{'opacity-50': !mcpEnabled}">
+                            <label class="form-label mb-1"><b>{{$t('setting.mcp.token')}}:</b></label>
+                            <input type="text" class="form-control font-monospace mb-2" :value="mcpToken" readonly>
+                            <button class="btn btn-warning w-100" :disabled="!mcpEnabled" @click="mcpRegenToken">
+                                {{$t('setting.mcp.btnRegenToken')}}
+                            </button>
                         </div>
                         <div class="mt-1 mb-2"><i>{{$t('setting.mcp.tokenHint')}}</i></div>
 
@@ -685,6 +681,24 @@ export default {
 
     .settings-page .form-check {
         margin-bottom: .75rem;
+    }
+
+    /* keep the card rows inside the page paddings */
+    .settings-page .main-content .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .settings-page .main-content .row > [class*="col-"] {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .settings-page .notebook-edit-link {
+        padding: .7rem .75rem;
+        border: 1px solid var(--nord4);
+        border-radius: .4rem;
+        background: #fff;
     }
 }
 </style>

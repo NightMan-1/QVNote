@@ -646,11 +646,13 @@ export default {
     flex: 0 0 auto;
     display: flex;
     border-top: 1px solid var(--nord4);
-    background: #fff;
+    background: var(--nord6);
+    box-shadow: 0 -2px 10px rgba(46, 52, 64, .06);
     padding-bottom: env(safe-area-inset-bottom);
 }
 
 .mshell__tab {
+    position: relative;
     flex: 1 1 0;
     display: flex;
     flex-direction: column;
@@ -661,14 +663,24 @@ export default {
     background: none;
     color: var(--nord3);
     font-size: .72rem;
+    transition: color .15s ease;
 }
 
 .mshell__tab i {
-    font-size: 1.25rem;
+    padding: .1rem .85rem;
+    border-radius: 999px;
+    font-size: 1.3rem;
+    transition: background-color .15s ease, transform .15s ease;
 }
 
 .mshell__tab--active {
     color: var(--nord10);
+    font-weight: 600;
+}
+
+.mshell__tab--active i {
+    background: rgba(94, 129, 172, .14);
+    transform: translateY(-1px);
 }
 
 /* two classes so it wins over the base .mshell__sheet rule below */

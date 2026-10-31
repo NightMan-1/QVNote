@@ -185,8 +185,10 @@
 @media (max-width : 540px) {
   .tingle-modal {
     top: 0px;
-    display: block;
-    padding-top: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px .75rem 1rem;
     width: 100%;
   }
 
@@ -207,11 +209,22 @@
     padding-top: 0;
   }
 
+  /* QVNote: actions stay in one row, evenly sized */
+  .tingle-modal-box__footer {
+    display: flex;
+    gap: .5rem;
+    padding: 1rem .75rem;
+  }
+
   .tingle-modal-box__footer .tingle-btn {
-    display: block;
+    display: inline-block;
     float: none;
-    margin-bottom: 1rem;
-    width: 100%;
+    flex: 1 1 0;
+    margin: 0;
+    padding: .7rem .4rem;
+    width: auto;
+    font-size: .95rem;
+    white-space: nowrap;
   }
 
   .tingle-modal__close {
