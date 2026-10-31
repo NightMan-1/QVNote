@@ -34,7 +34,7 @@
                 <input type="text" class="form-control mb-2 mt-3 text-dark font-size-normal"
                         :placeholder="$t('editor.inputTitlePlaceholder')" v-model="articleCurrentEditable.title" ref='editorTitle'/>
                 <div class="row">
-                    <div class="col-6">
+                    <div class="col-12 col-md-6">
                         <div class="mb-3">
                             <label><b>{{$t('editor.titleURL')}}</b></label>
                             <div class="input-group">
@@ -44,7 +44,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-md-6">
                         <div class="mb-3">
                             <label><b>{{$t('editor.titleTags')}}</b></label>
                             <multiselect
@@ -523,6 +523,45 @@ export default {
     }
     #qv-editor-main{
         overflow: hidden;
+        width: 100%;
+    }
+
+    @media (max-width: 991.98px) {
+        #qv-editor {
+            padding: .25rem .75rem 1.5rem;
+        }
+
+        /* keep the app header visible: the editor header scrolls with the page
+           and sticks to the top of the scrolling area */
+        #qv-editor-header {
+            position: sticky;
+            top: 0;
+            left: auto;
+            width: 100%;
+            z-index: 900;
+            padding: .4rem .5rem;
+            /* children are floated: contain them so the sticky header has a
+               real height and the content below starts in the right place */
+            display: flow-root;
+        }
+
+        #qv-editor-header h4 {
+            font-size: 1.05rem;
+            margin-top: .3rem !important;
+            max-width: 45%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #qv-editor-header .btn {
+            padding: .25rem .5rem;
+            min-width: 2.25rem;
+        }
+
+        .editor.ace {
+            height: 60vh;
+        }
     }
 
     .font-size-normal {

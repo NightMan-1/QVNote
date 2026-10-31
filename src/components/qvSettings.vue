@@ -1,10 +1,11 @@
 <template>
     <div :class="gridClass">
+        <div class="mobile-backdrop d-lg-none" v-if="noteStore.mobileSidebar" @click="noteStore.setMobileSidebar(false)"></div>
     	<div class="grid-head-1">
             <qv-header-logo></qv-header-logo>
         </div>
         <div class="grid-sidebar-wrap"></div>
-    	<div class="grid-sidebar-1">
+    	<div class="grid-sidebar-1" :class="{ 'mobile-open': noteStore.mobileSidebar }">
             <nav class="sidebar-nav">
             <ul class="nav">
                 <li class="nav-title text-primary mb-2">{{$t('general.sidebarSettings')}}</li>

@@ -501,3 +501,158 @@ ol[data-notivue-align] {
     --nv-z: 2000;
     --nv-root-top: 3.75rem;
 }
+
+/* Mobile header: toggle for the off-canvas sidebar */
+.mobile-menu-button {
+    padding: .25rem .6rem;
+    margin-right: .35rem;
+    border: 1px solid var(--nord4);
+    background: #fff;
+    color: var(--nord3);
+    font-size: 1.35rem;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.mobile-menu-button:hover,
+.mobile-menu-button:focus-visible {
+    background: var(--nord5);
+}
+
+/* Dashboard blocks: two columns on desktop, a single column on phones */
+.dashboard-block {
+    float: left;
+}
+
+.dashboard-info,
+.dashboard-chart {
+    width: 30rem;
+    max-width: 50%;
+}
+
+.dashboard-activity {
+    width: 60rem;
+    max-width: 100%;
+}
+
+.dashboard-chart-canvas {
+    width: 100%;
+    height: 13rem;
+}
+
+/* Native language picker in Settings: Bootstrap's w-25 is too narrow */
+.select-css {
+    min-width: 12rem;
+    max-width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Phones and tablets in portrait
+   -------------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+    .main-content {
+        padding: .5rem .75rem;
+    }
+
+    .dashboard-info,
+    .dashboard-chart {
+        float: none;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .dashboard-activity {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .dashboard-chart-canvas {
+        height: 10rem;
+    }
+
+    #localeSelect.select-css {
+        width: 100% !important;
+    }
+
+    /* a bit more air around the note title */
+    .article-text h1,
+    .article-text-big h1,
+    .article-main h1 {
+        font-size: 1.6rem;
+        line-height: 1.3;
+    }
+
+    .article-text,
+    .article-text-big {
+        padding: .5rem .75rem 1rem;
+        max-width: 100%;
+    }
+
+    /* two-line note titles instead of a single truncated line */
+    .article-title-list .nav-link {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.35;
+        padding: .5rem .75rem;
+    }
+
+    /* comfortable tap targets in the app and note toolbars */
+    .grid-head-1 .btn,
+    .grid-head-3 .btn {
+        min-height: 2.5rem;
+        min-width: 2.5rem;
+    }
+
+    /* toasts: full width with small margins instead of a floating card */
+    ol[data-notivue-align] {
+        --nv-root-top: 3.6rem;
+        --nv-root-left: .5rem;
+        --nv-root-right: .5rem;
+    }
+
+    /* the transition wrapper is a centered flex item; stretch it first, then
+       the notification (the library sets --nv-width inline to 350px) */
+    ol[data-notivue-align] .Notivue__enter {
+        width: 100%;
+    }
+
+    ol[data-notivue-align] .Notivue__notification {
+        --nv-width: 100% !important;
+        width: 100%;
+    }
+}
+
+/* Landscape phones: the chrome takes too much vertical space */
+@media (max-width: 991.98px) and (max-height: 500px) {
+    .grid-v1, .grid-v2 {
+        grid-template-rows: 2.8rem auto 1fr;
+    }
+
+    .grid-head-1 .dashboard-button span {
+        display: none;
+    }
+
+    .mobile-menu-button {
+        font-size: 1.2rem;
+        padding: .2rem .5rem;
+    }
+
+    #qv-editor-header {
+        padding: .2rem .5rem;
+    }
+
+    #qv-editor-header h4 {
+        font-size: .95rem;
+        margin-top: .2rem !important;
+    }
+
+    .dashboard-chart-canvas {
+        height: 9rem;
+    }
+
+    #qv-editor {
+        padding-top: 0;
+    }
+}

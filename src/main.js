@@ -6,7 +6,6 @@ import { createNotivue } from 'notivue'
 import 'notivue/notification.css'
 import 'notivue/notification-progress.css'
 import 'notivue/animations.css'
-import 'vue3-calendar-heatmap/dist/style.css'
 
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import './style/nord-root.scss'

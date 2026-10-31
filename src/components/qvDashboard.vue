@@ -1,6 +1,6 @@
 <template>
   <div class="main-content">
-    <div style="width:30rem; max-width:50%; float:left;">
+    <div class="dashboard-block dashboard-info">
       <h4 class="mt-2"><b>{{$t('dashboard.infoTitle')}}:</b></h4>
       <p>
         <b>{{$t('dashboard.infoTotalNotebooks')}}:</b> {{notebookCount}}<br>
@@ -15,21 +15,21 @@
         <b>{{$t('dashboard.infoSearchIndexSize')}}:</b> {{ $filters.formatBytes(statistic.dataSize) }}
       </p>
     </div>
-    <div style="width:30rem; max-width:50%; float:left;">
+    <div class="dashboard-block dashboard-chart">
       <h4 class="mt-2"><b>{{$t('dashboard.tagsPieTitle')}}:</b></h4>
       <VChart
         :option="statistic.chartOption"
-        style="width: 100%; height: 13rem;"
+        class="dashboard-chart-canvas"
         autoresize
       />
 
     </div>
     <div class="clearfix"></div>
-    <div style="width:60rem; max-width:100%;">
+    <div class="dashboard-block dashboard-activity">
       <h4 class="mt-4"><b>{{$t('dashboard.activityTitle')}}:</b></h4>
       <calendar-heatmap
         :values="statistic.calendarData"
-        :end-date="new Intl.DateTimeFormat('en-US').format(new Date())"
+        :end-date="new Date()"
         :range-color="['#ebedf0', '#c6e48b', '#7bc96f', '#24a53e', '#1f7a31', '#0e5b1d']"
         :locale="calendarLocale"
         :tooltip-unit="$t('dashboard.activityGraph.tooltipUnit')"
@@ -47,7 +47,7 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { PieChart } from 'echarts/charts'
 import { LegendComponent, TooltipComponent } from 'echarts/components'
-import { CalendarHeatmap } from 'vue3-calendar-heatmap'
+import CalendarHeatmap from './CalendarHeatmap.vue'
 
 use([CanvasRenderer, PieChart, LegendComponent, TooltipComponent])
 

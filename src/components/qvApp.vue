@@ -1,11 +1,12 @@
 <template>
-    <div :class="gridClass" id="grid">
+    <div :class="[gridClass, { 'mobile-note-open': isNoteOpen }]" id="grid">
+        <div class="mobile-backdrop d-lg-none" v-if="noteStore.mobileSidebar" @click="noteStore.setMobileSidebar(false)"></div>
     	<div class="grid-head-1">
             <qv-header-logo></qv-header-logo>
         </div>
     	<div class="grid-sidebar-wrap"></div>
-    	<div class="grid-sidebar-1"><qv-sidebar/></div>
-    	<div class="grid-footer-1">
+    	<div class="grid-sidebar-1" :class="{ 'mobile-open': noteStore.mobileSidebar }"><qv-sidebar/></div>
+    	<div class="grid-footer-1" :class="{ 'mobile-open': noteStore.mobileSidebar }">
                 <div class="btn-group w-100">
                     <button class="btn text-white" @click="noteStore.setSidebarType('notebooksList')"
                             :class="{'btn-outline-primary': sidebarType !== 'notebooksList', 'btn-primary': sidebarType === 'notebooksList' }">
@@ -53,7 +54,8 @@
             </div>
         </div></div>
     	<div class="grid-head-3 text-end" v-if="pageType === 'articleList'">
-            <button class="btn btn-outline-secondary float-start" :title="$t('articleList.btnHideSidebar')" @click="gridShow = !gridShow"><i class="bi bi-chevron-left text-black-50" v-if="gridShow"></i><i class="bi bi-chevron-right text-black-50" v-if="!gridShow"></i></button>
+            <button class="btn btn-outline-secondary float-start d-lg-none me-2" :title="$t('articleList.backToList')" @click="backToList"><i class="bi bi-arrow-left text-black-50"></i></button>
+            <button class="btn btn-outline-secondary float-start d-none d-lg-inline-block" :title="$t('articleList.btnHideSidebar')" @click="gridShow = !gridShow"><i class="bi bi-chevron-left text-black-50" v-if="gridShow"></i><i class="bi bi-chevron-right text-black-50" v-if="!gridShow"></i></button>
 
             <a v-bind:href="articleCurrent.url_src" v-if="articleCurrent.url_src"
                 target="_blank" class="btn btn-outline-secondary me-2"><i class="bi bi-box-arrow-up-right text-dark"></i></a>
@@ -191,6 +193,9 @@ export default {
         showAdvancedInfo () { return this.noteStore.showAdvancedNoteInfo },
         readerMode () { return this.noteStore.readerMode },
         layoutBig () { return this.noteStore.layoutBig },
+        isNoteOpen () {
+            return this.$route.name === 'qvNote' || this.$route.name === 'qvTag'
+        },
         displayedContent () {
             var content = this.contentOverride !== null
                 ? this.contentOverride
@@ -247,6 +252,8 @@ export default {
             }
         },
         '$route' (to, from) {
+            // close the mobile drawer whenever navigation happens
+            this.noteStore.setMobileSidebar(false)
             // console.log('from ', from.name, 'to ', to.name)
             // console.log('route.name ', this.$route.name)
             if (from.name === 'qvEditor' && to.name === 'qvNote') {
@@ -440,7 +447,10 @@ export default {
                             if (noteUUID !== undefined) {
                                 articleCurrentUUID = noteUUID
                             }
-                            this.$router.push('/tags/' + this.currentTagURL + '/' + articleCurrentUUID + '/') // сразу более правильные ссылки
+                            // on phones/tablets stay on the list, the note opens on tap
+                            if (!this.isMobileViewport()) {
+                                this.$router.push('/tags/' + this.currentTagURL + '/' + articleCurrentUUID + '/') // сразу более правильные ссылки
+                            }
                         }
                     })
                     .catch(error => {
@@ -479,7 +489,10 @@ export default {
                             if (noteUUID !== undefined) {
                                 articleCurrentUUID = noteUUID
                             }
-                            this.$router.push('/notes/' + this.currentNotebookID + '/' + articleCurrentUUID + '/').catch(() => {}) // сразу более правильные ссылки
+                            // on phones/tablets stay on the list, the note opens on tap
+                            if (!this.isMobileViewport()) {
+                                this.$router.push('/notes/' + this.currentNotebookID + '/' + articleCurrentUUID + '/').catch(() => {}) // сразу более правильные ссылки
+                            }
                         }
                     })
                     .catch(error => {
@@ -496,6 +509,16 @@ export default {
             }
             if (this.articleCurrent.uuid !== articleCurrentUUID) {
                 this.noteStore.getArticle(articleCurrentUUID)
+            }
+        },
+        isMobileViewport () {
+            return window.matchMedia('(max-width: 991.98px)').matches
+        },
+        backToList () {
+            if (this.$route.name === 'qvTag') {
+                this.$router.push('/tags/' + this.$route.params.nbUUID + '/')
+            } else {
+                this.$router.push('/notes/' + this.$route.params.nbUUID + '/')
             }
         },
         openArticle (UUID, nbUUID) {

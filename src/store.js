@@ -35,6 +35,7 @@ export const useNoteStore = defineStore('note', {
         readerMode: lsGet('readerMode', false),
         layoutBig: lsGet('layoutBig', false),
         gridClass: 'grid-v1',
+        mobileSidebar: false,
         localesList: {
             'en': 'English',
             'ru': 'Русский'
@@ -63,6 +64,9 @@ export const useNoteStore = defineStore('note', {
     actions: {
         setConfig (config) {
             this.config = config
+        },
+        setMobileSidebar (value) {
+            this.mobileSidebar = value
         },
         setGridClass (config) {
             this.gridClass = config
