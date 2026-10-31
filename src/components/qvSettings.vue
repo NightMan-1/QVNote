@@ -1,7 +1,7 @@
 <template>
-    <div :class="[gridClass, 'settings-page']">
+    <div :class="[gridClass, 'settings-page', { 'settings-embedded': embedded }]">
         <div class="mobile-backdrop d-lg-none" v-if="noteStore.mobileSidebar" @click="noteStore.setMobileSidebar(false)"></div>
-        <div class="settings-mobile-bar d-lg-none">
+        <div v-if="!embedded" class="settings-mobile-bar d-lg-none">
             <button class="settings-mobile-back" :aria-label="$t('articleList.backToList')" @click="goBack">
                 <i class="bi bi-arrow-left"></i>
             </button>
@@ -236,6 +236,9 @@ import qvHeaderLogo from './qvHeaderLogo.vue'
 
 export default {
     name: 'qvSettings',
+    props: {
+        embedded: { type: Boolean, default: false }
+    },
     components: { qvHeaderLogo },
     setup () {
         return { noteStore: useNoteStore(), modal: useModal() }
@@ -601,11 +604,12 @@ export default {
     .settings-page .grid-sidebar-1 .sidebar-nav .nav {
         display: flex;
         flex-direction: row;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: .4rem;
         margin: 0;
         padding: .5rem .6rem;
-        overflow: visible;
+        overflow-x: auto;
+        overflow-y: hidden;
         background: var(--nord6);
         border-bottom: 1px solid var(--nord4);
     }
@@ -644,6 +648,15 @@ export default {
         width: 100%;
         height: auto;
         overflow-y: auto;
+    }
+
+    .settings-page.settings-embedded {
+        display: block;
+        height: auto;
+    }
+
+    .settings-embedded .grid-body-1 {
+        overflow: visible;
     }
 
     .settings-page .main-content {

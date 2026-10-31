@@ -41,6 +41,8 @@
 
             <NoteArticle v-else-if="isNoteRoute && article.uuid" :article="article" />
 
+            <qv-settings v-else-if="activeTab === 'settings'" embedded />
+
             <div v-else-if="activeTab === 'search'" class="mshell__search">
                 <input
                     ref="searchField"
@@ -63,8 +65,8 @@
             </div>
 
             <div v-else-if="activeTab === 'more'" class="mshell__list">
-                <button class="mshell__item mshell__item--action" @click="selectTab('overview')">
-                    <i class="bi bi-bar-chart me-2"></i>{{ $t('dashboard.infoTitle') }}
+                <button class="mshell__item mshell__item--action" @click="openEditor">
+                    <i class="bi bi-pencil me-2"></i>{{ $t('general.addNewNote') }}
                 </button>
                 <button class="mshell__item mshell__item--action" @click="openSettings">
                     <i class="bi bi-gear me-2"></i>{{ $t('general.buttonSettings') }}
@@ -92,7 +94,7 @@
                 v-for="tab in tabs"
                 :key="tab.id"
                 class="mshell__tab"
-                :class="{ 'mshell__tab--active': activeTab === tab.id }"
+                :class="{ 'mshell__tab--active': tabActive(tab.id) }"
                 @click="selectTab(tab.id)"
             >
                 <i class="bi" :class="tab.icon"></i>
@@ -217,10 +219,11 @@ import QvBrand from './QvBrand.vue'
 
 const qvDashboard = defineAsyncComponent(() => import('./qvDashboard.vue'))
 const qvEditor = defineAsyncComponent(() => import('./qvEditor.vue'))
+const qvSettings = defineAsyncComponent(() => import('./qvSettings.vue'))
 
 export default {
     name: 'MobileShell',
-    components: { NoteArticle, qvDashboard, qvEditor, QvBrand },
+    components: { NoteArticle, qvDashboard, qvEditor, qvSettings, QvBrand },
     data () {
         return {
             actionSheet: null,
@@ -295,6 +298,9 @@ export default {
             if (this.activeTab === 'more') {
                 return this.$t('general.tabMore')
             }
+            if (this.activeTab === 'settings') {
+                return this.$t('general.buttonSettings')
+            }
             if (this.isNoteRoute && this.$route.name === 'qvTag') {
                 return this.currentTagURL || this.$t('general.sidebarTags')
             }
@@ -349,6 +355,9 @@ export default {
             this.installPrompt = null
             prompt.prompt()
         },
+        tabActive (id) {
+            return this.activeTab === id || (id === 'more' && this.activeTab === 'settings')
+        },
         syncTabWithRoute () {
             if (this.$route.name === 'qvApp') {
                 this.activeTab = 'overview'
@@ -359,6 +368,7 @@ export default {
             }
         },
         selectTab (id) {
+            const previous = this.activeTab
             this.activeTab = id
             if (id === 'overview') {
                 if (this.$route.name !== 'qvApp') {
@@ -374,7 +384,11 @@ export default {
                 return
             }
             if (id === 'search') {
-                this.$nextTick(() => this.$refs.searchField && this.$refs.searchField.focus())
+                if (previous === 'search') {
+                    this.closeSearch()
+                } else {
+                    this.$nextTick(() => this.$refs.searchField && this.$refs.searchField.focus())
+                }
             }
         },
         openNotebook (uuid) {
@@ -457,7 +471,13 @@ export default {
                 .catch(error => console.error('Delete error:', error))
         },
         openSettings () {
-            this.$router.push('/settings/')
+            this.activeTab = 'settings'
+        },
+        openEditor () {
+            this.noteStore.doEmptyCurrentArticle()
+            this.noteStore.setCurrentNotebookID('')
+            this.noteStore.setPageType('editor')
+            this.$router.push({ name: 'qvEditor' })
         },
         closeSearch () {
             this.activeTab = 'notes'
