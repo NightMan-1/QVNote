@@ -84,3 +84,13 @@ const notivue = createNotivue({
 app.use(notivue)
 
 app.mount('#app')
+
+// PWA: cache the shell and static assets for a fast, installable app. The dev
+// server is left alone so hot reload is not affected.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((error) => {
+            console.warn('Service worker registration failed:', error)
+        })
+    })
+}

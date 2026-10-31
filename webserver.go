@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -167,6 +168,52 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 	// Static files from embedded filesystem
 	fileServer := http.FileServer(templateFileSystem())
 	r.Handle("/static/*", fileServer)
+
+	// PWA assets: the manifest and the service worker must live in the root
+	// scope (the worker also needs Service-Worker-Allowed), while icons are
+	// plain files under /pwa/.
+	r.Handle("/pwa/*", fileServer)
+
+	writeTemplateAsset := func(name, contentType string, headers map[string]string) http.HandlerFunc {
+		return func(w http.ResponseWriter, req *http.Request) {
+			data, err := fs.ReadFile(templateFS, "templates/"+name)
+			if err != nil {
+				http.NotFound(w, req)
+				return
+			}
+			w.Header().Set("Content-Type", contentType)
+			for key, value := range headers {
+				w.Header().Set(key, value)
+			}
+			_, _ = w.Write(data)
+		}
+	}
+	r.Get("/manifest.webmanifest", writeTemplateAsset("pwa/manifest.webmanifest", "application/manifest+json", map[string]string{"Cache-Control": "no-cache"}))
+	r.Get("/sw.js", writeTemplateAsset("pwa/sw.js", "application/javascript; charset=utf-8", map[string]string{
+		"Service-Worker-Allowed": "/",
+		"Cache-Control":          "no-cache",
+	}))
+
+	// List of embedded static assets for the service worker's precache.
+	r.Get("/pwa/precache.json", func(w http.ResponseWriter, req *http.Request) {
+		urls := []string{}
+		err := fs.WalkDir(templateFS, "templates/static", func(path string, entry fs.DirEntry, walkErr error) error {
+			if walkErr != nil || entry.IsDir() {
+				return nil
+			}
+			switch strings.ToLower(filepath.Ext(path)) {
+			case ".js", ".css", ".woff2", ".png", ".svg":
+				urls = append(urls, "/"+strings.TrimPrefix(path, "templates/"))
+			}
+			return nil
+		})
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Cache-Control", "no-cache")
+		jsonResponse(w, urls)
+	})
 
 	// For installation
 	r.HandleFunc("/api/config.write", func(w http.ResponseWriter, r *http.Request) {
