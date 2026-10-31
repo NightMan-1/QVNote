@@ -1,41 +1,71 @@
 <template>
     <div class="mshell">
         <header class="mshell__bar">
-            <button class="mshell__btn" :aria-label="$t('general.menu')" @click="drawerOpen = true">
-                <i class="bi bi-list"></i>
+            <button v-if="focusMode" class="mshell__btn" :aria-label="$t('articleList.backToList')" @click="backFromFocus">
+                <i class="bi bi-arrow-left"></i>
             </button>
-            <div class="mshell__title">{{ pageTitle }}</div>
-            <button class="mshell__btn" :aria-label="$t('articleList.searchPlaceholder')" @click="toggleSearch">
-                <i class="bi" :class="searchOpen ? 'bi-x-lg' : 'bi-search'"></i>
+
+            <button v-else-if="activeTab === 'notes'" class="mshell__library" @click="libraryOpen = true">
+                <span class="mshell__library-name">{{ pageTitle }}</span>
+                <i class="bi bi-chevron-down"></i>
+            </button>
+
+            <div v-else class="mshell__title">{{ pageTitle }}</div>
+
+            <div class="mshell__grow"></div>
+
+            <template v-if="focusMode && isNoteRoute && article.uuid">
+                <a
+                    v-if="article.url_src"
+                    class="mshell__btn"
+                    :href="article.url_src"
+                    target="_blank"
+                    rel="noopener"
+                ><i class="bi bi-box-arrow-up-right"></i></a>
+                <button class="mshell__btn" :aria-label="$t('editor.titleExist')" @click="editNote">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </template>
+            <button v-else-if="activeTab === 'search'" class="mshell__btn" @click="closeSearch">
+                <i class="bi bi-x-lg"></i>
             </button>
         </header>
 
-        <div v-if="searchOpen" class="mshell__search">
-            <input
-                ref="searchField"
-                v-model="searchText"
-                type="search"
-                class="form-control"
-                :placeholder="$t('articleList.searchPlaceholder')"
-            >
-        </div>
-
         <main class="mshell__content">
-            <qv-dashboard v-if="isDashboard" />
-
-            <qv-editor v-else-if="pageType === 'editor'" />
-
-            <div v-else-if="showSearchResults" class="mshell__list">
-                <div v-if="searchResults.length === 0" class="mshell__empty">{{ $t('articleList.searchNothing') }}</div>
-                <button
-                    v-for="note in searchResults"
-                    :key="note.uuid"
-                    class="mshell__item"
-                    @click="openNote(note.uuid, note.NoteBookUUID)"
-                >{{ note.title }}</button>
-            </div>
+            <qv-editor v-if="pageType === 'editor'" />
 
             <NoteArticle v-else-if="isNoteRoute && article.uuid" :article="article" />
+
+            <div v-else-if="activeTab === 'search'" class="mshell__search">
+                <input
+                    ref="searchField"
+                    v-model="searchText"
+                    type="search"
+                    class="form-control"
+                    :placeholder="$t('articleList.searchPlaceholder')"
+                >
+                <div class="mshell__list">
+                    <div v-if="searchText.trim().length < 3" class="mshell__hint">{{ $t('articleList.searchHint') }}</div>
+                    <div v-else-if="searchResults.length === 0" class="mshell__hint">{{ $t('articleList.searchNothing') }}</div>
+                    <button
+                        v-for="note in searchResults"
+                        :key="note.uuid"
+                        class="mshell__item"
+                        @click="openNote(note.uuid, note.NoteBookUUID)"
+                    >{{ note.title }}</button>
+                </div>
+            </div>
+
+            <div v-else-if="activeTab === 'more'" class="mshell__list">
+                <button class="mshell__item mshell__item--action" @click="selectTab('overview')">
+                    <i class="bi bi-bar-chart me-2"></i>{{ $t('dashboard.infoTitle') }}
+                </button>
+                <button class="mshell__item mshell__item--action" @click="openSettings">
+                    <i class="bi bi-gear me-2"></i>{{ $t('general.buttonSettings') }}
+                </button>
+            </div>
+
+            <qv-dashboard v-else-if="activeTab === 'overview'" />
 
             <div v-else class="mshell__list">
                 <button
@@ -47,51 +77,87 @@
             </div>
         </main>
 
-        <div class="mshell__note-bar" v-if="isNoteRoute && article.uuid">
-            <button class="mshell__btn" :aria-label="$t('articleList.backToList')" @click="backToList">
-                <i class="bi bi-arrow-left"></i>
+        <nav v-if="!focusMode" class="mshell__tabs">
+            <button
+                v-for="tab in tabs"
+                :key="tab.id"
+                class="mshell__tab"
+                :class="{ 'mshell__tab--active': activeTab === tab.id }"
+                @click="selectTab(tab.id)"
+            >
+                <i class="bi" :class="tab.icon"></i>
+                <span>{{ tab.label }}</span>
             </button>
-            <a
-                v-if="article.url_src"
-                class="mshell__btn"
-                :href="article.url_src"
-                target="_blank"
-                rel="noopener"
-            ><i class="bi bi-box-arrow-up-right"></i></a>
-            <button class="mshell__btn" :aria-label="$t('editor.titleExist')" @click="editNote">
-                <i class="bi bi-pencil"></i>
-            </button>
-        </div>
+        </nav>
 
-        <div v-if="drawerOpen" class="mshell__backdrop" @click="drawerOpen = false"></div>
-        <aside class="mshell__drawer" :class="{ 'mshell__drawer--open': drawerOpen }">
-            <div class="mshell__drawer-scroll"><qv-sidebar /></div>
-            <div class="mshell__drawer-footer">
-                <div class="btn-group w-100">
-                    <button
-                        class="btn text-white"
-                        :class="sidebarType === 'notebooksList' ? 'btn-primary' : 'btn-outline-primary'"
-                        @click="noteStore.setSidebarType('notebooksList')"
-                    >
-                        <i class="bi bi-journal-text me-1"></i>{{ $t('general.sidebarSwitchNotebooks') }}
-                    </button>
-                    <button
-                        class="btn text-white"
-                        :class="sidebarType === 'tagsList' ? 'btn-primary' : 'btn-outline-primary'"
-                        @click="noteStore.setSidebarType('tagsList')"
-                    >
-                        <i class="bi bi-tags me-1"></i>{{ $t('general.sidebarSwitchTags') }}
-                    </button>
-                </div>
+        <div v-if="libraryOpen" class="mshell__sheet">
+            <header class="mshell__sheet-bar">
+                <div class="mshell__title">{{ $t('general.libraryTitle') }}</div>
+                <div class="mshell__grow"></div>
+                <button class="mshell__btn" @click="libraryOpen = false"><i class="bi bi-x-lg"></i></button>
+            </header>
+
+            <div class="mshell__sheet-switch">
+                <button
+                    class="btn"
+                    :class="libraryType === 'notebooks' ? 'btn-primary' : 'btn-outline-primary'"
+                    @click="libraryType = 'notebooks'"
+                >{{ $t('general.sidebarSwitchNotebooks') }}</button>
+                <button
+                    class="btn"
+                    :class="libraryType === 'tags' ? 'btn-primary' : 'btn-outline-primary'"
+                    @click="libraryType = 'tags'"
+                >{{ $t('general.sidebarSwitchTags') }}</button>
             </div>
-        </aside>
+
+            <div class="mshell__sheet-list">
+                <template v-if="libraryType === 'notebooks'">
+                    <button class="mshell__item mshell__item--row" @click="openNotebook('Allnotes')">
+                        <span><i class="bi bi-collection me-2"></i>{{ $t('general.sidebarAllNotes') }}</span>
+                        <span class="badge bg-primary">{{ notesCountTotal }}</span>
+                    </button>
+                    <button class="mshell__item mshell__item--row" @click="openNotebook('Inbox')">
+                        <span><i class="bi bi-inbox me-2"></i>{{ $t('general.sidebarInbox') }}</span>
+                        <span class="badge bg-primary">{{ notesCountInbox }}</span>
+                    </button>
+                    <button class="mshell__item mshell__item--row" @click="openNotebook('Favorites')">
+                        <span><i class="bi bi-star me-2"></i>{{ $t('general.sidebarFavorites') }}</span>
+                        <span class="badge bg-primary">{{ notesCountFavorites }}</span>
+                    </button>
+                    <button class="mshell__item mshell__item--row" @click="openNotebook('Trash')">
+                        <span><i class="bi bi-trash me-2"></i>{{ $t('general.sidebarTrash') }}</span>
+                        <span class="badge bg-primary">{{ notesCountTrash }}</span>
+                    </button>
+                    <div class="mshell__group">{{ $t('general.sidebarNotebooks') }}</div>
+                    <button
+                        v-for="notebook in regularNotebooks"
+                        :key="notebook.uuid"
+                        class="mshell__item mshell__item--row"
+                        @click="openNotebook(notebook.uuid)"
+                    >
+                        <span>{{ notebook.name }}</span>
+                        <span class="badge bg-primary">{{ notebook.notesCount }}</span>
+                    </button>
+                </template>
+                <template v-else>
+                    <button
+                        v-for="tag in tags"
+                        :key="tag.url"
+                        class="mshell__item mshell__item--row"
+                        @click="openTag(tag.url)"
+                    >
+                        <span>#{{ tag.name }}</span>
+                        <span class="badge bg-primary">{{ tag.count }}</span>
+                    </button>
+                </template>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
 import { defineAsyncComponent } from 'vue'
 import { useNoteStore } from '../store'
-import qvSidebar from './qvSidebar.vue'
 import NoteArticle from './NoteArticle.vue'
 
 const qvDashboard = defineAsyncComponent(() => import('./qvDashboard.vue'))
@@ -99,14 +165,14 @@ const qvEditor = defineAsyncComponent(() => import('./qvEditor.vue'))
 
 export default {
     name: 'MobileShell',
-    components: { qvSidebar, NoteArticle, qvDashboard, qvEditor },
+    components: { NoteArticle, qvDashboard, qvEditor },
     data () {
         return {
-            drawerOpen: false,
-            searchOpen: false,
+            activeTab: 'overview',
+            libraryOpen: false,
+            libraryType: 'notebooks',
             searchText: '',
             searchResults: [],
-            searchPending: false,
             searchTimer: null
         }
     },
@@ -114,27 +180,51 @@ export default {
         return { noteStore: useNoteStore() }
     },
     computed: {
+        tabs () {
+            return [
+                { id: 'overview', icon: 'bi-bar-chart', label: this.$t('general.tabOverview') },
+                { id: 'notes', icon: 'bi-journal-text', label: this.$t('general.tabNotes') },
+                { id: 'search', icon: 'bi-search', label: this.$t('general.tabSearch') },
+                { id: 'more', icon: 'bi-three-dots', label: this.$t('general.tabMore') }
+            ]
+        },
         pageType () { return this.noteStore.pageType },
-        sidebarType () { return this.noteStore.sidebarType },
+        article () { return this.noteStore.currentArticle || {} },
         notes () {
             const list = this.noteStore.notesList
             return Array.isArray(list) ? list : []
         },
-        article () { return this.noteStore.currentArticle || {} },
+        notebooks () {
+            const list = this.noteStore.notebooksList
+            return Array.isArray(list) ? list : []
+        },
+        regularNotebooks () {
+            return this.notebooks.filter(n => n.name !== 'Inbox' && n.name !== 'Trash')
+        },
+        tags () {
+            const list = this.noteStore.tagsList
+            return Array.isArray(list) ? list : []
+        },
+        notesCountTotal () { return this.noteStore.notesCountTotal },
+        notesCountInbox () { return this.noteStore.notesCountInbox },
+        notesCountFavorites () { return this.noteStore.notesCountFavorites },
+        notesCountTrash () { return this.noteStore.notesCountTrash },
         currentNotebookID () { return this.noteStore.currentNotebookID },
         currentTagURL () { return this.noteStore.currentTagURL },
-        isDashboard () { return this.$route.name === 'qvApp' },
         isNoteRoute () { return this.$route.name === 'qvNote' || this.$route.name === 'qvTag' },
-        showSearchResults () { return this.searchText.trim().length >= 3 },
+        focusMode () { return this.isNoteRoute || this.pageType === 'editor' },
         pageTitle () {
-            if (this.isDashboard) {
+            if (this.activeTab === 'overview') {
                 return this.$t('dashboard.infoTitle')
             }
-            if (this.$route.name === 'qvTag' || this.$route.name === 'qvTagsList') {
-                return this.currentTagURL || this.$t('general.sidebarSwitchTags')
+            if (this.activeTab === 'search') {
+                return this.$t('general.tabSearch')
             }
-            if (this.$route.name === 'qvEditor') {
-                return this.article.uuid ? this.$t('editor.titleExist') : this.$t('editor.titleNew')
+            if (this.activeTab === 'more') {
+                return this.$t('general.tabMore')
+            }
+            if (this.isNoteRoute && this.$route.name === 'qvTag') {
+                return this.currentTagURL || this.$t('general.sidebarTags')
             }
             const id = this.currentNotebookID
             const special = {
@@ -146,32 +236,92 @@ export default {
             if (special[id]) {
                 return this.$t(special[id])
             }
-            const notebooks = this.noteStore.notebooksList
-            const list = Array.isArray(notebooks) ? notebooks : []
-            const current = list.find(n => n.uuid === id)
-            return current ? current.name : 'QVNote'
+            const current = this.notebooks.find(n => n.uuid === id)
+            return current ? current.name : this.$t('general.sidebarAllNotes')
         }
     },
     watch: {
-        '$route' () {
-            this.drawerOpen = false
-            this.searchOpen = false
-            this.searchText = ''
-            this.searchResults = []
-        },
         searchText () {
             this.runSearch()
+        },
+        '$route' () {
+            this.libraryOpen = false
+            this.syncTabWithRoute()
+        },
+        pageType () {
+            this.syncTabWithRoute()
         }
     },
+    mounted () {
+        this.syncTabWithRoute()
+    },
     methods: {
-        toggleSearch () {
-            this.searchOpen = !this.searchOpen
-            if (this.searchOpen) {
-                this.$nextTick(() => this.$refs.searchField && this.$refs.searchField.focus())
-            } else {
-                this.searchText = ''
-                this.searchResults = []
+        syncTabWithRoute () {
+            if (this.$route.name === 'qvApp') {
+                this.activeTab = 'overview'
+            } else if (this.$route.name === 'qvNote' || this.$route.name === 'qvNotebooks' ||
+                this.$route.name === 'qvTag' || this.$route.name === 'qvTagsList' ||
+                this.$route.name === 'qvEditor') {
+                this.activeTab = 'notes'
             }
+        },
+        selectTab (id) {
+            this.activeTab = id
+            if (id === 'overview') {
+                if (this.$route.name !== 'qvApp') {
+                    this.$router.push('/')
+                }
+                return
+            }
+            if (id === 'notes') {
+                if (this.$route.name !== 'qvNote' && this.$route.name !== 'qvNotebooks' &&
+                    this.$route.name !== 'qvTag' && this.$route.name !== 'qvTagsList') {
+                    this.$router.push('/notes/' + (this.currentNotebookID || 'Allnotes') + '/')
+                }
+                return
+            }
+            if (id === 'search') {
+                this.$nextTick(() => this.$refs.searchField && this.$refs.searchField.focus())
+            }
+        },
+        openNotebook (uuid) {
+            this.libraryOpen = false
+            this.activeTab = 'notes'
+            this.$router.push('/notes/' + uuid + '/')
+        },
+        openTag (url) {
+            this.libraryOpen = false
+            this.activeTab = 'notes'
+            this.$router.push('/tags/' + url + '/')
+        },
+        openNote (uuid, notebookUUID) {
+            const nb = notebookUUID || this.currentNotebookID
+            this.searchText = ''
+            this.searchResults = []
+            this.activeTab = 'notes'
+            this.$router.push('/notes/' + nb + '/' + uuid + '/')
+        },
+        backFromFocus () {
+            if (this.pageType === 'editor' && this.article.uuid) {
+                this.$router.push('/notes/' + this.article.NoteBookUUID + '/' + this.article.uuid + '/')
+                return
+            }
+            if (this.isNoteRoute && this.$route.name === 'qvTag') {
+                this.$router.push('/tags/' + this.$route.params.nbUUID + '/')
+                return
+            }
+            this.$router.push('/notes/' + (this.currentNotebookID || 'Allnotes') + '/')
+        },
+        editNote () {
+            this.$router.push({ name: 'qvEditor' })
+        },
+        openSettings () {
+            this.$router.push('/settings/')
+        },
+        closeSearch () {
+            this.activeTab = 'notes'
+            this.searchText = ''
+            this.searchResults = []
         },
         runSearch () {
             if (this.searchTimer) {
@@ -182,7 +332,6 @@ export default {
                 this.searchResults = []
                 return
             }
-            this.searchPending = true
             this.searchTimer = setTimeout(() => {
                 fetch(this.noteStore.apiFolder + '/search.json', {
                     method: 'POST',
@@ -198,25 +347,7 @@ export default {
                         console.error('Search error:', error)
                         this.searchResults = []
                     })
-                    .finally(() => { this.searchPending = false })
             }, 250)
-        },
-        openNote (uuid, notebookUUID) {
-            const nb = notebookUUID || this.currentNotebookID
-            this.searchText = ''
-            this.searchResults = []
-            this.searchOpen = false
-            this.$router.push('/notes/' + nb + '/' + uuid + '/')
-        },
-        backToList () {
-            if (this.$route.name === 'qvTag') {
-                this.$router.push('/tags/' + this.$route.params.nbUUID + '/')
-            } else {
-                this.$router.push('/notes/' + this.currentNotebookID + '/')
-            }
-        },
-        editNote () {
-            this.$router.push({ name: 'qvEditor' })
         }
     }
 }
@@ -235,18 +366,40 @@ export default {
     display: flex;
     align-items: center;
     gap: .35rem;
-    height: 3.4rem;
-    padding: 0 .4rem;
+    min-height: 3.2rem;
+    padding: .25rem .5rem;
     background: #fff;
     border-bottom: 1px solid var(--nord4);
 }
 
+.mshell__grow {
+    flex: 1 1 auto;
+}
+
 .mshell__title {
-    flex: 1;
-    min-width: 0;
     font-weight: 600;
     font-size: 1.05rem;
     color: var(--nord0);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mshell__library {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    max-width: 75%;
+    padding: .35rem .5rem;
+    border: 0;
+    border-radius: .35rem;
+    background: none;
+    color: var(--nord0);
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.mshell__library-name {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -263,19 +416,12 @@ export default {
     border-radius: .35rem;
     background: #fff;
     color: var(--nord3);
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     text-decoration: none;
 }
 
 .mshell__btn:active {
     background: var(--nord5);
-}
-
-.mshell__search {
-    flex: 0 0 auto;
-    padding: .5rem .75rem;
-    border-bottom: 1px solid var(--nord4);
-    background: var(--nord6);
 }
 
 .mshell__content {
@@ -306,53 +452,94 @@ export default {
     background: var(--nord5);
 }
 
-.mshell__empty {
-    padding: 1.5rem 1rem;
+.mshell__item--row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.mshell__item--action {
+    display: flex;
+    align-items: center;
+}
+
+.mshell__hint {
+    padding: 1.25rem 1rem;
     color: var(--nord3);
 }
 
-.mshell__note-bar {
+.mshell__group {
+    padding: .9rem 1rem .35rem;
+    color: var(--nord3);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.mshell__search {
+    padding: .75rem .75rem 0;
+}
+
+.mshell__tabs {
     flex: 0 0 auto;
     display: flex;
-    gap: .35rem;
-    padding: .4rem .5rem;
     border-top: 1px solid var(--nord4);
+    background: #fff;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mshell__tab {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .1rem;
+    padding: .45rem .25rem .35rem;
+    border: 0;
+    background: none;
+    color: var(--nord3);
+    font-size: .72rem;
+}
+
+.mshell__tab i {
+    font-size: 1.25rem;
+}
+
+.mshell__tab--active {
+    color: var(--nord10);
+}
+
+.mshell__sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+}
+
+.mshell__sheet-bar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem .5rem;
+    border-bottom: 1px solid var(--nord4);
+}
+
+.mshell__sheet-switch {
+    display: flex;
+    gap: .4rem;
+    padding: .6rem .75rem;
     background: var(--nord6);
 }
 
-.mshell__backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, .45);
-    z-index: 1190;
+.mshell__sheet-switch .btn {
+    flex: 1 1 0;
 }
 
-.mshell__drawer {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: min(85vw, 20rem);
-    display: flex;
-    flex-direction: column;
-    background: var(--nord0);
-    transform: translateX(-100%);
-    transition: transform .25s ease;
-    z-index: 1200;
-}
-
-.mshell__drawer--open {
-    transform: none;
-}
-
-.mshell__drawer-scroll {
+.mshell__sheet-list {
     flex: 1 1 auto;
     overflow-y: auto;
-}
-
-.mshell__drawer-footer {
-    flex: 0 0 auto;
-    padding: .6rem;
-    border-top: 1px solid var(--nord3);
 }
 </style>
