@@ -25,7 +25,10 @@ const logo = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSI4IDQgNDYgNTYiIHhtbG5z
 
 .qv-brand__name {
     font-size: 1.15rem;
-    font-weight: 600;
+    /* Montserrat is a variable font: font-weight is ignored, the axis has to
+       be set explicitly (same as .dashboard-button on the desktop header) */
+    font-variation-settings: 'wght' 700;
+    margin-left: .2rem;
     color: var(--nord10);
     white-space: nowrap;
 }

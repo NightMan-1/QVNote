@@ -370,7 +370,7 @@ export default {
     align-items: center;
     gap: .35rem;
     min-height: 3.2rem;
-    padding: .25rem .5rem;
+    padding: .25rem .75rem;
     background: #fff;
     border-bottom: 1px solid var(--nord4);
 }
