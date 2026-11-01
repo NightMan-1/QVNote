@@ -3,7 +3,12 @@
         <header class="m-note__head">
             <h1 class="m-note__title">{{ article.title }}</h1>
             <div v-if="article.tags && article.tags.length" class="m-note__tags">
-                <span v-for="tag in article.tags" :key="tag" class="m-note__tag">#{{ tag }}</span>
+                <button
+                    v-for="tag in article.tags"
+                    :key="tag"
+                    class="m-note__tag"
+                    @click="$emit('tag-click', tag)"
+                >#{{ tag }}</button>
             </div>
         </header>
 
@@ -26,6 +31,7 @@ import { handleCodePenRefresh, highlightCodeBlocks, renderNoteContent } from '..
 const props = defineProps({
     article: { type: Object, required: true }
 })
+defineEmits(['tag-click'])
 
 const contentEl = ref(null)
 const html = computed(() => renderNoteContent(props.article.content))
@@ -69,10 +75,15 @@ function onContentClick (event) {
 
 .m-note__tag {
     padding: .22rem .45rem;
+    border: 0;
     border-radius: var(--m-radius-sm);
     background: var(--m-chip-bg);
     color: var(--m-chip-text);
     font-size: .75rem;
     line-height: 1.3;
+}
+
+.m-note__tag:active {
+    filter: brightness(.94);
 }
 </style>

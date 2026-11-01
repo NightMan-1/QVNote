@@ -1,11 +1,18 @@
 <template>
     <div class="mshell" :style="{ '--mshell-tabs': tabsHeight + 'px' }">
         <header class="mshell__bar">
-            <button v-if="focusMode" class="mshell__btn" :aria-label="$t('articleList.backToList')" @click="backFromFocus">
-                <i class="bi bi-arrow-left"></i>
-            </button>
+            <div v-if="focusMode" class="mshell__lead">
+                <button class="mshell__btn" :aria-label="$t('articleList.backToList')" @click="backFromFocus">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                <div v-if="isNoteRoute" class="mshell__crumb">
+                    <i class="bi" :class="sectionIcon"></i>
+                    <span class="mshell__ellipsis">{{ pageTitle }}</span>
+                </div>
+            </div>
 
             <button v-else-if="activeTab === 'notes'" class="mshell__library" @click="showLibrary">
+                <i class="bi" :class="sectionIcon"></i>
                 <span class="mshell__ellipsis">{{ pageTitle }}</span>
                 <i class="bi bi-chevron-down"></i>
             </button>
@@ -76,7 +83,7 @@
 
             <MobileDashboard v-else-if="activeTab === 'overview'" />
 
-            <MobileNote v-else-if="isNoteRoute && article.uuid" :article="article" />
+            <MobileNote v-else-if="isNoteRoute && article.uuid" :article="article" @tag-click="openTagByName" />
 
             <div v-else class="mshell__list">
                 <div v-if="notes.length === 0" class="mshell__hint">{{ $t('articleList.emptyNotebook') }}</div>
@@ -195,7 +202,8 @@
                         v-for="tag in tags"
                         :key="tag.url"
                         class="mshell__item mshell__item--row mshell__item--library"
-                        @click="openTag(tag.url)"
+                        :class="{ 'mshell__item--current': tagIsCurrent(tag) }"
+                        @click="openTag(tag.name)"
                     >
                         <span class="mshell__entry">
                             <i class="bi bi-hash"></i>
@@ -326,6 +334,23 @@ export default {
             }
             return this.$t('general.actions')
         },
+        isTagContext () {
+            return this.$route.name === 'qvTag' || this.$route.name === 'qvTagsList'
+        },
+        // the icon in front of the current notebook/tag name, so a notebook
+        // and a tag with the same name can be told apart
+        sectionIcon () {
+            if (this.isTagContext) {
+                return 'bi-hash'
+            }
+            const icons = {
+                Allnotes: 'bi-collection',
+                Inbox: 'bi-inbox',
+                Favorites: 'bi-star',
+                Trash: 'bi-trash'
+            }
+            return icons[this.currentNotebookID] || 'bi-journal-bookmark'
+        },
         focusMode () {
             // reading a note (or editing it) gets the compact header with the
             // note actions; other tabs show their own header instead
@@ -344,7 +369,7 @@ export default {
             if (this.activeTab === 'settings') {
                 return this.$t('general.buttonSettings')
             }
-            if (this.isNoteRoute && this.$route.name === 'qvTag') {
+            if (this.isTagContext) {
                 return this.currentTagURL || this.$t('general.sidebarTags')
             }
             const id = this.currentNotebookID
@@ -492,7 +517,7 @@ export default {
             }
         },
         showLibrary () {
-            this.libraryType = 'notebooks'
+            this.libraryType = this.isTagContext ? 'tags' : 'notebooks'
             this.measureTabs()
             this.libraryOpen = true
             this.$nextTick(() => {
@@ -512,16 +537,38 @@ export default {
                 this.$router.push('/notes/' + uuid + '/')
             }
         },
-        openTag (url) {
+        openTag (name) {
             this.libraryOpen = false
             this.activeTab = 'notes'
-            this.$router.push('/tags/' + url + '/')
+            this.$router.push({ name: 'qvTagsList', params: { nbUUID: name } })
+        },
+        // a tag chip in the note view
+        openTagByName (name) {
+            this.openTag(name)
+        },
+        safeDecode (value) {
+            try {
+                return decodeURIComponent(value)
+            } catch (e) {
+                return value
+            }
+        },
+        tagIsCurrent (tag) {
+            return this.isTagContext && this.safeDecode(tag.url) === this.currentTagURL
         },
         openNote (uuid, notebookUUID) {
-            const nb = notebookUUID || this.currentNotebookID
             this.searchText = ''
             this.searchResults = []
             this.activeTab = 'notes'
+
+            // inside a tag keep the tag in the url, so "back" returns to the
+            // tagged list and the header keeps showing the tag
+            if (this.isTagContext && this.currentTagURL) {
+                this.$router.push({ name: 'qvTag', params: { nbUUID: this.currentTagURL, noteUUID: uuid } })
+                return
+            }
+
+            const nb = notebookUUID || this.currentNotebookID
             this.$router.push('/notes/' + nb + '/' + uuid + '/')
         },
         backFromFocus () {
@@ -530,7 +577,7 @@ export default {
                 return
             }
             if (this.isNoteRoute && this.$route.name === 'qvTag') {
-                this.$router.push('/tags/' + this.$route.params.nbUUID + '/')
+                this.$router.push({ name: 'qvTagsList', params: { nbUUID: this.currentTagURL || this.$route.params.nbUUID } })
                 return
             }
             this.$router.push('/notes/' + (this.currentNotebookID || 'Allnotes') + '/')
@@ -685,6 +732,40 @@ export default {
     color: var(--m-text);
     font-size: 1.05rem;
     font-weight: 600;
+}
+
+.mshell__library > i:first-child {
+    flex: 0 0 auto;
+    color: var(--m-accent);
+    font-size: 1.05rem;
+}
+
+.mshell__library > i:last-child {
+    flex: 0 0 auto;
+    color: var(--m-text-muted);
+    font-size: .8rem;
+}
+
+.mshell__lead {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+}
+
+.mshell__crumb {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    min-width: 0;
+    color: var(--m-text-muted);
+    font-size: .82rem;
+}
+
+.mshell__crumb i {
+    flex: 0 0 auto;
+    color: var(--m-accent);
+    font-size: .9rem;
 }
 
 .mshell__btn {
