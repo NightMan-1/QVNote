@@ -180,6 +180,15 @@
                 >{{ $t('general.sidebarSwitchTags') }}</button>
             </div>
 
+            <label v-if="libraryType === 'tags'" class="mshell__sheet-filter">
+                <i class="bi bi-search"></i>
+                <input
+                    v-model="tagFilter"
+                    type="search"
+                    :placeholder="$t('general.filterTags')"
+                >
+            </label>
+
             <div ref="libraryList" class="mshell__sheet-list">
                 <template v-if="libraryType === 'notebooks'">
                     <button
@@ -199,7 +208,7 @@
                 </template>
                 <template v-else>
                     <button
-                        v-for="tag in tags"
+                        v-for="tag in filteredTags"
                         :key="tag.url"
                         class="mshell__item mshell__item--row mshell__item--library"
                         :class="{ 'mshell__item--current': tagIsCurrent(tag) }"
@@ -211,6 +220,7 @@
                         </span>
                         <span class="mshell__item-count">{{ tag.count }}</span>
                     </button>
+                    <div v-if="filteredTags.length === 0" class="mshell__hint">{{ $t('general.filterEmpty') }}</div>
                 </template>
             </div>
 
@@ -277,6 +287,7 @@ export default {
             libraryType: 'notebooks',
             tabsHeight: 0,
             lastNotesTabTap: 0,
+            tagFilter: '',
             searchText: '',
             searchResults: [],
             searchTimer: null
@@ -317,6 +328,11 @@ export default {
         tags () {
             const list = this.noteStore.tagsList
             return Array.isArray(list) ? list : []
+        },
+        // 700+ tags need a filter; notebooks stay unfiltered by request
+        filteredTags () {
+            const query = this.tagFilter.trim().toLowerCase()
+            return query ? this.tags.filter(tag => tag.name.toLowerCase().includes(query)) : this.tags
         },
         notesCountTotal () { return this.noteStore.notesCountTotal },
         notesCountInbox () { return this.noteStore.notesCountInbox },
@@ -518,6 +534,10 @@ export default {
         },
         showLibrary () {
             this.libraryType = this.isTagContext ? 'tags' : 'notebooks'
+            // keep the tag query while browsing tags, drop it elsewhere
+            if (this.libraryType === 'notebooks') {
+                this.tagFilter = ''
+            }
             this.measureTabs()
             this.libraryOpen = true
             this.$nextTick(() => {
@@ -1025,6 +1045,29 @@ export default {
     background: var(--m-bg);
     color: var(--m-text);
     box-shadow: 0 1px 3px rgba(46, 52, 64, .12);
+}
+
+.mshell__sheet-filter {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: .5rem;
+    margin: 0 .75rem .5rem;
+    padding: .5rem .65rem;
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius);
+    color: var(--m-text-muted);
+    background: var(--m-bg);
+}
+
+.mshell__sheet-filter input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    color: var(--m-text);
+    font-size: .95rem;
 }
 
 .mshell__sheet-list {

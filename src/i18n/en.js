@@ -8,6 +8,8 @@ export default {
         addNewNotebook: 'Add a notebook',
         buttonSettings: 'Settings',
         libraryTitle: 'Library',
+        filterTags: 'Find a tag',
+        filterEmpty: 'Nothing matches',
         libraryEmpty: 'No notebooks yet',
         sidebarLibrary: 'LIBRARY',
         sidebarInbox: 'Inbox',
