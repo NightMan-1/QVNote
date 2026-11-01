@@ -13,6 +13,11 @@ import './style/bootstrap/bootstrap.scss'
 import './style/grid.css'
 import './style/main.css'
 import './style/typography.scss'
+
+// mobile shell: own tokens, base and reader styles (independent of desktop)
+import './mobile/tokens.css'
+import './mobile/base.css'
+import './mobile/content.css'
 import './vendor/tingle/tingle.css'
 
 import App from './App.vue'

@@ -1,0 +1,155 @@
+/* Typography for note content in the mobile reader.
+ *
+ * The note HTML is rendered with v-html, so these rules cannot be scoped with
+ * Vue. Everything is namespaced under .m-note__content: the mobile reader
+ * defines its own reading rhythm instead of inheriting bootstrap.
+ */
+.m-note__content {
+    color: var(--m-text);
+    font-size: 1.02rem;
+    line-height: 1.62;
+    overflow-wrap: anywhere;
+}
+
+.m-note__content > :first-child {
+    margin-top: 0;
+}
+
+.m-note__content p {
+    margin: 0 0 .85rem;
+}
+
+.m-note__content h1,
+.m-note__content h2,
+.m-note__content h3,
+.m-note__content h4,
+.m-note__content h5,
+.m-note__content h6 {
+    margin: 1.5rem 0 .6rem;
+    color: var(--m-text);
+    font-weight: 700;
+    line-height: 1.28;
+}
+
+.m-note__content h1 { font-size: 1.5rem; }
+.m-note__content h2 { font-size: 1.32rem; }
+.m-note__content h3 { font-size: 1.18rem; }
+.m-note__content h4 { font-size: 1.06rem; }
+.m-note__content h5,
+.m-note__content h6 { font-size: 1rem; }
+
+.m-note__content a {
+    color: var(--m-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.m-note__content ul,
+.m-note__content ol {
+    margin: 0 0 .85rem;
+    padding-left: 1.4rem;
+}
+
+.m-note__content ol {
+    padding-left: 1.7rem;
+}
+
+.m-note__content li {
+    margin: .25rem 0;
+}
+
+/* the default marker box touches the text in Montserrat */
+.m-note__content ol > li {
+    padding-left: .25rem;
+}
+
+.m-note__content li > ul,
+.m-note__content li > ol {
+    margin: .25rem 0;
+}
+
+.m-note__content blockquote {
+    margin: 0 0 1rem;
+    padding: .6rem .9rem;
+    border-left: 3px solid var(--m-accent);
+    border-radius: 0 var(--m-radius-sm) var(--m-radius-sm) 0;
+    background: var(--m-surface);
+    color: var(--m-text-muted);
+}
+
+.m-note__content blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+.m-note__content hr {
+    margin: 1.5rem 0;
+    border: 0;
+    border-top: 1px solid var(--m-border);
+}
+
+.m-note__content code {
+    padding: .1em .35em;
+    border-radius: 4px;
+    background: var(--m-surface);
+    color: var(--m-text);
+    font-family: var(--m-font-mono);
+    font-size: .9em;
+}
+
+.m-note__content pre {
+    margin: 0 0 1rem;
+    padding: .8rem .9rem;
+    border-radius: var(--m-radius-sm);
+    background: var(--m-surface);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.m-note__content pre code {
+    padding: 0;
+    background: none;
+    font-size: .86rem;
+    line-height: 1.5;
+    white-space: pre;
+}
+
+.m-note__content img,
+.m-note__content video,
+.m-note__content iframe,
+.m-note__content svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.m-note__content img {
+    margin: .5rem 0;
+    border-radius: var(--m-radius-sm);
+}
+
+.m-note__content iframe[src*="/api/codepen/"] {
+    width: 100%;
+}
+
+/* wide tables scroll instead of stretching the page */
+.m-note__content table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 1rem;
+    border-collapse: collapse;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.m-note__content th,
+.m-note__content td {
+    padding: .4rem .55rem;
+    border: 1px solid var(--m-border);
+    vertical-align: top;
+}
+
+.m-note__content th {
+    background: var(--m-surface);
+    font-weight: 600;
+    text-align: left;
+}

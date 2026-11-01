@@ -44,7 +44,7 @@
                     ref="searchField"
                     v-model="searchText"
                     type="search"
-                    class="form-control"
+                    class="mshell__search-field"
                     :placeholder="$t('articleList.searchPlaceholder')"
                 >
                 <div class="mshell__list">
@@ -60,23 +60,23 @@
                 </div>
             </div>
 
-            <NoteArticle v-else-if="isNoteRoute && article.uuid" :article="article" />
-
             <qv-settings v-else-if="activeTab === 'settings'" embedded />
 
             <div v-else-if="activeTab === 'more'" class="mshell__list">
                 <button class="mshell__item mshell__item--action" @click="openEditor">
-                    <i class="bi bi-pencil me-2"></i>{{ $t('general.addNewNote') }}
+                    <i class="bi bi-pencil"></i>{{ $t('general.addNewNote') }}
                 </button>
                 <button class="mshell__item mshell__item--action" @click="openSettings">
-                    <i class="bi bi-gear me-2"></i>{{ $t('general.buttonSettings') }}
+                    <i class="bi bi-gear"></i>{{ $t('general.buttonSettings') }}
                 </button>
                 <button v-if="canInstall" class="mshell__item mshell__item--action" @click="installApp">
-                    <i class="bi bi-download me-2"></i>{{ $t('general.installApp') }}
+                    <i class="bi bi-download"></i>{{ $t('general.installApp') }}
                 </button>
             </div>
 
             <qv-dashboard v-else-if="activeTab === 'overview'" />
+
+            <MobileNote v-else-if="isNoteRoute && article.uuid" :article="article" />
 
             <div v-else class="mshell__list">
                 <div v-if="notes.length === 0" class="mshell__hint">{{ $t('articleList.emptyNotebook') }}</div>
@@ -112,14 +112,14 @@
             <div class="mshell__sheet-list">
                 <template v-if="actionSheet === 'actions'">
                     <button class="mshell__item mshell__item--action" @click="toggleFavorite">
-                        <i class="bi me-2" :class="article.favorites ? 'bi-star-fill text-warning' : 'bi-star'"></i>
+                        <i class="bi" :class="article.favorites ? 'bi-star-fill text-warning' : 'bi-star'"></i>
                         {{ article.favorites ? $t('articleList.btnRemoveFavorites') : $t('articleList.btnFavorites') }}
                     </button>
                     <button class="mshell__item mshell__item--action" @click="actionSheet = 'move'">
-                        <i class="bi bi-arrow-left-right me-2"></i>{{ $t('articleList.btnMove') }}
+                        <i class="bi bi-arrow-left-right"></i>{{ $t('articleList.btnMove') }}
                     </button>
-                    <button class="mshell__item mshell__item--action text-danger" @click="actionSheet = 'delete'">
-                        <i class="bi bi-trash me-2"></i>{{ $t('articleList.btnDelete') }}
+                    <button class="mshell__item mshell__item--action mshell__danger" @click="actionSheet = 'delete'">
+                        <i class="bi bi-trash"></i>{{ $t('articleList.btnDelete') }}
                     </button>
                 </template>
 
@@ -129,15 +129,15 @@
                         v-for="notebook in notebooks"
                         :key="notebook.uuid"
                         class="mshell__item"
-                        :class="{ 'fw-semibold': notebook.uuid === currentNotebookID }"
+                        :class="{ 'mshell__item--selected': notebook.uuid === currentNotebookID }"
                         @click="moveTo(notebook.uuid)"
                     >{{ notebook.name }}</button>
                 </template>
 
                 <template v-else-if="actionSheet === 'delete'">
                     <div class="mshell__group">{{ $t('articleList.modalDeleteTitle') }}</div>
-                    <button class="mshell__item mshell__item--action text-danger" @click="deleteNote">
-                        <i class="bi bi-trash me-2"></i>{{ $t('general.yesBig') }}
+                    <button class="mshell__item mshell__item--action mshell__danger" @click="deleteNote">
+                        <i class="bi bi-trash"></i>{{ $t('general.yesBig') }}
                     </button>
                     <button class="mshell__item mshell__item--action" @click="actionSheet = 'actions'">
                         {{ $t('general.noBig') }}
@@ -251,7 +251,7 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { useNoteStore } from '../store'
-import NoteArticle from './NoteArticle.vue'
+import MobileNote from '../mobile/MobileNote.vue'
 import QvBrand from './QvBrand.vue'
 
 const qvDashboard = defineAsyncComponent(() => import('./qvDashboard.vue'))
@@ -260,7 +260,7 @@ const qvSettings = defineAsyncComponent(() => import('./qvSettings.vue'))
 
 export default {
     name: 'MobileShell',
-    components: { NoteArticle, qvDashboard, qvEditor, qvSettings, QvBrand },
+    components: { MobileNote, qvDashboard, qvEditor, qvSettings, QvBrand },
     data () {
         return {
             actionSheet: null,
@@ -326,8 +326,9 @@ export default {
             return this.$t('general.actions')
         },
         focusMode () {
-            // the search screen takes over the whole header, also over a note
-            return (this.isNoteRoute || this.pageType === 'editor') && this.activeTab !== 'search'
+            // reading a note (or editing it) gets the compact header with the
+            // note actions; other tabs show their own header instead
+            return this.activeTab === 'notes' && (this.isNoteRoute || this.pageType === 'editor')
         },
         pageTitle () {
             if (this.activeTab === 'overview') {
@@ -622,7 +623,7 @@ export default {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #fff;
+    background: var(--m-bg);
 }
 
 .mshell__bar {
@@ -632,8 +633,8 @@ export default {
     gap: .35rem;
     min-height: 3.2rem;
     padding: .25rem .75rem;
-    background: #fff;
-    border-bottom: 1px solid var(--nord4);
+    background: var(--m-bg);
+    border-bottom: 1px solid var(--m-border);
 }
 
 .mshell__grow {
@@ -643,7 +644,7 @@ export default {
 .mshell__title {
     font-weight: 600;
     font-size: 1.05rem;
-    color: var(--nord0);
+    color: var(--m-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -658,7 +659,7 @@ export default {
     border: 0;
     border-radius: .35rem;
     background: none;
-    color: var(--nord0);
+    color: var(--m-text);
     font-size: 1.05rem;
     font-weight: 600;
 }
@@ -670,16 +671,16 @@ export default {
     width: 2.5rem;
     height: 2.5rem;
     padding: 0;
-    border: 1px solid var(--nord4);
+    border: 1px solid var(--m-border);
     border-radius: .35rem;
-    background: #fff;
-    color: var(--nord3);
+    background: var(--m-bg);
+    color: var(--m-text-muted);
     font-size: 1.1rem;
     text-decoration: none;
 }
 
 .mshell__btn:active {
-    background: var(--nord5);
+    background: var(--m-surface-2);
 }
 
 .mshell__content {
@@ -702,16 +703,16 @@ export default {
     word-break: break-word;
     padding: .8rem 1rem;
     border: 0;
-    border-bottom: 1px solid var(--nord5);
+    border-bottom: 1px solid var(--m-surface-2);
     background: none;
-    color: var(--grey-700);
+    color: var(--m-text);
     font-size: 1rem;
     line-height: 1.35;
     text-align: left;
 }
 
 .mshell__item:active {
-    background: var(--nord5);
+    background: var(--m-surface-2);
 }
 
 .mshell__item--row {
@@ -724,17 +725,33 @@ export default {
 .mshell__item--action {
     display: flex;
     align-items: center;
+    gap: .5rem;
+}
+
+.mshell__item--action i {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    text-align: center;
+}
+
+.mshell__item--selected {
+    font-weight: 600;
+}
+
+.mshell__danger,
+.mshell__danger i {
+    color: var(--m-danger);
 }
 
 .mshell__hint {
     padding: 1.25rem 1rem;
-    color: var(--nord3);
+    color: var(--m-text-muted);
     overflow-wrap: anywhere;
 }
 
 .mshell__group {
     padding: .9rem 1rem .35rem;
-    color: var(--nord3);
+    color: var(--m-text-muted);
     font-size: .8rem;
     text-transform: uppercase;
     letter-spacing: .03em;
@@ -744,11 +761,27 @@ export default {
     padding: .75rem .75rem 0;
 }
 
+.mshell__search-field {
+    width: 100%;
+    padding: .6rem .75rem;
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius);
+    background: var(--m-bg);
+    color: var(--m-text);
+    font-size: 1rem;
+    outline: none;
+}
+
+.mshell__search-field:focus {
+    border-color: var(--m-accent);
+    box-shadow: 0 0 0 .2rem var(--m-accent-soft);
+}
+
 .mshell__tabs {
     flex: 0 0 auto;
     display: flex;
-    border-top: 1px solid var(--nord4);
-    background: var(--nord6);
+    border-top: 1px solid var(--m-border);
+    background: var(--m-surface);
     box-shadow: 0 -2px 10px rgba(46, 52, 64, .06);
     padding-bottom: env(safe-area-inset-bottom);
 }
@@ -763,7 +796,7 @@ export default {
     padding: .45rem .25rem .35rem;
     border: 0;
     background: none;
-    color: var(--nord3);
+    color: var(--m-text-muted);
     font-size: .72rem;
     transition: color .15s ease;
 }
@@ -776,12 +809,12 @@ export default {
 }
 
 .mshell__tab--active {
-    color: var(--nord10);
+    color: var(--m-accent);
     font-weight: 600;
 }
 
 .mshell__tab--active i {
-    background: rgba(94, 129, 172, .14);
+    background: var(--m-accent-soft);
     transform: translateY(-1px);
 }
 
@@ -828,12 +861,12 @@ export default {
     height: .25rem;
     margin: .45rem auto .1rem;
     border-radius: 999px;
-    background: var(--nord4);
+    background: var(--m-border);
 }
 
 .mshell__sheet-title {
     padding-left: .25rem;
-    color: var(--nord0);
+    color: var(--m-text);
     font-size: 1.02rem;
     font-weight: 700;
 }
@@ -853,7 +886,7 @@ export default {
     z-index: 1200;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: var(--m-bg);
 }
 
 .mshell__sheet-bar {
@@ -861,7 +894,7 @@ export default {
     align-items: center;
     gap: .5rem;
     padding: .4rem .5rem;
-    border-bottom: 1px solid var(--nord4);
+    border-bottom: 1px solid var(--m-border);
 }
 
 .mshell__sheet-switch {
@@ -870,7 +903,7 @@ export default {
     margin: .55rem .75rem;
     padding: .2rem;
     border-radius: .6rem;
-    background: var(--nord6);
+    background: var(--m-surface);
 }
 
 .mshell__seg {
@@ -879,14 +912,14 @@ export default {
     border: 0;
     border-radius: .45rem;
     background: none;
-    color: var(--nord3);
+    color: var(--m-text-muted);
     font-size: .9rem;
     font-weight: 600;
 }
 
 .mshell__seg--active {
-    background: #fff;
-    color: var(--nord0);
+    background: var(--m-bg);
+    color: var(--m-text);
     box-shadow: 0 1px 3px rgba(46, 52, 64, .12);
 }
 
@@ -910,7 +943,7 @@ export default {
 
 .mshell__entry i {
     flex: 0 0 auto;
-    color: var(--nord10);
+    color: var(--m-accent);
     font-size: 1rem;
 }
 
@@ -923,14 +956,14 @@ export default {
 
 .mshell__item-count {
     flex: 0 0 auto;
-    color: var(--nord3);
+    color: var(--m-text-muted);
     font-size: .85rem;
     font-variant-numeric: tabular-nums;
 }
 
 .mshell__item--current {
-    background: rgba(94, 129, 172, .1);
-    color: var(--nord10);
+    background: var(--m-accent-soft);
+    color: var(--m-accent);
     font-weight: 600;
 }
 
@@ -940,8 +973,8 @@ export default {
     grid-template-columns: 1fr 1fr;
     gap: .5rem;
     padding: .65rem .75rem .8rem;
-    border-top: 1px solid var(--nord5);
-    background: var(--nord6);
+    border-top: 1px solid var(--m-surface-2);
+    background: var(--m-surface);
 }
 
 .mshell__shortcut {
@@ -950,31 +983,31 @@ export default {
     gap: .45rem;
     min-width: 0;
     padding: .55rem .6rem;
-    border: 1px solid var(--nord4);
+    border: 1px solid var(--m-border);
     border-radius: .65rem;
-    background: #fff;
-    color: var(--grey-700);
+    background: var(--m-bg);
+    color: var(--m-text);
     font-size: .88rem;
     text-align: left;
 }
 
 .mshell__shortcut i {
     flex: 0 0 auto;
-    color: var(--nord10);
+    color: var(--m-accent);
     font-size: 1rem;
 }
 
 .mshell__shortcut--active {
-    border-color: var(--nord10);
-    background: rgba(94, 129, 172, .1);
-    color: var(--nord10);
+    border-color: var(--m-accent);
+    background: var(--m-accent-soft);
+    color: var(--m-accent);
     font-weight: 600;
 }
 
 .mshell__shortcut-count {
     flex: 0 0 auto;
     margin-left: auto;
-    color: var(--nord3);
+    color: var(--m-text-muted);
     font-size: .78rem;
     font-variant-numeric: tabular-nums;
 }

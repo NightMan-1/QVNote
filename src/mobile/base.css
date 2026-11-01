@@ -1,0 +1,38 @@
+/* Base styles for the mobile shell.
+ *
+ * Selectors are wrapped in :where() so they have zero specificity and never
+ * fight the component styles. The shell must not inherit desktop look & feel
+ * (bootstrap body font, link colours, tap highlight, text scaling).
+ */
+:where(.mshell),
+:where(.mshell) *,
+:where(.mshell) *::before,
+:where(.mshell) *::after {
+    box-sizing: border-box;
+}
+
+:where(.mshell) {
+    font-family: var(--m-font);
+    font-size: var(--m-text-base);
+    line-height: var(--m-line);
+    color: var(--m-text);
+    background: var(--m-bg);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+}
+
+:where(.mshell) :where(button, input, select, textarea) {
+    font: inherit;
+    color: inherit;
+}
+
+:where(.mshell) :where(button) {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+:where(.mshell) :where(a) {
+    color: var(--m-accent);
+}

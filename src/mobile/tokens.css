@@ -1,0 +1,39 @@
+/* Mobile design tokens.
+ *
+ * Everything inside the mobile shell (.mshell) is styled through these
+ * variables, so the phone UI can be redesigned without touching the desktop
+ * theme, and the desktop can change without breaking the phone layout.
+ * Values are the current Nord-based defaults.
+ */
+.mshell {
+    /* palette */
+    --m-bg: #fff;
+    --m-surface: #eceff4;
+    --m-surface-2: #e5e9f0;
+    --m-border: #d8dee9;
+    --m-text: #2e3440;
+    --m-text-muted: #4c566a;
+    --m-accent: #5e81ac;
+    --m-accent-soft: rgba(94, 129, 172, .12);
+    --m-danger: #bf616a;
+    --m-title: #a3be8c;
+    --m-chip-bg: #88c0d0;
+    --m-chip-text: #2e3440;
+
+    /* typography */
+    --m-font: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --m-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --m-text-sm: .82rem;
+    --m-text-base: 1rem;
+    --m-text-lg: 1.06rem;
+    --m-line: 1.5;
+
+    /* shape */
+    --m-radius-sm: .35rem;
+    --m-radius: .6rem;
+    --m-radius-lg: 1rem;
+    --m-shadow-sheet: 0 -8px 24px rgba(46, 52, 64, .18);
+
+    /* minimum comfortable touch target */
+    --m-tap: 2.5rem;
+}
