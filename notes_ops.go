@@ -527,6 +527,38 @@ func deleteNote(uuid string) error {
 
 // editNotebook handles rename / new / remove. remove moves notes to Trash
 // first and refuses to delete Inbox or Trash themselves.
+// createNotebook creates a notebook and returns its uuid.
+func createNotebook(title string) (string, error) {
+	u1 := strings.ToUpper(generateUUID())
+
+	notebookDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + u1 + ".qvnotebook")
+	metaFile, _ := filepath.Abs(notebookDir + "/meta.json")
+	var meta struct {
+		Name string `json:"name"`
+		UUID string `json:"uuid"`
+	}
+	meta.Name = title
+	meta.UUID = u1
+	metaJSON, _ := json.MarshalIndent(meta, "", "  ")
+	os.MkdirAll(notebookDir, 0755)
+	if err := ioutil.WriteFile(metaFile, metaJSON, 0644); err != nil {
+		return "", err
+	}
+
+	var notebookNew NoteBookType
+	notebookNew.Name = title
+	notebookNew.UUID = u1
+	notebookNew.Notes = make(map[string]int64)
+	enc, err := json.Marshal(notebookNew)
+	if err != nil {
+		return "", err
+	}
+	if err := NoteBookDB.Set([]byte(u1), enc); err != nil {
+		return "", err
+	}
+	return u1, nil
+}
+
 func editNotebook(action, uuid, title string) error {
 	switch {
 	case action == "rename" && uuid != "":
@@ -553,31 +585,8 @@ func editNotebook(action, uuid, title string) error {
 		return NoteBookDB.Set([]byte(uuid), enc)
 
 	case action == "new" && uuid == "":
-		u1 := strings.ToUpper(generateUUID())
-
-		notebookDir, _ := filepath.Abs(configGlobal.sourceFolder + "/" + u1 + ".qvnotebook")
-		metaFile, _ := filepath.Abs(notebookDir + "/meta.json")
-		var meta struct {
-			Name string `json:"name"`
-			UUID string `json:"uuid"`
-		}
-		meta.Name = title
-		meta.UUID = u1
-		metaJSON, _ := json.MarshalIndent(meta, "", "  ")
-		os.MkdirAll(notebookDir, 0755)
-		if err := ioutil.WriteFile(metaFile, metaJSON, 0644); err != nil {
-			return err
-		}
-
-		var notebookNew NoteBookType
-		notebookNew.Name = title
-		notebookNew.UUID = u1
-		notebookNew.Notes = make(map[string]int64)
-		enc, err := json.Marshal(notebookNew)
-		if err != nil {
-			return err
-		}
-		return NoteBookDB.Set([]byte(u1), enc)
+		_, err := createNotebook(title)
+		return err
 
 	case action == "remove" && uuid != "" && uuid != "Inbox" && uuid != "Trash":
 		data, _ := NoteBookDB.Get([]byte("Trash"))

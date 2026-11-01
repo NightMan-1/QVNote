@@ -91,6 +91,9 @@
                 <button class="mshell__item mshell__item--action" @click="openEditor">
                     <i class="bi bi-pencil"></i>{{ $t('general.addNewNote') }}
                 </button>
+                <button class="mshell__item mshell__item--action" @click="openNewNotebook">
+                    <i class="bi bi-journal-plus"></i>{{ $t('general.addNewNotebook') }}
+                </button>
                 <button class="mshell__item mshell__item--action" @click="openSettings">
                     <i class="bi bi-gear"></i>{{ $t('general.buttonSettings') }}
                 </button>
@@ -161,7 +164,6 @@
                 </template>
 
                 <template v-else-if="actionSheet === 'move'">
-                    <div class="mshell__group">{{ $t('articleList.modalMoveNotebook') }}</div>
                     <button
                         v-for="notebook in notebooks"
                         :key="notebook.uuid"
@@ -169,6 +171,34 @@
                         :class="{ 'mshell__item--selected': notebook.uuid === currentNotebookID }"
                         @click="moveTo(notebook.uuid)"
                     >{{ notebook.name }}</button>
+                </template>
+
+                <template v-else-if="actionSheet === 'newNotebook'">
+                    <div class="mshell__confirm">
+                        <label class="mshell__confirm-text" for="mshell-new-notebook">
+                            {{ $t('general.modalNewNotebookText') }}
+                        </label>
+                        <input
+                            id="mshell-new-notebook"
+                            v-model="newNotebookName"
+                            class="mshell__form-input"
+                            :placeholder="$t('general.modalNewNotebookTitle')"
+                            @keydown.enter.prevent="createNotebook"
+                        >
+                        <p v-if="newNotebookError" class="mshell__form-error">{{ newNotebookError }}</p>
+                        <div class="mshell__confirm-actions">
+                            <button class="mshell__confirm-btn" @click="actionSheet = null">
+                                {{ $t('general.cancel') }}
+                            </button>
+                            <button
+                                class="mshell__confirm-btn mshell__confirm-btn--primary"
+                                :disabled="!newNotebookName.trim() || creatingNotebook"
+                                @click="createNotebook"
+                            >
+                                {{ $t('general.modalNewNotebookBtnAdd') }}
+                            </button>
+                        </div>
+                    </div>
                 </template>
 
                 <template v-else-if="actionSheet === 'delete'">
@@ -325,6 +355,9 @@ export default {
             tagFilter: '',
             prependText: '',
             prepending: false,
+            newNotebookName: '',
+            newNotebookError: '',
+            creatingNotebook: false,
             searchText: '',
             searchResults: [],
             searchTimer: null
@@ -379,6 +412,9 @@ export default {
         currentTagURL () { return this.noteStore.currentTagURL },
         isNoteRoute () { return this.$route.name === 'qvNote' || this.$route.name === 'qvTag' },
         actionSheetTitle () {
+            if (this.actionSheet === 'newNotebook') {
+                return this.$t('general.modalNewNotebookTitle')
+            }
             if (this.actionSheet === 'prepend') {
                 return this.$t('articleList.btnPrepend')
             }
@@ -725,6 +761,43 @@ export default {
         toggleActions () {
             this.actionSheet = this.actionSheet === 'actions' ? null : 'actions'
         },
+        openNewNotebook () {
+            this.newNotebookName = ''
+            this.newNotebookError = ''
+            this.actionSheet = 'newNotebook'
+            this.$nextTick(() => {
+                const field = document.getElementById('mshell-new-notebook')
+                if (field) {
+                    field.focus()
+                }
+            })
+        },
+        createNotebook () {
+            const title = this.newNotebookName.trim()
+            if (!title || this.creatingNotebook) {
+                return
+            }
+            this.creatingNotebook = true
+            this.newNotebookError = ''
+            fetch(this.noteStore.apiFolder + '/notebook_edit.json', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'new', uuid: '', title })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    this.actionSheet = null
+                    this.noteStore.getAllData()
+                    if (data && data.uuid) {
+                        this.activeTab = 'notes'
+                        this.$router.push('/notes/' + data.uuid + '/')
+                    }
+                })
+                .catch(error => {
+                    console.error('Error creating notebook:', error)
+                    this.newNotebookError = this.$t('general.messageCanNotAddNewNotebook')
+                })
+                .finally(() => { this.creatingNotebook = false })
+        },
         openSettings () {
             this.activeTab = 'settings'
         },
@@ -983,6 +1056,39 @@ export default {
     border-color: var(--m-danger);
     background: var(--m-danger);
     color: #fff;
+}
+
+.mshell__confirm-btn--primary {
+    border-color: var(--m-accent);
+    background: var(--m-accent);
+    color: #fff;
+}
+
+.mshell__confirm-btn:disabled {
+    opacity: .45;
+}
+
+.mshell__form-input {
+    width: 100%;
+    padding: .6rem .7rem;
+    margin-bottom: .75rem;
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-sm);
+    outline: none;
+    background: var(--m-bg);
+    color: var(--m-text);
+    font: inherit;
+    font-size: .95rem;
+}
+
+.mshell__form-input:focus {
+    border-color: var(--m-accent);
+}
+
+.mshell__form-error {
+    margin: -.35rem 0 .6rem;
+    color: var(--m-danger);
+    font-size: .82rem;
 }
 
 .mshell__prepend {

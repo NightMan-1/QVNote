@@ -516,8 +516,18 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			Title  string `json:"title"`
 		}
 		readJSON(r, &request)
-		editNotebook(request.Action, request.UUID, request.Title)
-		jsonResponse(w, map[string]interface{}{})
+		var newUUID string
+		var err error
+		if request.Action == "new" && request.UUID == "" {
+			newUUID, err = createNotebook(request.Title)
+		} else {
+			err = editNotebook(request.Action, request.UUID, request.Title)
+		}
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		jsonResponse(w, map[string]interface{}{"uuid": newUUID})
 	})
 
 	// Search
