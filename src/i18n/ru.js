@@ -8,6 +8,7 @@ export default {
         addNewNotebook: 'Добавить блокнот',
         buttonSettings: 'Настройки',
         libraryTitle: 'Библиотека',
+        libraryEmpty: 'Блокнотов пока нет',
         sidebarLibrary: 'LIBRARY',
         sidebarInbox: 'Inbox',
         sidebarFavorites: 'Favorite',

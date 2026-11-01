@@ -8,6 +8,7 @@ export default {
         addNewNotebook: 'Add a notebook',
         buttonSettings: 'Settings',
         libraryTitle: 'Library',
+        libraryEmpty: 'No notebooks yet',
         sidebarLibrary: 'LIBRARY',
         sidebarInbox: 'Inbox',
         sidebarFavorites: 'Favorite',

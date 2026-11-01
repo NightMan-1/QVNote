@@ -5,8 +5,8 @@
                 <i class="bi bi-arrow-left"></i>
             </button>
 
-            <button v-else-if="activeTab === 'notes'" class="mshell__library" @click="libraryOpen = true">
-                <span class="mshell__library-name">{{ pageTitle }}</span>
+            <button v-else-if="activeTab === 'notes'" class="mshell__library" @click="showLibrary">
+                <span class="mshell__ellipsis">{{ pageTitle }}</span>
                 <i class="bi bi-chevron-down"></i>
             </button>
 
@@ -89,7 +89,7 @@
             </div>
         </main>
 
-        <nav v-if="!focusMode" class="mshell__tabs">
+        <nav v-if="pageType !== 'editor'" class="mshell__tabs">
             <button
                 v-for="tab in tabs"
                 :key="tab.id"
@@ -146,67 +146,100 @@
             </div>
         </div>
 
-        <div v-if="libraryOpen" class="mshell__sheet">
+        <div v-if="libraryOpen" class="mshell__backdrop" @click="libraryOpen = false"></div>
+        <div v-if="libraryOpen" class="mshell__sheet mshell__sheet--library">
+            <div class="mshell__grip"></div>
+
             <header class="mshell__sheet-bar">
-                <div class="mshell__title">{{ $t('general.libraryTitle') }}</div>
+                <div class="mshell__sheet-title">{{ $t('general.libraryTitle') }}</div>
                 <div class="mshell__grow"></div>
                 <button class="mshell__btn" @click="libraryOpen = false"><i class="bi bi-x-lg"></i></button>
             </header>
 
             <div class="mshell__sheet-switch">
                 <button
-                    class="btn"
-                    :class="libraryType === 'notebooks' ? 'btn-primary' : 'btn-outline-primary'"
+                    class="mshell__seg"
+                    :class="{ 'mshell__seg--active': libraryType === 'notebooks' }"
                     @click="libraryType = 'notebooks'"
                 >{{ $t('general.sidebarSwitchNotebooks') }}</button>
                 <button
-                    class="btn"
-                    :class="libraryType === 'tags' ? 'btn-primary' : 'btn-outline-primary'"
+                    class="mshell__seg"
+                    :class="{ 'mshell__seg--active': libraryType === 'tags' }"
                     @click="libraryType = 'tags'"
                 >{{ $t('general.sidebarSwitchTags') }}</button>
             </div>
 
-            <div class="mshell__sheet-list">
+            <div ref="libraryList" class="mshell__sheet-list">
                 <template v-if="libraryType === 'notebooks'">
-                    <button class="mshell__item mshell__item--row" @click="openNotebook('Allnotes')">
-                        <span><i class="bi bi-collection me-2"></i>{{ $t('general.sidebarAllNotes') }}</span>
-                        <span class="badge bg-primary">{{ notesCountTotal }}</span>
-                    </button>
-                    <button class="mshell__item mshell__item--row" @click="openNotebook('Inbox')">
-                        <span><i class="bi bi-inbox me-2"></i>{{ $t('general.sidebarInbox') }}</span>
-                        <span class="badge bg-primary">{{ notesCountInbox }}</span>
-                    </button>
-                    <button class="mshell__item mshell__item--row" @click="openNotebook('Favorites')">
-                        <span><i class="bi bi-star me-2"></i>{{ $t('general.sidebarFavorites') }}</span>
-                        <span class="badge bg-primary">{{ notesCountFavorites }}</span>
-                    </button>
-                    <button class="mshell__item mshell__item--row" @click="openNotebook('Trash')">
-                        <span><i class="bi bi-trash me-2"></i>{{ $t('general.sidebarTrash') }}</span>
-                        <span class="badge bg-primary">{{ notesCountTrash }}</span>
-                    </button>
-                    <div class="mshell__group">{{ $t('general.sidebarNotebooks') }}</div>
                     <button
                         v-for="notebook in regularNotebooks"
                         :key="notebook.uuid"
-                        class="mshell__item mshell__item--row"
+                        class="mshell__item mshell__item--row mshell__item--library"
+                        :class="{ 'mshell__item--current': notebook.uuid === currentNotebookID }"
                         @click="openNotebook(notebook.uuid)"
                     >
-                        <span>{{ notebook.name }}</span>
-                        <span class="badge bg-primary">{{ notebook.notesCount }}</span>
+                        <span class="mshell__entry">
+                            <i class="bi bi-journal-bookmark"></i>
+                            <span class="mshell__ellipsis">{{ notebook.name }}</span>
+                        </span>
+                        <span class="mshell__item-count">{{ notebook.notesCount }}</span>
                     </button>
+                    <div v-if="regularNotebooks.length === 0" class="mshell__hint">{{ $t('general.libraryEmpty') }}</div>
                 </template>
                 <template v-else>
                     <button
                         v-for="tag in tags"
                         :key="tag.url"
-                        class="mshell__item mshell__item--row"
+                        class="mshell__item mshell__item--row mshell__item--library"
                         @click="openTag(tag.url)"
                     >
-                        <span>#{{ tag.name }}</span>
-                        <span class="badge bg-primary">{{ tag.count }}</span>
+                        <span class="mshell__entry">
+                            <i class="bi bi-hash"></i>
+                            <span class="mshell__ellipsis">{{ tag.name }}</span>
+                        </span>
+                        <span class="mshell__item-count">{{ tag.count }}</span>
                     </button>
                 </template>
             </div>
+
+            <footer v-if="libraryType === 'notebooks'" class="mshell__shortcuts">
+                <button
+                    class="mshell__shortcut"
+                    :class="{ 'mshell__shortcut--active': currentNotebookID === 'Allnotes' }"
+                    @click="openNotebook('Allnotes')"
+                >
+                    <i class="bi bi-collection"></i>
+                    <span class="mshell__ellipsis">{{ $t('general.sidebarAllNotes') }}</span>
+                    <span class="mshell__shortcut-count">{{ notesCountTotal }}</span>
+                </button>
+                <button
+                    class="mshell__shortcut"
+                    :class="{ 'mshell__shortcut--active': currentNotebookID === 'Inbox' }"
+                    @click="openNotebook('Inbox')"
+                >
+                    <i class="bi bi-inbox"></i>
+                    <span class="mshell__ellipsis">{{ $t('general.sidebarInbox') }}</span>
+                    <span class="mshell__shortcut-count">{{ notesCountInbox }}</span>
+                </button>
+                <button
+                    class="mshell__shortcut"
+                    :class="{ 'mshell__shortcut--active': currentNotebookID === 'Favorites' }"
+                    @click="openNotebook('Favorites')"
+                >
+                    <i class="bi bi-star"></i>
+                    <span class="mshell__ellipsis">{{ $t('general.sidebarFavorites') }}</span>
+                    <span class="mshell__shortcut-count">{{ notesCountFavorites }}</span>
+                </button>
+                <button
+                    class="mshell__shortcut"
+                    :class="{ 'mshell__shortcut--active': currentNotebookID === 'Trash' }"
+                    @click="openNotebook('Trash')"
+                >
+                    <i class="bi bi-trash"></i>
+                    <span class="mshell__ellipsis">{{ $t('general.sidebarTrash') }}</span>
+                    <span class="mshell__shortcut-count">{{ notesCountTrash }}</span>
+                </button>
+            </footer>
         </div>
     </div>
 </template>
@@ -377,26 +410,64 @@ export default {
                 }
                 return
             }
+            if (id === 'notes') {
+                this.openLibrary()
+                return
+            }
 
             this.activeTab = id
             if (id === 'overview') {
                 if (this.$route.name !== 'qvApp') {
                     this.$router.push('/')
                 }
-                return
-            }
-            if (id === 'notes') {
-                if (this.$route.name !== 'qvNote' && this.$route.name !== 'qvNotebooks' &&
-                    this.$route.name !== 'qvTag' && this.$route.name !== 'qvTagsList') {
-                    this.$router.push('/notes/' + (this.currentNotebookID || 'Allnotes') + '/')
-                }
-                return
             }
         },
+        // the "Notes" tab opens the notebook picker instead of the plain list
+        openLibrary () {
+            const onNotesScreen = this.$route.name === 'qvNote' ||
+                this.$route.name === 'qvNotebooks' ||
+                this.$route.name === 'qvTag' ||
+                this.$route.name === 'qvTagsList'
+
+            this.activeTab = 'notes'
+
+            if (onNotesScreen) {
+                this.showLibrary()
+                return
+            }
+
+            const navigation = this.$router.push('/notes/' + (this.currentNotebookID || 'Allnotes') + '/')
+            if (navigation && navigation.then) {
+                navigation.then(() => {
+                    this.$nextTick(() => {
+                        this.showLibrary()
+                    })
+                }).catch(() => {})
+            } else {
+                this.$nextTick(() => {
+                    this.showLibrary()
+                })
+            }
+        },
+        showLibrary () {
+            this.libraryType = 'notebooks'
+            this.libraryOpen = true
+            this.$nextTick(() => {
+                const list = this.$refs.libraryList
+                const current = list && list.querySelector('.mshell__item--current')
+                if (current && current.scrollIntoView) {
+                    current.scrollIntoView({ block: 'center' })
+                }
+            })
+        },
         openNotebook (uuid) {
+            const alreadyHere = this.$route.name === 'qvNotebooks' &&
+                this.$route.params.nbUUID === uuid
             this.libraryOpen = false
             this.activeTab = 'notes'
-            this.$router.push('/notes/' + uuid + '/')
+            if (!alreadyHere) {
+                this.$router.push('/notes/' + uuid + '/')
+            }
         },
         openTag (url) {
             this.libraryOpen = false
@@ -573,12 +644,6 @@ export default {
     font-weight: 600;
 }
 
-.mshell__library-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 .mshell__btn {
     display: inline-flex;
     align-items: center;
@@ -701,6 +766,54 @@ export default {
     transform: translateY(-1px);
 }
 
+.mshell__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    background: rgba(46, 52, 64, .38);
+}
+
+/* the notebook picker is a large bottom sheet: notebooks scroll above,
+   fast access to the main sections is pinned below */
+.mshell__sheet.mshell__sheet--library {
+    inset: auto 0 0 0;
+    width: min(100%, 36rem);
+    height: auto;
+    max-height: 86vh;
+    margin: 0 auto;
+    border-radius: 1rem 1rem 0 0;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, .18);
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: mshell-sheet-up .2s ease-out;
+}
+
+@keyframes mshell-sheet-up {
+    from {
+        transform: translateY(14px);
+        opacity: .6;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.mshell__grip {
+    width: 2.25rem;
+    height: .25rem;
+    margin: .45rem auto .1rem;
+    border-radius: 999px;
+    background: var(--nord4);
+}
+
+.mshell__sheet-title {
+    padding-left: .25rem;
+    color: var(--nord0);
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
 /* two classes so it wins over the base .mshell__sheet rule below */
 .mshell__sheet.mshell__sheet--bottom {
     inset: auto 0 0 0;
@@ -729,17 +842,116 @@ export default {
 
 .mshell__sheet-switch {
     display: flex;
-    gap: .4rem;
-    padding: .6rem .75rem;
+    gap: .25rem;
+    margin: .55rem .75rem;
+    padding: .2rem;
+    border-radius: .6rem;
     background: var(--nord6);
 }
 
-.mshell__sheet-switch .btn {
+.mshell__seg {
     flex: 1 1 0;
+    padding: .45rem .5rem;
+    border: 0;
+    border-radius: .45rem;
+    background: none;
+    color: var(--nord3);
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.mshell__seg--active {
+    background: #fff;
+    color: var(--nord0);
+    box-shadow: 0 1px 3px rgba(46, 52, 64, .12);
 }
 
 .mshell__sheet-list {
     flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+}
+
+.mshell__item--library {
+    align-items: center;
+    padding: .75rem 1rem;
+}
+
+.mshell__entry {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-width: 0;
+}
+
+.mshell__entry i {
+    flex: 0 0 auto;
+    color: var(--nord10);
+    font-size: 1rem;
+}
+
+.mshell__ellipsis {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.mshell__item-count {
+    flex: 0 0 auto;
+    color: var(--nord3);
+    font-size: .85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.mshell__item--current {
+    background: rgba(94, 129, 172, .1);
+    color: var(--nord10);
+    font-weight: 600;
+}
+
+.mshell__shortcuts {
+    display: grid;
+    flex: 0 0 auto;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+    padding: .65rem .75rem .8rem;
+    border-top: 1px solid var(--nord5);
+    background: var(--nord6);
+}
+
+.mshell__shortcut {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    min-width: 0;
+    padding: .55rem .6rem;
+    border: 1px solid var(--nord4);
+    border-radius: .65rem;
+    background: #fff;
+    color: var(--grey-700);
+    font-size: .88rem;
+    text-align: left;
+}
+
+.mshell__shortcut i {
+    flex: 0 0 auto;
+    color: var(--nord10);
+    font-size: 1rem;
+}
+
+.mshell__shortcut--active {
+    border-color: var(--nord10);
+    background: rgba(94, 129, 172, .1);
+    color: var(--nord10);
+    font-weight: 600;
+}
+
+.mshell__shortcut-count {
+    flex: 0 0 auto;
+    margin-left: auto;
+    color: var(--nord3);
+    font-size: .78rem;
+    font-variant-numeric: tabular-nums;
 }
 </style>
