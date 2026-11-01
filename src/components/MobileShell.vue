@@ -37,9 +37,26 @@
                 <button v-if="canEditNote" class="mshell__btn" :aria-label="$t('editor.titleExist')" @click="editNote">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="mshell__btn" :aria-label="$t('general.actions')" @click="actionSheet = 'actions'">
-                    <i class="bi bi-three-dots-vertical"></i>
-                </button>
+                <div class="mshell__menu-anchor">
+                    <button class="mshell__btn" :aria-label="$t('general.actions')" @click="toggleActions">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <div v-if="actionSheet === 'actions'" class="mshell__menu">
+                        <button class="mshell__menu-item" @click="toggleFavorite">
+                            <i class="bi" :class="article.favorites ? 'bi-star-fill' : 'bi-star'"></i>
+                            {{ article.favorites ? $t('articleList.btnRemoveFavorites') : $t('articleList.btnFavorites') }}
+                        </button>
+                        <button v-if="article.url_src" class="mshell__menu-item" @click="actionSheet = 'prepend'">
+                            <i class="bi bi-plus-circle"></i>{{ $t('articleList.btnPrepend') }}
+                        </button>
+                        <button class="mshell__menu-item" @click="actionSheet = 'move'">
+                            <i class="bi bi-arrow-left-right"></i>{{ $t('articleList.btnMove') }}
+                        </button>
+                        <button class="mshell__menu-item mshell__menu-item--danger" @click="actionSheet = 'delete'">
+                            <i class="bi bi-trash"></i>{{ $t('articleList.btnDelete') }}
+                        </button>
+                    </div>
+                </div>
             </template>
             <button v-else-if="activeTab === 'search'" class="mshell__btn" @click="closeSearch">
                 <i class="bi bi-x-lg"></i>
@@ -110,46 +127,20 @@
             </button>
         </nav>
 
-        <div v-if="actionSheet" class="mshell__backdrop" @click="actionSheet = null"></div>
-        <div v-if="actionSheet" class="mshell__sheet mshell__sheet--bottom">
+        <div
+            v-if="actionSheet"
+            class="mshell__backdrop"
+            :class="{ 'mshell__backdrop--menu': actionSheet === 'actions' }"
+            @click="actionSheet = null"
+        ></div>
+        <div v-if="actionSheet && actionSheet !== 'actions'" class="mshell__sheet mshell__sheet--bottom">
             <header class="mshell__sheet-bar">
                 <div class="mshell__title">{{ actionSheetTitle }}</div>
                 <div class="mshell__grow"></div>
                 <button class="mshell__btn" @click="actionSheet = null"><i class="bi bi-x-lg"></i></button>
             </header>
             <div class="mshell__sheet-list">
-                <template v-if="actionSheet === 'actions'">
-                    <button class="mshell__item mshell__item--action" @click="toggleFavorite">
-                        <i class="bi" :class="article.favorites ? 'bi-star-fill text-warning' : 'bi-star'"></i>
-                        {{ article.favorites ? $t('articleList.btnRemoveFavorites') : $t('articleList.btnFavorites') }}
-                    </button>
-                    <button
-                        v-if="article.url_src"
-                        class="mshell__item mshell__item--action"
-                        @click="actionSheet = 'prepend'"
-                    >
-                        <i class="bi bi-plus-circle"></i>{{ $t('articleList.btnPrepend') }}
-                    </button>
-                    <button class="mshell__item mshell__item--action" @click="actionSheet = 'move'">
-                        <i class="bi bi-arrow-left-right"></i>{{ $t('articleList.btnMove') }}
-                    </button>
-                    <button class="mshell__item mshell__item--action mshell__danger" @click="actionSheet = 'delete'">
-                        <i class="bi bi-trash"></i>{{ $t('articleList.btnDelete') }}
-                    </button>
-                </template>
-
-                <template v-else-if="actionSheet === 'move'">
-                    <div class="mshell__group">{{ $t('articleList.modalMoveNotebook') }}</div>
-                    <button
-                        v-for="notebook in notebooks"
-                        :key="notebook.uuid"
-                        class="mshell__item"
-                        :class="{ 'mshell__item--selected': notebook.uuid === currentNotebookID }"
-                        @click="moveTo(notebook.uuid)"
-                    >{{ notebook.name }}</button>
-                </template>
-
-                <template v-else-if="actionSheet === 'prepend'">
+                <template v-if="actionSheet === 'prepend'">
                     <div class="mshell__prepend">
                         <textarea
                             v-model="prependText"
@@ -716,6 +707,9 @@ export default {
                 })
                 .finally(() => { this.prepending = false })
         },
+        toggleActions () {
+            this.actionSheet = this.actionSheet === 'actions' ? null : 'actions'
+        },
         openSettings () {
             this.activeTab = 'settings'
         },
@@ -1069,6 +1063,78 @@ export default {
 /* the library leaves the bottom tabs uncovered */
 .mshell__backdrop--above-tabs {
     bottom: var(--mshell-tabs, 0px);
+}
+
+/* the note actions open as a dropdown next to the "..." button */
+/* a menu does not dim the page: the backdrop only catches outside taps */
+.mshell__backdrop--menu {
+    background: transparent;
+}
+
+.mshell__menu-anchor {
+    position: relative;
+    display: flex;
+}
+
+.mshell__menu {
+    position: absolute;
+    top: calc(100% + .4rem);
+    right: 0;
+    z-index: 1300;
+    min-width: 15rem;
+    max-height: 60vh;
+    padding: .3rem;
+    overflow-y: auto;
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius);
+    background: var(--m-bg);
+    box-shadow: 0 .6rem 1.6rem rgba(46, 52, 64, .2);
+    transform-origin: top right;
+    animation: mshell-menu-in .12s ease-out;
+}
+
+@keyframes mshell-menu-in {
+    from {
+        transform: scale(.96);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.mshell__menu-item {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    width: 100%;
+    padding: .6rem .55rem;
+    border: 0;
+    border-radius: var(--m-radius-sm);
+    background: none;
+    color: var(--m-text);
+    font-size: .92rem;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.mshell__menu-item:active {
+    background: var(--m-surface);
+}
+
+.mshell__menu-item i {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    color: var(--m-accent);
+    font-size: 1rem;
+    text-align: center;
+}
+
+.mshell__menu-item--danger,
+.mshell__menu-item--danger i {
+    color: var(--m-danger);
 }
 
 /* the notebook picker is a large bottom sheet: notebooks scroll above,
