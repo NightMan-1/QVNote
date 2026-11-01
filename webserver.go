@@ -545,12 +545,20 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 		var request struct {
 			NoteID string `json:"NoteID"`
 			Raw    bool   `json:"raw"`
+			Format string `json:"format"`
 		}
 		readJSON(r, &request)
 		noteData := loadNote(request.NoteID, request.Raw, r.Host)
 		if noteData == nil {
 			jsonResponse(w, map[string]interface{}{})
 			return
+		}
+		// The mobile editor works in markdown: convert the stored HTML on the
+		// fly (same converter the MCP server uses for its markdown format).
+		if strings.EqualFold(request.Format, "markdown") && noteData.ContentType != "code" {
+			if markdown, err := HTMLToMarkdown(noteData.Content); err == nil {
+				noteData.Content = markdown
+			}
 		}
 		jsonResponse(w, noteData)
 	})
@@ -564,17 +572,74 @@ func WebServer(webserverChan chan bool) { //nolint:gocyclo
 			Content      string   `json:"content"`
 			Tags         []string `json:"tags"`
 			ContentState string   `json:"content_state"`
+			Format       string   `json:"format"`
 		}
 		readJSON(r, &request)
+
+		// Notes are stored as HTML (Quiver format); clients that edit markdown
+		// (mobile editor, MCP) send markdown and it is converted here.
+		content := request.Content
+		if strings.EqualFold(request.Format, "markdown") {
+			converted, err := mcpContentToHTML(request.Content, "markdown")
+			if err != nil {
+				jsonError(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			content = converted
+		}
 
 		result, err := saveNote(saveNoteParams{
 			UUID:         request.UUID,
 			Title:        request.Title,
 			URL:          request.URL,
 			Type:         request.Type,
-			Content:      request.Content,
+			Content:      content,
 			Tags:         request.Tags,
 			ContentState: request.ContentState,
+		})
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		jsonResponse(w, result)
+	})
+
+	// Prepends a short markdown note above the stored content of a note.
+	// Imported articles are never round-tripped through markdown: the article
+	// stays exactly as fetched and the reader's note is added on top.
+	r.HandleFunc("/api/note_prepend.json", func(w http.ResponseWriter, r *http.Request) {
+		var request struct {
+			UUID    string `json:"uuid"`
+			Content string `json:"content"`
+		}
+		readJSON(r, &request)
+
+		if strings.TrimSpace(request.Content) == "" {
+			jsonError(w, "empty content", http.StatusBadRequest)
+			return
+		}
+		noteData := loadNote(request.UUID, true, "")
+		if noteData == nil {
+			jsonError(w, "note not found: "+request.UUID, http.StatusNotFound)
+			return
+		}
+		if noteData.ContentType == "code" {
+			jsonError(w, "code notes are not supported", http.StatusBadRequest)
+			return
+		}
+		html, err := mcpContentToHTML(request.Content, "markdown")
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		content := `<div class="note-prepend">` + html + "</div><hr>" + noteData.Content
+		result, err := saveNote(saveNoteParams{
+			UUID:    noteData.UUID,
+			Title:   noteData.Title,
+			URL:     noteData.URL,
+			Type:    noteData.ContentType,
+			Content: content,
+			Tags:    noteData.Tags,
 		})
 		if err != nil {
 			jsonError(w, err.Error(), http.StatusInternalServerError)

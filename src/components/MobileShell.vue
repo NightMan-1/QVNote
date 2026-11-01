@@ -1,5 +1,8 @@
 <template>
     <div class="mshell" :style="{ '--mshell-tabs': tabsHeight + 'px' }">
+        <MobileEditor v-if="pageType === 'editor'" />
+
+        <template v-else>
         <header class="mshell__bar">
             <div v-if="focusMode" class="mshell__lead">
                 <button class="mshell__btn" :aria-label="$t('articleList.backToList')" @click="backFromFocus">
@@ -31,7 +34,7 @@
                     target="_blank"
                     rel="noopener"
                 ><i class="bi bi-box-arrow-up-right"></i></a>
-                <button class="mshell__btn" :aria-label="$t('editor.titleExist')" @click="editNote">
+                <button v-if="canEditNote" class="mshell__btn" :aria-label="$t('editor.titleExist')" @click="editNote">
                     <i class="bi bi-pencil"></i>
                 </button>
                 <button class="mshell__btn" :aria-label="$t('general.actions')" @click="actionSheet = 'actions'">
@@ -44,9 +47,7 @@
         </header>
 
         <main class="mshell__content">
-            <qv-editor v-if="pageType === 'editor'" />
-
-            <div v-else-if="activeTab === 'search'" class="mshell__search">
+            <div v-if="activeTab === 'search'" class="mshell__search">
                 <input
                     ref="searchField"
                     v-model="searchText"
@@ -96,7 +97,7 @@
             </div>
         </main>
 
-        <nav v-if="pageType !== 'editor'" ref="tabs" class="mshell__tabs">
+        <nav ref="tabs" class="mshell__tabs">
             <button
                 v-for="tab in tabs"
                 :key="tab.id"
@@ -122,6 +123,13 @@
                         <i class="bi" :class="article.favorites ? 'bi-star-fill text-warning' : 'bi-star'"></i>
                         {{ article.favorites ? $t('articleList.btnRemoveFavorites') : $t('articleList.btnFavorites') }}
                     </button>
+                    <button
+                        v-if="article.url_src"
+                        class="mshell__item mshell__item--action"
+                        @click="actionSheet = 'prepend'"
+                    >
+                        <i class="bi bi-plus-circle"></i>{{ $t('articleList.btnPrepend') }}
+                    </button>
                     <button class="mshell__item mshell__item--action" @click="actionSheet = 'move'">
                         <i class="bi bi-arrow-left-right"></i>{{ $t('articleList.btnMove') }}
                     </button>
@@ -139,6 +147,26 @@
                         :class="{ 'mshell__item--selected': notebook.uuid === currentNotebookID }"
                         @click="moveTo(notebook.uuid)"
                     >{{ notebook.name }}</button>
+                </template>
+
+                <template v-else-if="actionSheet === 'prepend'">
+                    <div class="mshell__prepend">
+                        <textarea
+                            v-model="prependText"
+                            class="mshell__prepend-field"
+                            rows="6"
+                            :placeholder="$t('articleList.prependPlaceholder')"
+                        ></textarea>
+                        <p class="mshell__hint">{{ $t('articleList.prependHint') }}</p>
+                        <button
+                            class="mshell__prepend-btn"
+                            :disabled="!prependText.trim() || prepending"
+                            @click="prependNote"
+                        >
+                            <span v-if="prepending" class="mshell__spin"></span>
+                            <template v-else>{{ $t('articleList.prependSave') }}</template>
+                        </button>
+                    </div>
                 </template>
 
                 <template v-else-if="actionSheet === 'delete'">
@@ -263,22 +291,23 @@
                 </button>
             </footer>
         </div>
+        </template>
     </div>
 </template>
 
 <script>
 import { defineAsyncComponent } from 'vue'
 import { useNoteStore } from '../store'
+import MobileEditor from '../mobile/MobileEditor.vue'
 import MobileNote from '../mobile/MobileNote.vue'
 import QvBrand from './QvBrand.vue'
 
 const MobileDashboard = defineAsyncComponent(() => import('../mobile/MobileDashboard.vue'))
 const MobileSettings = defineAsyncComponent(() => import('../mobile/MobileSettings.vue'))
-const qvEditor = defineAsyncComponent(() => import('./qvEditor.vue'))
 
 export default {
     name: 'MobileShell',
-    components: { MobileNote, MobileDashboard, MobileSettings, qvEditor, QvBrand },
+    components: { MobileEditor, MobileNote, MobileDashboard, MobileSettings, QvBrand },
     data () {
         return {
             actionSheet: null,
@@ -288,6 +317,8 @@ export default {
             tabsHeight: 0,
             lastNotesTabTap: 0,
             tagFilter: '',
+            prependText: '',
+            prepending: false,
             searchText: '',
             searchResults: [],
             searchTimer: null
@@ -342,6 +373,9 @@ export default {
         currentTagURL () { return this.noteStore.currentTagURL },
         isNoteRoute () { return this.$route.name === 'qvNote' || this.$route.name === 'qvTag' },
         actionSheetTitle () {
+            if (this.actionSheet === 'prepend') {
+                return this.$t('articleList.btnPrepend')
+            }
             if (this.actionSheet === 'move') {
                 return this.$t('articleList.btnMove')
             }
@@ -349,6 +383,10 @@ export default {
                 return this.$t('articleList.btnDelete')
             }
             return this.$t('general.actions')
+        },
+        canEditNote () {
+            const article = this.article || {}
+            return !!article.uuid && article.type !== 'code' && !article.url_src
         },
         isTagContext () {
             return this.$route.name === 'qvTag' || this.$route.name === 'qvTagsList'
@@ -413,6 +451,9 @@ export default {
         },
         pageType () {
             this.syncTabWithRoute()
+            // the tab bar is hidden while the editor is open; re-measure it
+            // when the shell comes back so the bottom sheets stay above it
+            this.$nextTick(() => this.measureTabs())
         }
     },
     mounted () {
@@ -653,6 +694,28 @@ export default {
                 })
                 .catch(error => console.error('Delete error:', error))
         },
+        prependNote () {
+            const text = this.prependText.trim()
+            if (!text || this.prepending) {
+                return
+            }
+            this.prepending = true
+            fetch(this.noteStore.apiFolder + '/note_prepend.json', {
+                method: 'POST',
+                body: JSON.stringify({ uuid: this.article.uuid, content: text })
+            })
+                .then(response => response.json())
+                .then(() => {
+                    this.prependText = ''
+                    this.actionSheet = null
+                    this.noteStore.getArticle(this.article.uuid)
+                    this.noteStore.getAllData()
+                })
+                .catch(error => {
+                    console.error('Prepend note error:', error)
+                })
+                .finally(() => { this.prepending = false })
+        },
         openSettings () {
             this.activeTab = 'settings'
         },
@@ -879,6 +942,60 @@ export default {
     font-size: .8rem;
     text-transform: uppercase;
     letter-spacing: .03em;
+}
+
+.mshell__prepend {
+    padding: .75rem .9rem 1rem;
+}
+
+.mshell__prepend-field {
+    width: 100%;
+    padding: .6rem .7rem;
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius);
+    outline: none;
+    background: var(--m-bg);
+    color: var(--m-text);
+    font: inherit;
+    font-size: .95rem;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.mshell__prepend-field:focus {
+    border-color: var(--m-accent);
+}
+
+.mshell__prepend-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: var(--m-tap);
+    border: 0;
+    border-radius: var(--m-radius-sm);
+    background: var(--m-accent);
+    color: #fff;
+    font-size: .95rem;
+    font-weight: 600;
+}
+
+.mshell__prepend-btn:disabled {
+    opacity: .45;
+}
+
+.mshell__spin {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: mshell-spin .7s linear infinite;
+}
+
+@keyframes mshell-spin {
+    to { transform: rotate(360deg); }
 }
 
 .mshell__search {
