@@ -176,6 +176,8 @@ export default {
         infoDateCreate: 'Дата создание',
         infoDateModify: 'Дата редактирование',
         infoTags: 'Теги',
+        infoNotebook: 'Блокнот',
+        infoSource: 'Источник',
         modalDeleteTitle: 'Удалить заметку?',
         modalMoveTitle: 'Переместить заметку',
         modalMoveNotebook: 'Новый блокнот',

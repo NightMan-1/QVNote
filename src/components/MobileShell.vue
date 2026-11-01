@@ -42,6 +42,9 @@
                         <i class="bi bi-three-dots-vertical"></i>
                     </button>
                     <div v-if="actionSheet === 'actions'" class="mshell__menu">
+                        <button class="mshell__menu-item" @click="actionSheet = 'info'">
+                            <i class="bi bi-info-circle"></i>{{ $t('articleList.btnInfo') }}
+                        </button>
                         <button class="mshell__menu-item" @click="toggleFavorite">
                             <i class="bi" :class="article.favorites ? 'bi-star-fill' : 'bi-star'"></i>
                             {{ article.favorites ? $t('articleList.btnRemoveFavorites') : $t('articleList.btnFavorites') }}
@@ -171,6 +174,35 @@
                         :class="{ 'mshell__item--selected': notebook.uuid === currentNotebookID }"
                         @click="moveTo(notebook.uuid)"
                     >{{ notebook.name }}</button>
+                </template>
+
+                <template v-else-if="actionSheet === 'info'">
+                    <dl class="mshell__info">
+                        <div class="mshell__info-row">
+                            <dt>{{ $t('articleList.infoDateCreate') }}</dt>
+                            <dd>{{ formatInfoDate(article.created_at) }}</dd>
+                        </div>
+                        <div class="mshell__info-row">
+                            <dt>{{ $t('articleList.infoDateModify') }}</dt>
+                            <dd>{{ formatInfoDate(article.updated_at) }}</dd>
+                        </div>
+                        <div class="mshell__info-row">
+                            <dt>{{ $t('articleList.infoNotebook') }}</dt>
+                            <dd>{{ articleNotebookName }}</dd>
+                        </div>
+                        <div v-if="article.url_src" class="mshell__info-row">
+                            <dt>{{ $t('articleList.infoSource') }}</dt>
+                            <dd>
+                                <a :href="article.url_src" target="_blank" rel="noopener">{{ article.url_src }}</a>
+                            </dd>
+                        </div>
+                        <div v-if="article.tags && article.tags.length" class="mshell__info-row mshell__info-row--top">
+                            <dt>{{ $t('articleList.infoTags') }}</dt>
+                            <dd class="mshell__info-tags">
+                                <span v-for="tag in article.tags" :key="tag" class="mshell__info-tag">{{ tag }}</span>
+                            </dd>
+                        </div>
+                    </dl>
                 </template>
 
                 <template v-else-if="actionSheet === 'newNotebook'">
@@ -412,6 +444,9 @@ export default {
         currentTagURL () { return this.noteStore.currentTagURL },
         isNoteRoute () { return this.$route.name === 'qvNote' || this.$route.name === 'qvTag' },
         actionSheetTitle () {
+            if (this.actionSheet === 'info') {
+                return this.$t('articleList.btnInfo')
+            }
             if (this.actionSheet === 'newNotebook') {
                 return this.$t('general.modalNewNotebookTitle')
             }
@@ -425,6 +460,23 @@ export default {
                 return this.$t('articleList.btnDelete')
             }
             return this.$t('general.actions')
+        },
+        articleNotebookName () {
+            const id = this.article && this.article.NoteBookUUID
+            if (!id) {
+                return ''
+            }
+            const special = {
+                Allnotes: 'general.sidebarAllNotes',
+                Inbox: 'general.sidebarInbox',
+                Favorites: 'general.sidebarFavorites',
+                Trash: 'general.sidebarTrash'
+            }
+            if (special[id]) {
+                return this.$t(special[id])
+            }
+            const notebook = this.notebooks.find(item => item.uuid === id)
+            return notebook ? notebook.name : id
         },
         canEditNote () {
             const article = this.article || {}
@@ -536,6 +588,19 @@ export default {
                 this.$route.name === 'qvEditor') {
                 this.activeTab = 'notes'
             }
+        },
+        // compact date for the info sheet: "01.11.2026, 19:31"
+        formatInfoDate (value) {
+            if (!value) {
+                return '—'
+            }
+            return new Intl.DateTimeFormat(this.$i18n.locale, {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(new Date(Number(value) * 1000))
         },
         measureTabs () {
             const tabs = this.$refs.tabs
@@ -1066,6 +1131,62 @@ export default {
 
 .mshell__confirm-btn:disabled {
     opacity: .45;
+}
+
+.mshell__info {
+    margin: 0;
+    padding: .25rem .9rem 1rem;
+}
+
+.mshell__info-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .9rem;
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--m-surface);
+    font-size: .88rem;
+}
+
+.mshell__info-row:last-child {
+    border-bottom: 0;
+}
+
+.mshell__info-row--top {
+    align-items: flex-start;
+}
+
+.mshell__info-row dt {
+    flex: 0 0 auto;
+    color: var(--m-text-muted);
+    font-weight: 400;
+}
+
+.mshell__info-row dd {
+    min-width: 0;
+    margin: 0;
+    color: var(--m-text);
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.mshell__info-row dd a {
+    color: var(--m-accent);
+}
+
+.mshell__info-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .3rem;
+}
+
+.mshell__info-tag {
+    padding: .12rem .4rem;
+    border-radius: var(--m-radius-sm);
+    background: var(--m-chip-bg);
+    color: var(--m-chip-text);
+    font-size: .75rem;
 }
 
 .mshell__form-input {

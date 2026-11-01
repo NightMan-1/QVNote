@@ -176,6 +176,8 @@ export default {
         infoDateCreate: 'Creation date',
         infoDateModify: 'Editing date',
         infoTags: 'Tags',
+        infoNotebook: 'Notebook',
+        infoSource: 'Source',
         modalDeleteTitle: 'Delete note?',
         modalMoveTitle: 'Move note',
         modalMoveNotebook: 'New notebook',
