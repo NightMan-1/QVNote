@@ -1,5 +1,5 @@
 <template>
-    <div class="mshell">
+    <div class="mshell" :style="{ '--mshell-tabs': tabsHeight + 'px' }">
         <header class="mshell__bar">
             <button v-if="focusMode" class="mshell__btn" :aria-label="$t('articleList.backToList')" @click="backFromFocus">
                 <i class="bi bi-arrow-left"></i>
@@ -39,10 +39,6 @@
         <main class="mshell__content">
             <qv-editor v-if="pageType === 'editor'" />
 
-            <NoteArticle v-else-if="isNoteRoute && article.uuid" :article="article" />
-
-            <qv-settings v-else-if="activeTab === 'settings'" embedded />
-
             <div v-else-if="activeTab === 'search'" class="mshell__search">
                 <input
                     ref="searchField"
@@ -63,6 +59,10 @@
                     >{{ note.title }}</button>
                 </div>
             </div>
+
+            <NoteArticle v-else-if="isNoteRoute && article.uuid" :article="article" />
+
+            <qv-settings v-else-if="activeTab === 'settings'" embedded />
 
             <div v-else-if="activeTab === 'more'" class="mshell__list">
                 <button class="mshell__item mshell__item--action" @click="openEditor">
@@ -89,7 +89,7 @@
             </div>
         </main>
 
-        <nav v-if="pageType !== 'editor'" class="mshell__tabs">
+        <nav v-if="pageType !== 'editor'" ref="tabs" class="mshell__tabs">
             <button
                 v-for="tab in tabs"
                 :key="tab.id"
@@ -146,7 +146,11 @@
             </div>
         </div>
 
-        <div v-if="libraryOpen" class="mshell__backdrop" @click="libraryOpen = false"></div>
+        <div
+            v-if="libraryOpen"
+            class="mshell__backdrop mshell__backdrop--above-tabs"
+            @click="libraryOpen = false"
+        ></div>
         <div v-if="libraryOpen" class="mshell__sheet mshell__sheet--library">
             <div class="mshell__grip"></div>
 
@@ -263,6 +267,7 @@ export default {
             installPrompt: null,
             libraryOpen: false,
             libraryType: 'notebooks',
+            tabsHeight: 0,
             searchText: '',
             searchResults: [],
             searchTimer: null
@@ -320,7 +325,10 @@ export default {
             }
             return this.$t('general.actions')
         },
-        focusMode () { return this.isNoteRoute || this.pageType === 'editor' },
+        focusMode () {
+            // the search screen takes over the whole header, also over a note
+            return (this.isNoteRoute || this.pageType === 'editor') && this.activeTab !== 'search'
+        },
         pageTitle () {
             if (this.activeTab === 'overview') {
                 return this.$t('dashboard.infoTitle')
@@ -371,9 +379,12 @@ export default {
             this.syncTabWithRoute()
         }
         window.addEventListener('beforeinstallprompt', this.onBeforeInstallPrompt)
+        window.addEventListener('resize', this.measureTabs)
+        this.measureTabs()
     },
     beforeUnmount () {
         window.removeEventListener('beforeinstallprompt', this.onBeforeInstallPrompt)
+        window.removeEventListener('resize', this.measureTabs)
     },
     methods: {
         onBeforeInstallPrompt (event) {
@@ -400,7 +411,14 @@ export default {
                 this.activeTab = 'notes'
             }
         },
+        measureTabs () {
+            const tabs = this.$refs.tabs
+            this.tabsHeight = tabs ? Math.round(tabs.getBoundingClientRect().height) : 0
+        },
         selectTab (id) {
+            if (id !== 'notes') {
+                this.libraryOpen = false
+            }
             if (id === 'search') {
                 if (this.activeTab === 'search') {
                     this.closeSearch()
@@ -451,6 +469,7 @@ export default {
         },
         showLibrary () {
             this.libraryType = 'notebooks'
+            this.measureTabs()
             this.libraryOpen = true
             this.$nextTick(() => {
                 const list = this.$refs.libraryList
@@ -773,17 +792,22 @@ export default {
     background: rgba(46, 52, 64, .38);
 }
 
+/* the library leaves the bottom tabs uncovered */
+.mshell__backdrop--above-tabs {
+    bottom: var(--mshell-tabs, 0px);
+}
+
 /* the notebook picker is a large bottom sheet: notebooks scroll above,
    fast access to the main sections is pinned below */
+/* the sheet ends above the tab bar so the bar stays visible and usable */
 .mshell__sheet.mshell__sheet--library {
-    inset: auto 0 0 0;
+    inset: auto 0 var(--mshell-tabs, 0px) 0;
     width: min(100%, 36rem);
     height: auto;
-    max-height: 86vh;
+    max-height: calc(100vh - var(--mshell-tabs, 0px) - 1.5rem);
     margin: 0 auto;
     border-radius: 1rem 1rem 0 0;
     box-shadow: 0 -8px 24px rgba(0, 0, 0, .18);
-    padding-bottom: env(safe-area-inset-bottom);
     animation: mshell-sheet-up .2s ease-out;
 }
 
