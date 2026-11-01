@@ -60,7 +60,7 @@
                 </div>
             </div>
 
-            <qv-settings v-else-if="activeTab === 'settings'" embedded />
+            <MobileSettings v-else-if="activeTab === 'settings'" />
 
             <div v-else-if="activeTab === 'more'" class="mshell__list">
                 <button class="mshell__item mshell__item--action" @click="openEditor">
@@ -74,7 +74,7 @@
                 </button>
             </div>
 
-            <qv-dashboard v-else-if="activeTab === 'overview'" />
+            <MobileDashboard v-else-if="activeTab === 'overview'" />
 
             <MobileNote v-else-if="isNoteRoute && article.uuid" :article="article" />
 
@@ -254,13 +254,13 @@ import { useNoteStore } from '../store'
 import MobileNote from '../mobile/MobileNote.vue'
 import QvBrand from './QvBrand.vue'
 
-const qvDashboard = defineAsyncComponent(() => import('./qvDashboard.vue'))
+const MobileDashboard = defineAsyncComponent(() => import('../mobile/MobileDashboard.vue'))
+const MobileSettings = defineAsyncComponent(() => import('../mobile/MobileSettings.vue'))
 const qvEditor = defineAsyncComponent(() => import('./qvEditor.vue'))
-const qvSettings = defineAsyncComponent(() => import('./qvSettings.vue'))
 
 export default {
     name: 'MobileShell',
-    components: { MobileNote, qvDashboard, qvEditor, qvSettings, QvBrand },
+    components: { MobileNote, MobileDashboard, MobileSettings, qvEditor, QvBrand },
     data () {
         return {
             actionSheet: null,
@@ -268,6 +268,7 @@ export default {
             libraryOpen: false,
             libraryType: 'notebooks',
             tabsHeight: 0,
+            lastNotesTabTap: 0,
             searchText: '',
             searchResults: [],
             searchTimer: null
@@ -430,7 +431,7 @@ export default {
                 return
             }
             if (id === 'notes') {
-                this.openLibrary()
+                this.toggleLibrary()
                 return
             }
 
@@ -440,6 +441,28 @@ export default {
                     this.$router.push('/')
                 }
             }
+        },
+        // The "Notes" tab toggles the notebook picker: the first tap opens it,
+        // the next one closes it. Two fast taps are a shortcut to All Notes,
+        // which is why the closing tap only counts after a short delay. The
+        // sheet opens immediately, so the normal flow has no lag.
+        toggleLibrary () {
+            const now = Date.now()
+            const isDoubleTap = now - this.lastNotesTabTap < 320
+            this.lastNotesTabTap = now
+
+            // two fast taps always land on All Notes, whatever was open before
+            if (isDoubleTap) {
+                this.openNotebook('Allnotes')
+                return
+            }
+
+            if (this.libraryOpen) {
+                this.libraryOpen = false
+                return
+            }
+
+            this.openLibrary()
         },
         // the "Notes" tab opens the notebook picker instead of the plain list
         openLibrary () {

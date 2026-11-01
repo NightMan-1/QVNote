@@ -137,6 +137,7 @@ export default {
             btnRegenToken: 'Перегенерировать',
             tokenHint: 'Передаётся в заголовке "Authorization: Bearer <token>". Обязателен, пока MCP-сервер включён.',
             endpointHint: 'URL эндпоинта MCP для настройки клиента.',
+            endpointLabel: 'Эндпоинт',
             msgSaved: 'Настройки сохранены',
             msgError: 'Ошибка сохранения настроек'
         },
@@ -193,6 +194,8 @@ export default {
         infoLastChanges: 'Последние изменения',
         infoSearchIndexSize: 'Размер поискового индекса',
         tagsPieTitle: 'Количество тегов на запись',
+        tagForms: ['тег', 'тега', 'тегов'],
+        noteForms: ['запись', 'записи', 'записей'],
         activityTitle: 'Активность',
         activityGraph: {
             months: ['янв', 'фев', 'мар', 'апр', 'май', 'июнь', 'июль', 'авг', 'сен', 'окт', 'ноя', 'дек'],

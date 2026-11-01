@@ -137,6 +137,7 @@ export default {
             btnRegenToken: 'Regenerate',
             tokenHint: 'Send as "Authorization: Bearer <token>" header. Required whenever the MCP server is enabled.',
             endpointHint: 'MCP endpoint URL for client configuration.',
+            endpointLabel: 'Endpoint',
             msgSaved: 'Settings saved',
             msgError: 'Error saving settings'
         },
@@ -192,6 +193,8 @@ export default {
         infoLastChanges: 'Last note',
         infoSearchIndexSize: 'Search index size',
         tagsPieTitle: 'Number of tags per note',
+        tagForms: ['tag', 'tags', 'tags'],
+        noteForms: ['note', 'notes', 'notes'],
         activityTitle: 'Activity',
         activityGraph: {
             months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sen', 'Oct', 'Nov', 'Dec'],
