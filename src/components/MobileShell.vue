@@ -160,14 +160,29 @@
                     </div>
                 </template>
 
+                <template v-else-if="actionSheet === 'move'">
+                    <div class="mshell__group">{{ $t('articleList.modalMoveNotebook') }}</div>
+                    <button
+                        v-for="notebook in notebooks"
+                        :key="notebook.uuid"
+                        class="mshell__item"
+                        :class="{ 'mshell__item--selected': notebook.uuid === currentNotebookID }"
+                        @click="moveTo(notebook.uuid)"
+                    >{{ notebook.name }}</button>
+                </template>
+
                 <template v-else-if="actionSheet === 'delete'">
-                    <div class="mshell__group">{{ $t('articleList.modalDeleteTitle') }}</div>
-                    <button class="mshell__item mshell__item--action mshell__danger" @click="deleteNote">
-                        <i class="bi bi-trash"></i>{{ $t('general.yesBig') }}
-                    </button>
-                    <button class="mshell__item mshell__item--action" @click="actionSheet = 'actions'">
-                        {{ $t('general.noBig') }}
-                    </button>
+                    <div class="mshell__confirm">
+                        <p class="mshell__confirm-text">{{ $t('articleList.modalDeleteTitle') }}</p>
+                        <div class="mshell__confirm-actions">
+                            <button class="mshell__confirm-btn" @click="actionSheet = null">
+                                {{ $t('general.cancel') }}
+                            </button>
+                            <button class="mshell__confirm-btn mshell__confirm-btn--danger" @click="deleteNote">
+                                {{ $t('articleList.btnDelete') }}
+                            </button>
+                        </div>
+                    </div>
                 </template>
             </div>
         </div>
@@ -936,6 +951,38 @@ export default {
     font-size: .8rem;
     text-transform: uppercase;
     letter-spacing: .03em;
+}
+
+.mshell__confirm {
+    padding: .75rem .9rem 1rem;
+}
+
+.mshell__confirm-text {
+    margin: 0 0 .9rem;
+    color: var(--m-text);
+    font-size: .98rem;
+}
+
+.mshell__confirm-actions {
+    display: flex;
+    gap: .5rem;
+}
+
+.mshell__confirm-btn {
+    flex: 1 1 0;
+    min-height: var(--m-tap);
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-sm);
+    background: var(--m-bg);
+    color: var(--m-text);
+    font-size: .95rem;
+    font-weight: 600;
+}
+
+.mshell__confirm-btn--danger {
+    border-color: var(--m-danger);
+    background: var(--m-danger);
+    color: #fff;
 }
 
 .mshell__prepend {
